@@ -1,0 +1,425 @@
+Index: new/ui/vnc.c
+===================================================================
+--- new.orig/ui/vnc.c	2011-08-11 10:10:00.000000000 +0200
++++ new/ui/vnc.c	2011-08-11 10:10:30.000000000 +0200
+@@ -31,6 +31,8 @@
+ #include "qemu-timer.h"
+ #include "acl.h"
+ #include "qemu-objects.h"
++#include <signal.h>
++#include <sys/wait.h>
+ 
+ #define VNC_REFRESH_INTERVAL_BASE 30
+ #define VNC_REFRESH_INTERVAL_INC  50
+@@ -41,6 +43,125 @@
+ #include "vnc_keysym.h"
+ #include "d3des.h"
+ 
++static int pve_vmid = 0;
++
++void pve_auth_setup(int vmid) {
++	pve_vmid = vmid;
++}
++
++static char *
++urlencode(char *buf, const char *value)
++{
++	static const char *hexchar = "0123456789abcdef";
++	char *p = buf;
++	int i;
++	int l = strlen(value);
++	for (i = 0; i < l; i++) {
++		char c = value[i];
++		if (('a' <= c && c <= 'z') ||
++		    ('A' <= c && c <= 'Z') ||
++		    ('0' <= c && c <= '9')) {
++			*p++ = c;
++		} else if (c == 32) {
++			*p++ = '+';
++		} else {
++			*p++ = '%';
++			*p++ = hexchar[c >> 4];
++			*p++ = hexchar[c & 15];
++		}
++	}
++	*p = 0;
++
++	return p;
++}
++
++int
++pve_auth_verify(const char *clientip, const char *username, const char *passwd)
++{
++	struct sockaddr_in server;
++
++	int sfd = socket(AF_INET, SOCK_STREAM, 0);
++	if (sfd == -1) {
++		perror("pve_auth_verify: socket failed");
++		return -1;
++	}
++
++	struct hostent *he;
++	if ((he = gethostbyname("localhost")) == NULL) {
++		fprintf(stderr, "pve_auth_verify: error resolving hostname\n");
++		goto err;
++	}
++
++	memcpy(&server.sin_addr, he->h_addr_list[0], he->h_length);
++	server.sin_family = AF_INET;
++	server.sin_port = htons(85);
++
++	if (connect(sfd, (struct sockaddr *)&server, sizeof(server))) {
++		perror("pve_auth_verify: error connecting to server");
++		goto err;
++	}
++
++	char buf[8192];
++	char form[8192];
++
++	char *p = form;
++	p = urlencode(p, "username");
++	*p++ = '=';
++	p = urlencode(p, username);
++
++	*p++ = '&';
++	p = urlencode(p, "password");
++	*p++ = '=';
++	p = urlencode(p, passwd);
++
++ 	*p++ = '&';
++	p = urlencode(p, "path");
++	*p++ = '=';
++	char authpath[256];
++	sprintf(authpath, "/vms/%d", pve_vmid);
++	p = urlencode(p, authpath);
++
++ 	*p++ = '&';
++ 	p = urlencode(p, "privs");
++	*p++ = '=';
++ 	p = urlencode(p, "VM.Console");
++
++	sprintf(buf, "POST /api2/json/access/ticket HTTP/1.1\n"
++		"Host: localhost:85\n"
++		"Connection: close\n"
++		"PVEClientIP: %s\n"
++		"Content-Type: application/x-www-form-urlencoded\n"
++		"Content-Length: %zd\n\n%s\n", clientip, strlen(form), form);
++	ssize_t len = strlen(buf);
++	ssize_t sb = send(sfd, buf, len, 0);
++	if (sb < 0) {
++		perror("pve_auth_verify: send failed");
++		goto err;
++	}
++	if (sb != len) {
++		fprintf(stderr, "pve_auth_verify: partial send error\n");
++		goto err;
++	}
++
++	len = recv(sfd, buf, sizeof(buf) - 1, 0);
++	if (len < 0) {
++		perror("pve_auth_verify: recv failed");
++		goto err;
++	}
++
++	buf[len] = 0;
++
++	//printf("DATA:%s\n", buf);
++
++	shutdown(sfd, SHUT_RDWR);
++
++	return strncmp(buf, "HTTP/1.1 200 OK", 15);
++
++err:
++	shutdown(sfd, SHUT_RDWR);
++	return -1;
++}
++
+ static VncDisplay *vnc_display; /* needed for info vnc */
+ static DisplayChangeListener *dcl;
+ 
+@@ -1810,7 +1931,7 @@
+ static void set_pixel_conversion(VncState *vs)
+ {
+     if ((vs->clientds.flags & QEMU_BIG_ENDIAN_FLAG) ==
+-        (vs->ds->surface->flags & QEMU_BIG_ENDIAN_FLAG) && 
++        (vs->ds->surface->flags & QEMU_BIG_ENDIAN_FLAG) &&
+         !memcmp(&(vs->clientds.pf), &(vs->ds->surface->pf), sizeof(PixelFormat))) {
+         vs->write_pixels = vnc_write_pixels_copy;
+         vnc_hextile_set_pixel_conversion(vs, 0);
+@@ -1896,7 +2017,7 @@
+         vnc_write_u8(vs, VNC_MSG_SERVER_FRAMEBUFFER_UPDATE);
+         vnc_write_u8(vs, 0);
+         vnc_write_u16(vs, 1); /* number of rects */
+-        vnc_framebuffer_update(vs, 0, 0, ds_get_width(vs->ds), 
++        vnc_framebuffer_update(vs, 0, 0, ds_get_width(vs->ds),
+                                ds_get_height(vs->ds), VNC_ENCODING_WMVi);
+         pixel_format_message(vs);
+         vnc_unlock_output(vs);
+@@ -2729,7 +2850,7 @@
+ char *vnc_display_local_addr(DisplayState *ds)
+ {
+     VncDisplay *vs = ds ? (VncDisplay *)ds->opaque : vnc_display;
+-    
++
+     return vnc_socket_local_addr("%s:%s", vs->lsock);
+ }
+ 
+@@ -2778,6 +2899,7 @@
+             tls = 1; /* Require TLS */
+         } else if (strncmp(options, "x509", 4) == 0) {
+             char *start, *end;
++            tls = 1; /* Require TLS */
+             x509 = 1; /* Require x509 certificates */
+             if (strncmp(options, "x509verify", 10) == 0)
+                 vs->tls.x509verify = 1; /* ...and verify client certs */
+@@ -2800,10 +2922,12 @@
+                 }
+                 qemu_free(path);
+             } else {
+-                fprintf(stderr, "No certificate path provided\n");
+-                qemu_free(vs->display);
+-                vs->display = NULL;
+-                return -1;
++                if (pve_tls_set_x509_creds_dir(vs) < 0) {
++			fprintf(stderr, "No certificate path provided\n");
++			qemu_free(vs->display);
++			vs->display = NULL;
++			return -1;
++		}
+             }
+ #endif
+ #if defined(CONFIG_VNC_TLS) || defined(CONFIG_VNC_SASL)
+@@ -2856,10 +2980,10 @@
+             vs->auth = VNC_AUTH_VENCRYPT;
+             if (x509) {
+                 VNC_DEBUG("Initializing VNC server with x509 password auth\n");
+-                vs->subauth = VNC_AUTH_VENCRYPT_X509VNC;
++                vs->subauth = VNC_AUTH_VENCRYPT_X509PLAIN;
+             } else {
+                 VNC_DEBUG("Initializing VNC server with TLS password auth\n");
+-                vs->subauth = VNC_AUTH_VENCRYPT_TLSVNC;
++                vs->subauth = VNC_AUTH_VENCRYPT_TLSPLAIN;
+             }
+         } else {
+ #endif /* CONFIG_VNC_TLS */
+Index: new/ui/vnc-auth-vencrypt.c
+===================================================================
+--- new.orig/ui/vnc-auth-vencrypt.c	2011-08-11 10:04:51.000000000 +0200
++++ new/ui/vnc-auth-vencrypt.c	2011-08-11 10:10:30.000000000 +0200
+@@ -25,7 +25,107 @@
+  */
+ 
+ #include "vnc.h"
++#include "qemu_socket.h"
+ 
++static int protocol_client_auth_plain(VncState *vs, uint8_t *data, size_t len)
++{
++	const char *err = NULL;
++	char username[256];
++	char passwd[512];
++
++	char clientip[256];
++	clientip[0] = 0;
++	struct sockaddr_in client;
++	socklen_t addrlen = sizeof(client);
++	if (getpeername(vs->csock, &client, &addrlen) == 0) {
++		inet_ntop(client.sin_family, &client.sin_addr, 
++			  clientip, sizeof(clientip));
++	}
++
++	if ((len != (vs->username_len + vs->password_len)) ||
++	    (vs->username_len >= (sizeof(username)-1)) ||
++	    (vs->password_len >= (sizeof(passwd)-1))	) {
++		err = "Got unexpected data length";
++		goto err;
++	}
++
++	strncpy(username, (char *)data, vs->username_len);
++	username[vs->username_len] = 0;
++	strncpy(passwd, (char *)data + vs->username_len, vs->password_len);
++	passwd[vs->password_len] = 0;
++
++	VNC_DEBUG("AUTH PLAIN username: %s pw: %s\n", username, passwd);
++
++	if (pve_auth_verify(clientip, username, passwd) == 0) {
++		vnc_write_u32(vs, 0); /* Accept auth completion */
++		start_client_init(vs);
++		return 0;
++	}
++
++	err =  "Authentication failed";
++err:
++       if (err) {
++	       VNC_DEBUG("AUTH PLAIN ERROR: %s\n", err);
++	       vnc_write_u32(vs, 1); /* Reject auth */
++	       if (vs->minor >= 8) {
++		       int elen = strlen(err);
++		       vnc_write_u32(vs, elen);
++		       vnc_write(vs, err, elen);
++	       }
++       }
++       vnc_flush(vs);
++       vnc_client_error(vs);
++
++       return 0;
++
++}
++
++static int protocol_client_auth_plain_start(VncState *vs, uint8_t *data, size_t len)
++{
++	uint32_t ulen = read_u32(data, 0);
++	uint32_t pwlen = read_u32(data, 4);
++	const char *err = NULL;
++
++	VNC_DEBUG("AUTH PLAIN START %u %u\n", ulen, pwlen);
++
++       if (!ulen) {
++	       err = "No User name.";
++	       goto err;
++       }
++       if (ulen >= 255) {
++	       err = "User name too long.";
++	       goto err;
++       }
++       if (!pwlen) {
++	       err = "Password too short";
++	       goto err;
++       }
++       if (pwlen >= 511) {
++	       err = "Password too long.";
++	       goto err;
++       }
++
++       vs->username_len = ulen;
++       vs->password_len = pwlen;
++
++       vnc_read_when(vs, protocol_client_auth_plain, ulen + pwlen);
++
++       return 0;
++err:
++       if (err) {
++	       VNC_DEBUG("AUTH PLAIN ERROR: %s\n", err);
++	       vnc_write_u32(vs, 1); /* Reject auth */
++	       if (vs->minor >= 8) {
++		       int elen = strlen(err);
++		       vnc_write_u32(vs, elen);
++		       vnc_write(vs, err, elen);
++	       }
++       }
++       vnc_flush(vs);
++       vnc_client_error(vs);
++
++       return 0;
++}
+ 
+ static void start_auth_vencrypt_subauth(VncState *vs)
+ {
+@@ -37,6 +137,12 @@
+        start_client_init(vs);
+        break;
+ 
++    case VNC_AUTH_VENCRYPT_TLSPLAIN:
++    case VNC_AUTH_VENCRYPT_X509PLAIN:
++       VNC_DEBUG("Start TLS auth PLAIN\n");
++       vnc_read_when(vs, protocol_client_auth_plain_start, 8);
++       break;
++
+     case VNC_AUTH_VENCRYPT_TLSVNC:
+     case VNC_AUTH_VENCRYPT_X509VNC:
+        VNC_DEBUG("Start TLS auth VNC\n");
+Index: new/ui/vnc.h
+===================================================================
+--- new.orig/ui/vnc.h	2011-08-11 10:04:51.000000000 +0200
++++ new/ui/vnc.h	2011-08-11 10:12:42.000000000 +0200
+@@ -260,6 +260,8 @@
+     char challenge[VNC_AUTH_CHALLENGE_SIZE];
+ #ifdef CONFIG_VNC_TLS
+     int subauth; /* Used by VeNCrypt */
++    int username_len;
++    int password_len;
+     VncStateTLS tls;
+ #endif
+ #ifdef CONFIG_VNC_SASL
+Index: new/ui/vnc-tls.c
+===================================================================
+--- new.orig/ui/vnc-tls.c	2011-08-11 10:04:51.000000000 +0200
++++ new/ui/vnc-tls.c	2011-08-11 10:10:30.000000000 +0200
+@@ -291,6 +291,14 @@
+     static const int kx_anon[] = {GNUTLS_KX_ANON_DH, 0};
+     static const int kx_x509[] = {GNUTLS_KX_DHE_DSS, GNUTLS_KX_RSA, GNUTLS_KX_DHE_RSA, GNUTLS_KX_SRP, 0};
+ 
++    /* optimize for speed */
++    static const int ciphers[] = {
++	    GNUTLS_CIPHER_ARCFOUR_128,
++	    GNUTLS_CIPHER_AES_128_CBC,
++	    GNUTLS_CIPHER_3DES_CBC,
++	    0
++    };
++
+     VNC_DEBUG("Do TLS setup\n");
+     if (vnc_tls_initialize() < 0) {
+         VNC_DEBUG("Failed to init TLS\n");
+@@ -310,6 +318,13 @@
+             return -1;
+         }
+ 
++	if ((gnutls_cipher_set_priority(vs->tls.session, ciphers)) < 0) {
++	    gnutls_deinit(vs->tls.session);
++            vs->tls.session = NULL;
++            vnc_client_error(vs);
++            return -1;
++	}
++
+         if (gnutls_kx_set_priority(vs->tls.session, needX509Creds ? kx_x509 : kx_anon) < 0) {
+             gnutls_deinit(vs->tls.session);
+             vs->tls.session = NULL;
+@@ -419,6 +434,24 @@
+     return 0;
+ }
+ 
++int pve_tls_set_x509_creds_dir(VncDisplay *vd)
++{
++    if (vnc_set_x509_credential(vd, "/etc/pve", "pve-root-ca.pem", &vd->tls.x509cacert, 0) < 0)
++        goto cleanup;
++    if (vnc_set_x509_credential(vd, "/etc/pve/local", "pve-ssl.pem", &vd->tls.x509cert, 0) < 0)
++        goto cleanup;
++    if (vnc_set_x509_credential(vd, "/etc/pve/local", "pve-ssl.key", &vd->tls.x509key, 0) < 0)
++        goto cleanup;
++
++    return 0;
++
++ cleanup:
++    qemu_free(vd->tls.x509cacert);
++    qemu_free(vd->tls.x509cert);
++    qemu_free(vd->tls.x509key);
++    vd->tls.x509cacert = vd->tls.x509cacrl = vd->tls.x509cert = vd->tls.x509key = NULL;
++    return -1;
++}
+ 
+ int vnc_tls_set_x509_creds_dir(VncDisplay *vd,
+                                const char *certdir)
+Index: new/ui/vnc-tls.h
+===================================================================
+--- new.orig/ui/vnc-tls.h	2011-08-11 10:04:51.000000000 +0200
++++ new/ui/vnc-tls.h	2011-08-11 10:10:30.000000000 +0200
+@@ -68,6 +68,8 @@
+ 
+ int vnc_tls_validate_certificate(VncState *vs);
+ 
++int pve_tls_set_x509_creds_dir(VncDisplay *vd);
++
+ int vnc_tls_set_x509_creds_dir(VncDisplay *vd,
+ 			       const char *path);
+ 
+Index: new/vl.c
+===================================================================
+--- new.orig/vl.c	2011-08-11 10:09:56.000000000 +0200
++++ new/vl.c	2011-08-11 10:10:30.000000000 +0200
+@@ -2774,6 +2774,7 @@
+                 break;
+             case QEMU_OPTION_id:
+                 fairsched_id = atoi(optarg);
++		pve_auth_setup(fairsched_id);
+ 		if (fairsched_id < 100 || fairsched_id >= 1000000) {
+ 		    fprintf(stderr, "Invalid ID\n");
+ 		    exit(1);

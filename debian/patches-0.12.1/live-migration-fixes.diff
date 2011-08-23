@@ -1,0 +1,51 @@
+Index: qemu-kvm/vl.c
+===================================================================
+--- qemu-kvm.orig/vl.c	2009-09-30 10:35:45.000000000 +0200
++++ qemu-kvm/vl.c	2009-09-30 10:47:05.000000000 +0200
+@@ -3175,9 +3175,10 @@
+ static int ram_save_live(QEMUFile *f, int stage, void *opaque)
+ {
+     ram_addr_t addr;
+-    uint64_t bytes_transferred_last;
+     double bwidth = 0;
+     uint64_t expected_time = 0;
++    static int64_t starttime = 0;
++    double timediff;
+ 
+     if (cpu_physical_sync_dirty_bitmap(0, TARGET_PHYS_ADDR_MAX) != 0) {
+         qemu_file_set_error(f);
+@@ -3195,10 +3196,9 @@
+         cpu_physical_memory_set_dirty_tracking(1);
+ 
+         qemu_put_be64(f, last_ram_offset | RAM_SAVE_FLAG_MEM_SIZE);
+-    }
+ 
+-    bytes_transferred_last = bytes_transferred;
+-    bwidth = get_clock();
++	starttime = get_clock();
++    }
+ 
+     while (!qemu_file_rate_limit(f)) {
+         int ret;
+@@ -3209,8 +3209,8 @@
+             break;
+     }
+ 
+-    bwidth = get_clock() - bwidth;
+-    bwidth = (bytes_transferred - bytes_transferred_last) / bwidth;
++    timediff = get_clock() - starttime;
++    bwidth = bytes_transferred / timediff;
+ 
+     /* if we haven't transferred anything this round, force expected_time to a
+      * a very high value, but without crashing */
+@@ -3230,6 +3230,10 @@
+ 
+     qemu_put_be64(f, RAM_SAVE_FLAG_EOS);
+ 
++    if ((stage == 2) && (bytes_transferred > 2*ram_bytes_total())) {
++        return 1;
++    }
++
+     expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;
+ 
+     return (stage == 2) && (expected_time <= migrate_max_downtime());

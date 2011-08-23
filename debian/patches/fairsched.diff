@@ -1,0 +1,159 @@
+Index: new/qemu-options.hx
+===================================================================
+--- new.orig/qemu-options.hx	2011-08-11 10:04:51.000000000 +0200
++++ new/qemu-options.hx	2011-08-11 10:09:56.000000000 +0200
+@@ -89,6 +89,12 @@
+ are split equally.
+ ETEXI
+ 
++DEF("id", HAS_ARG, QEMU_OPTION_id,
++    "-id n	     set the faisched ID\n", QEMU_ARCH_ALL)
++
++DEF("cpuunits",  HAS_ARG, QEMU_OPTION_cpuunits,
++    "-cpuuinits n    set fairsched cpu units\n", QEMU_ARCH_ALL)
++
+ DEF("fda", HAS_ARG, QEMU_OPTION_fda,
+     "-fda/-fdb file  use 'file' as floppy disk 0/1 image\n", QEMU_ARCH_ALL)
+ DEF("fdb", HAS_ARG, QEMU_OPTION_fdb, "", QEMU_ARCH_ALL)
+Index: new/vl.c
+===================================================================
+--- new.orig/vl.c	2011-08-11 10:04:51.000000000 +0200
++++ new/vl.c	2011-08-11 10:09:56.000000000 +0200
+@@ -150,6 +150,8 @@
+ #include "fsdev/qemu-fsdev.h"
+ #endif
+ 
++#include "vzsyscalls.h"
++
+ #include "disas.h"
+ 
+ #include "qemu_socket.h"
+@@ -203,6 +205,7 @@
+ int rtc_td_hack = 0;
+ int usb_enabled = 0;
+ int singlestep = 0;
++int fairsched_id = 0;
+ int smp_cpus = 1;
+ int max_cpus = 0;
+ int smp_cores = 1;
+@@ -2074,6 +2077,7 @@
+ {
+     const char *gdbstub_dev = NULL;
+     int i;
++    int cpuunits = 0;
+     int snapshot, linux_boot;
+     const char *icount_option = NULL;
+     const char *initrd_filename;
+@@ -2768,6 +2772,20 @@
+                     exit(1);
+                 }
+                 break;
++            case QEMU_OPTION_id:
++                fairsched_id = atoi(optarg);
++		if (fairsched_id < 100 || fairsched_id >= 1000000) {
++		    fprintf(stderr, "Invalid ID\n");
++		    exit(1);
++		}
++                break;
++            case QEMU_OPTION_cpuunits:
++                cpuunits = atoi(optarg);
++		if (cpuunits < 8 || cpuunits > 500000) {
++		    fprintf(stderr, "Invalid value for cpuunits\n");
++                    exit(1);
++                }
++                break;
+ 	    case QEMU_OPTION_vnc:
+ #ifdef CONFIG_VNC
+                 display_remote++;
+@@ -3141,6 +3159,39 @@
+     if (ram_size == 0)
+         ram_size = DEFAULT_RAM_SIZE * 1024 * 1024;
+ 
++    if (cpuunits && !fairsched_id) {
++      fprintf(stderr, "cpuunits specified without -id");
++      exit (1);
++    }
++
++    if (fairsched_id && cpuunits) {
++      int ret;
++      int weight = cpuunits ? 500000/cpuunits : 500;
++      pid_t cpid = getpid();
++
++      ret = syscall(__NR_fairsched_rmnod, fairsched_id);
++      if (ret == -EBUSY) {
++	fprintf (stderr, "unable to create fairsched node - still in use\n");
++	exit(1);
++      }
++
++      ret = syscall(__NR_fairsched_mknod, 0, weight, fairsched_id);
++      if (ret != fairsched_id) {
++	fprintf (stderr, "unable to create fairsched node\n");
++	exit(1);
++      }
++
++      ret = syscall(__NR_fairsched_mvpr, cpid, fairsched_id);
++      if (ret != 0) {
++	fprintf (stderr, "unable to move procces to fairsched group");
++	exit (1);
++      }
++
++      /* note: we can never remove ourself from the group, so the empty group
++	 will exist after we finish
++      */
++    }
++
+     /* init the dynamic translator */
+     cpu_exec_init_all(tb_size * 1024 * 1024);
+ 
+Index: new/vzsyscalls.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ new/vzsyscalls.h	2011-08-11 10:09:56.000000000 +0200
+@@ -0,0 +1,47 @@
++/*
++ *  Copyright (C) 2000-2008, Parallels, Inc. All rights reserved.
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++#ifndef _VZSYSCALLS_H_
++#define _VZSYSCALLS_H_
++
++#include <sys/syscall.h>
++
++#ifdef __x86_64__
++#define __NR_fairsched_vcpus	499
++#define __NR_setluid		501
++#define __NR_setublimit		502
++#define __NR_fairsched_mknod    504
++#define __NR_fairsched_rmnod    505
++#define __NR_fairsched_chwt	506
++#define __NR_fairsched_mvpr     507
++#define __NR_fairsched_rate	508
++#define __NR_ioprio_set		251
++#elif defined(__i386__)
++#define __NR_fairsched_mknod    500
++#define __NR_fairsched_rmnod    501
++#define __NR_fairsched_chwt	502
++#define __NR_fairsched_mvpr     503
++#define __NR_fairsched_rate	504
++#define __NR_fairsched_vcpus	505
++#define __NR_setluid		511
++#define __NR_setublimit		512
++#define __NR_ioprio_set		289
++#else
++#error "no syscall for this arch"
++#endif
++
++#endif

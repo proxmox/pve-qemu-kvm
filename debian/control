@@ -1,0 +1,16 @@
+Source: pve-qemu-kvm
+Section: admin
+Priority: extra
+Maintainer: Proxmox Support Team <support@proxmox.com>
+Build-Depends: debhelper (>= 5), autotools-dev, libpci-dev, quilt, texinfo, texi2html, libgnutls-dev, libsdl1.2-dev, check, libaio-dev, uuid-dev
+Standards-Version: 3.7.2
+
+Package: pve-qemu-kvm
+Architecture: any
+Depends: iproute, bridge-utils, python, libsdl1.2debian, libaio1, libuuid1, ${shlibs:Depends}, ${misc:Depends}
+Conflicts: qemu, qemu-kvm, kvm, pve-kvm, pve-qemu-kvm-2.6.18
+Replaces: pve-kvm, pve-qemu-kvm-2.6.18
+Description: Full virtualization on x86 hardware
+ Using KVM, one can run multiple virtual PCs, each running unmodified Linux or
+ Windows images. Each virtual machine has private virtualized hardware: a
+ network card, disk, graphics adapter, etc. 

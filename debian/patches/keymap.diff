@@ -1,0 +1,68 @@
+Index: new/ui/vnc.c
+===================================================================
+--- new.orig/ui/vnc.c	2011-08-11 10:04:51.000000000 +0200
++++ new/ui/vnc.c	2011-08-11 10:10:00.000000000 +0200
+@@ -1444,6 +1444,10 @@
+ 
+ static void do_key_event(VncState *vs, int down, int keycode, int sym)
+ {
++    int mods =  keycode & 0xf00;
++
++    keycode &= SCANCODE_KEYMASK;
++
+     /* QEMU console switch */
+     switch(keycode) {
+     case 0x2a:                          /* Left Shift */
+@@ -1514,12 +1518,42 @@
+     }
+ 
+     if (is_graphic_console()) {
++
++ 	/* our java vnc client never sends ALTGR, so we create
++	   an artificial up/down event */
++
++	int emul_altgr = (mods & SCANCODE_ALTGR) &&
++	    !vs->modifiers_state[0xb8];
++
++	if (emul_altgr) {
++		reset_keys(vs);
++		kbd_put_keycode(SCANCODE_EMUL0);
++		kbd_put_keycode(0xb8 & SCANCODE_KEYCODEMASK);
++	}
++
++	int emul_shift = (mods & SCANCODE_SHIFT) &&
++	    !vs->modifiers_state[0x2a];
++
++	if (emul_shift) {
++	    kbd_put_keycode(0x2a & SCANCODE_KEYCODEMASK);
++	}
++
+         if (keycode & SCANCODE_GREY)
+             kbd_put_keycode(SCANCODE_EMUL0);
+         if (down)
+             kbd_put_keycode(keycode & SCANCODE_KEYCODEMASK);
+         else
+             kbd_put_keycode(keycode | SCANCODE_UP);
++
++	if (emul_shift) {
++	    kbd_put_keycode(0x2a | SCANCODE_UP);
++	}
++
++	if (emul_altgr) {
++	    kbd_put_keycode(SCANCODE_EMUL0);
++	    kbd_put_keycode(0xb8 | SCANCODE_UP);
++	}
++
+     } else {
+         /* QEMU console emulation */
+         if (down) {
+@@ -1627,7 +1661,8 @@
+         lsym = lsym - 'A' + 'a';
+     }
+ 
+-    keycode = keysym2scancode(vs->vd->kbd_layout, lsym & 0xFFFF) & SCANCODE_KEYMASK;
++    keycode = keysym2scancode(vs->vd->kbd_layout, lsym & 0xFFFF);
++
+     do_key_event(vs, down, keycode, sym);
+ }
+ 

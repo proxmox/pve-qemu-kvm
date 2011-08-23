@@ -1,0 +1,126 @@
+Index: qemu-kvm/console.h
+===================================================================
+--- qemu-kvm.orig/console.h	2009-12-21 10:37:57.000000000 +0100
++++ qemu-kvm/console.h	2009-12-21 10:45:29.000000000 +0100
+@@ -322,7 +322,7 @@
+ void vnc_display_init(DisplayState *ds);
+ void vnc_display_close(DisplayState *ds);
+ int vnc_display_open(DisplayState *ds, const char *display);
+-int vnc_display_password(DisplayState *ds, const char *password);
++int vnc_display_password(DisplayState *ds, const char *password, int limit);
+ void do_info_vnc_print(Monitor *mon, const QObject *data);
+ void do_info_vnc(Monitor *mon, QObject **ret_data);
+ char *vnc_display_local_addr(DisplayState *ds);
+Index: qemu-kvm/monitor.c
+===================================================================
+--- qemu-kvm.orig/monitor.c	2009-12-21 10:37:58.000000000 +0100
++++ qemu-kvm/monitor.c	2009-12-21 11:03:40.000000000 +0100
+@@ -949,9 +949,9 @@
+     monitor_read_bdrv_key_start(mon, bs, NULL, NULL);
+ }
+ 
+-static void change_vnc_password(const char *password)
++static void change_vnc_password(const char *password, int limit)
+ {
+-    if (vnc_display_password(NULL, password) < 0)
++    if (vnc_display_password(NULL, password, limit) < 0)
+         qemu_error_new(QERR_SET_PASSWD_FAILED);
+ 
+ }
+@@ -959,19 +959,30 @@
+ static void change_vnc_password_cb(Monitor *mon, const char *password,
+                                    void *opaque)
+ {
+-    change_vnc_password(password);
++    change_vnc_password(password, 0);
++    monitor_read_command(mon, 1);
++}
++
++static void change_vnc_ticket_cb(Monitor *mon, const char *password,
++				 void *opaque)
++{
++    change_vnc_password(password, 1);
+     monitor_read_command(mon, 1);
+ }
+ 
+ static void do_change_vnc(Monitor *mon, const char *target, const char *arg)
+ {
+     if (strcmp(target, "passwd") == 0 ||
+-        strcmp(target, "password") == 0) {
++        strcmp(target, "password") == 0 ||
++	strcmp(target, "ticket") == 0) {
+         if (arg) {
+             char password[9];
+             strncpy(password, arg, sizeof(password));
+             password[sizeof(password) - 1] = '\0';
+-            change_vnc_password(password);
++ 	    if (strcmp(target, "ticket") == 0)
++ 	      change_vnc_ticket_cb(mon, password, NULL);
++ 	    else 
++ 	      change_vnc_password_cb(mon, password, NULL);
+         } else {
+             monitor_read_password(mon, change_vnc_password_cb, NULL);
+         }
+Index: qemu-kvm/vnc.c
+===================================================================
+--- qemu-kvm.orig/vnc.c	2009-12-21 10:37:57.000000000 +0100
++++ qemu-kvm/vnc.c	2009-12-21 10:44:13.000000000 +0100
+@@ -1763,7 +1763,7 @@
+ static void set_pixel_conversion(VncState *vs)
+ {
+     if ((vs->clientds.flags & QEMU_BIG_ENDIAN_FLAG) ==
+-        (vs->ds->surface->flags & QEMU_BIG_ENDIAN_FLAG) && 
++        (vs->ds->surface->flags & QEMU_BIG_ENDIAN_FLAG) &&
+         !memcmp(&(vs->clientds.pf), &(vs->ds->surface->pf), sizeof(PixelFormat))) {
+         vs->write_pixels = vnc_write_pixels_copy;
+         switch (vs->ds->surface->pf.bits_per_pixel) {
+@@ -1871,7 +1871,7 @@
+         vnc_write_u8(vs, 0);  /* msg id */
+         vnc_write_u8(vs, 0);
+         vnc_write_u16(vs, 1); /* number of rects */
+-        vnc_framebuffer_update(vs, 0, 0, ds_get_width(vs->ds), 
++        vnc_framebuffer_update(vs, 0, 0, ds_get_width(vs->ds),
+                                ds_get_height(vs->ds), VNC_ENCODING_WMVi);
+         pixel_format_message(vs);
+         vnc_flush(vs);
+@@ -2068,7 +2068,10 @@
+     int i, j, pwlen;
+     unsigned char key[8];
+ 
+-    if (!vs->vd->password || !vs->vd->password[0]) {
++    if (vs->vd->retries >= 0)
++        vs->vd->retries++;
++
++    if (!vs->vd->password || !vs->vd->password[0] || vs->vd->retries > 3) {
+         VNC_DEBUG("No password configured on server");
+         vnc_write_u32(vs, 1); /* Reject auth */
+         if (vs->minor >= 8) {
+@@ -2438,7 +2441,7 @@
+ #endif
+ }
+ 
+-int vnc_display_password(DisplayState *ds, const char *password)
++int vnc_display_password(DisplayState *ds, const char *password, int limit)
+ {
+     VncDisplay *vs = ds ? (VncDisplay *)ds->opaque : vnc_display;
+ 
+@@ -2453,6 +2456,7 @@
+     if (password && password[0]) {
+         if (!(vs->password = qemu_strdup(password)))
+             return -1;
++	vs->retries = limit ? 0 : -1;
+         if (vs->auth == VNC_AUTH_NONE) {
+             vs->auth = VNC_AUTH_VNC;
+         }
+Index: qemu-kvm/vnc.h
+===================================================================
+--- qemu-kvm.orig/vnc.h	2009-12-21 10:37:57.000000000 +0100
++++ qemu-kvm/vnc.h	2009-12-21 10:44:13.000000000 +0100
+@@ -104,6 +104,7 @@
+ 
+     char *display;
+     char *password;
++    int retries;
+     int auth;
+ #ifdef CONFIG_VNC_TLS
+     int subauth; /* Used by VeNCrypt */

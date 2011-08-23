@@ -1,0 +1,16 @@
+
+Alway use our own version.
+
+Index: new/kvm/libkvm/libkvm.h
+===================================================================
+--- new.orig/kvm/libkvm/libkvm.h	2011-08-11 10:04:51.000000000 +0200
++++ new/kvm/libkvm/libkvm.h	2011-08-11 10:10:13.000000000 +0200
+@@ -15,7 +15,7 @@
+ #define __user /* temporary, until installed via make headers_install */
+ #endif
+ 
+-#include <linux/kvm.h>
++#include "linux/kvm.h"
+ 
+ #include <signal.h>
+ 

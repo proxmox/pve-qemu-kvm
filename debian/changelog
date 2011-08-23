@@ -1,0 +1,171 @@
+pve-qemu-kvm (0.15.0-1) unstable; urgency=low
+
+  * update to upstream 0.15.0
+
+  * depend on libaio1 (--enable-linux-aio)
+
+  * depend on libuuid1 (--enable-uuid)
+  
+  * use pxe roms from upstream qemu-kvm
+  
+  * do not use --disable-blobs (let qemu-kvm install files, and we remove
+    what we do not need)
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 11 Aug 2011 10:00:44 +0200
+
+pve-qemu-kvm (0.14.1-1) unstable; urgency=low
+
+  * update to upstream 0.14.1
+  
+  * remove enable-ksm.diff patch (newer libc already have those
+    definitions)
+  
+  * also install vgabios-qxl.bin vgabios-stdvga.bin vgabios-vmware.bin
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 21 Jun 2011 06:30:29 +0200
+
+pve-qemu-kvm (0.14.0-1) unstable; urgency=low
+
+  * update to 0.14.0
+
+  * removed kvmtrace (removed from upstream?)
+  
+  * add vnc keyboard fixes for fr-ca (reported by Pierre-Yves)
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 25 Feb 2011 08:17:56 +0100
+
+pve-qemu-kvm (0.13.0-3) unstable; urgency=low
+
+  * fix vnc keyboard altgr/shift emulation
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 07 Dec 2010 12:45:16 +0100
+
+pve-qemu-kvm (0.13.0-2) unstable; urgency=low
+
+  * do not install unnecessary blobs (manually install blobs, use
+    --disable-blobs)
+
+  * update migration and vnc keymap patches for 0.13.0
+  
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 25 Oct 2010 13:46:03 +0200
+
+pve-qemu-kvm (0.13.0-1) unstable; urgency=low
+
+  * update to qemu-kvm-0.13.0
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 21 Oct 2010 13:38:14 +0200
+
+pve-qemu-kvm (0.12.5-2) unstable; urgency=low
+
+  * enable up to 32 NICs (as suggested in the forum)
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 06 Oct 2010 08:23:07 +0200
+
+pve-qemu-kvm (0.12.5-1) unstable; urgency=low
+
+  * update to qemu-kvm-0.12.5
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 05 Aug 2010 11:01:56 +0200
+
+pve-qemu-kvm (0.12.4-1) unstable; urgency=low
+
+  * update to qemu-kvm-0.12.4
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 11 May 2010 08:14:29 +0200
+
+pve-qemu-kvm (0.12.3-1) unstable; urgency=low
+
+  * update to qemu-kvm-0.12.3
+  
+  * include gPXE 1.0 network boot
+  
+  * remove multicore.diff patch
+  
+  * do not install ppc and sparc bios files
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 14 Apr 2010 13:30:23 +0200
+
+pve-qemu-kvm (0.11.1-2) unstable; urgency=low
+
+  * Use/Include PXE boot ROMs from the Etherboot package
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 26 Jan 2010 13:28:19 +0100
+
+pve-qemu-kvm (0.11.1-1) unstable; urgency=low
+
+  * update to qemu-kvm-0.11.1
+
+  * cleanup debian rules file
+  
+  * install kvmtrace kvmtrace_format and kvm_stat
+  
+  * configure with --disable-xen --with-kvm-trace 
+  
+  * depend on python for scripts
+  
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 14 Dec 2009 14:44:56 +0100
+
+pve-qemu-kvm (0.11.0-2) stable; urgency=low
+
+  * fix live migration (live-migration-fxes.diff)
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 30 Sep 2009 11:07:23 +0200
+
+pve-qemu-kvm (0.11.0-1) stable; urgency=low
+
+  * update to stable branch
+
+  * rename packare to pve-qemu-kvm
+	
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 28 Sep 2009 10:35:05 +0200
+
+pve-kvm (86-4) unstable; urgency=low
+
+  * include multicore patch from amd
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 14 Sep 2009 10:40:00 +0200
+
+pve-kvm (86-3) unstable; urgency=low
+
+  * fix "i8042.c: No controller found" problem
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 15 Jun 2009 13:35:57 +0200
+
+pve-kvm (86-2) unstable; urgency=low
+
+  * add CPUID fix: http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff_plain;h=8fa3b3ce6e
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 09 Jun 2009 09:50:28 +0200
+
+pve-kvm (86-1) unstable; urgency=low
+
+  *  New upstream release
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 22 May 2009 09:16:27 +0200
+
+pve-kvm (85-1) unstable; urgency=low
+
+  *  New upstream release
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 28 Apr 2009 07:41:21 +0200
+
+pve-kvm (83-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed,  7 Jan 2009 12:57:02 +0100
+
+pve-kvm (75-1) unstable; urgency=low
+
+  *  New upstream release
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 11 Sep 2008 10:03:51 +0200
+
+pve-kvm (74-1) unstable; urgency=low
+
+  * New upstream release
+  
+  * added fairsched options
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 28 Aug 2008 12:40:32 +0200
+

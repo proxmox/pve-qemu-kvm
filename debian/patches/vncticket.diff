@@ -1,0 +1,149 @@
+Index: qemu-kvm/console.h
+===================================================================
+--- qemu-kvm.orig/console.h	2010-10-21 13:40:20.000000000 +0200
++++ qemu-kvm/console.h	2010-10-21 14:06:21.000000000 +0200
+@@ -368,7 +368,7 @@
+ void vnc_display_init(DisplayState *ds);
+ void vnc_display_close(DisplayState *ds);
+ int vnc_display_open(DisplayState *ds, const char *display);
+-int vnc_display_password(DisplayState *ds, const char *password);
++int vnc_display_password(DisplayState *ds, const char *password, int limit);
+ void do_info_vnc_print(Monitor *mon, const QObject *data);
+ void do_info_vnc(Monitor *mon, QObject **ret_data);
+ char *vnc_display_local_addr(DisplayState *ds);
+Index: qemu-kvm/ui/vnc.c
+===================================================================
+--- qemu-kvm.orig/ui/vnc.c	2010-10-21 13:40:21.000000000 +0200
++++ qemu-kvm/ui/vnc.c	2010-10-21 14:06:21.000000000 +0200
+@@ -1790,7 +1790,7 @@
+ static void set_pixel_conversion(VncState *vs)
+ {
+     if ((vs->clientds.flags & QEMU_BIG_ENDIAN_FLAG) ==
+-        (vs->ds->surface->flags & QEMU_BIG_ENDIAN_FLAG) && 
++        (vs->ds->surface->flags & QEMU_BIG_ENDIAN_FLAG) &&
+         !memcmp(&(vs->clientds.pf), &(vs->ds->surface->pf), sizeof(PixelFormat))) {
+         vs->write_pixels = vnc_write_pixels_copy;
+         vnc_hextile_set_pixel_conversion(vs, 0);
+@@ -1876,7 +1876,7 @@
+         vnc_write_u8(vs, VNC_MSG_SERVER_FRAMEBUFFER_UPDATE);
+         vnc_write_u8(vs, 0);
+         vnc_write_u16(vs, 1); /* number of rects */
+-        vnc_framebuffer_update(vs, 0, 0, ds_get_width(vs->ds), 
++        vnc_framebuffer_update(vs, 0, 0, ds_get_width(vs->ds),
+                                ds_get_height(vs->ds), VNC_ENCODING_WMVi);
+         pixel_format_message(vs);
+         vnc_unlock_output(vs);
+@@ -2079,7 +2079,10 @@
+     int i, j, pwlen;
+     unsigned char key[8];
+ 
+-    if (!vs->vd->password || !vs->vd->password[0]) {
++    if (vs->vd->retries >= 0)
++        vs->vd->retries++;
++
++    if (!vs->vd->password || !vs->vd->password[0] || vs->vd->retries > 3) {
+         VNC_DEBUG("No password configured on server");
+         vnc_write_u32(vs, 1); /* Reject auth */
+         if (vs->minor >= 8) {
+@@ -2478,7 +2481,7 @@
+ #endif
+ }
+ 
+-int vnc_display_password(DisplayState *ds, const char *password)
++int vnc_display_password(DisplayState *ds, const char *password, int limit)
+ {
+     VncDisplay *vs = ds ? (VncDisplay *)ds->opaque : vnc_display;
+ 
+@@ -2493,6 +2496,7 @@
+     if (password && password[0]) {
+         if (!(vs->password = qemu_strdup(password)))
+             return -1;
++	vs->retries = limit ? 0 : -1;
+         if (vs->auth == VNC_AUTH_NONE) {
+             vs->auth = VNC_AUTH_VNC;
+         }
+Index: qemu-kvm/ui/vnc.h
+===================================================================
+--- qemu-kvm.orig/ui/vnc.h	2010-10-21 13:40:20.000000000 +0200
++++ qemu-kvm/ui/vnc.h	2010-10-21 14:06:21.000000000 +0200
+@@ -120,6 +120,7 @@
+ 
+     char *display;
+     char *password;
++    int retries;
+     int auth;
+     bool lossy;
+ #ifdef CONFIG_VNC_TLS
+Index: qemu-kvm/monitor.c
+===================================================================
+--- qemu-kvm.orig/monitor.c	2010-10-21 13:40:21.000000000 +0200
++++ qemu-kvm/monitor.c	2010-10-21 14:14:38.000000000 +0200
+@@ -978,7 +978,7 @@
+ 
+ static int change_vnc_password(const char *password)
+ {
+-    if (vnc_display_password(NULL, password) < 0) {
++    if (vnc_display_password(NULL, password, 0) < 0) {
+         qerror_report(QERR_SET_PASSWD_FAILED);
+         return -1;
+     }
+@@ -986,6 +986,17 @@
+     return 0;
+ }
+ 
++static int change_vnc_ticket(const char *password)
++{
++    if (vnc_display_password(NULL, password, 1) < 0) {
++	qerror_report(QERR_SET_PASSWD_FAILED);
++	return -1;
++    }
++
++    return 0;
++}
++
++
+ static void change_vnc_password_cb(Monitor *mon, const char *password,
+                                    void *opaque)
+ {
+@@ -996,12 +1007,16 @@
+ static int do_change_vnc(Monitor *mon, const char *target, const char *arg)
+ {
+     if (strcmp(target, "passwd") == 0 ||
+-        strcmp(target, "password") == 0) {
++        strcmp(target, "password") == 0 ||
++	strcmp(target, "ticket") == 0) {
+         if (arg) {
+             char password[9];
+             strncpy(password, arg, sizeof(password));
+             password[sizeof(password) - 1] = '\0';
+-            return change_vnc_password(password);
++	    if (strcmp(target, "ticket") == 0)
++		return change_vnc_ticket(password);
++	    else
++		return change_vnc_password(password);
+         } else {
+             return monitor_read_password(mon, change_vnc_password_cb, NULL);
+         }
+@@ -3324,11 +3339,11 @@
+ static int is_valid_option(const char *c, const char *typestr)
+ {
+     char option[3];
+-  
++
+     option[0] = '-';
+     option[1] = *c;
+     option[2] = '\0';
+-  
++
+     typestr = strstr(typestr, option);
+     return (typestr != NULL);
+ }
+@@ -3640,7 +3655,7 @@
+                     p++;
+                     if(c != *p) {
+                         if(!is_valid_option(p, typestr)) {
+-                  
++
+                             monitor_printf(mon, "%s: unsupported option -%c\n",
+                                            cmdname, *p);
+                             goto fail;

@@ -1,0 +1,41 @@
+Index: new/net.h
+===================================================================
+--- new.orig/net.h	2011-08-11 10:04:51.000000000 +0200
++++ new/net.h	2011-08-11 10:09:49.000000000 +0200
+@@ -172,8 +172,8 @@
+ int do_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+-#define DEFAULT_NETWORK_SCRIPT "/etc/qemu-ifup"
+-#define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/qemu-ifdown"
++#define DEFAULT_NETWORK_SCRIPT "/etc/kvm/kvm-ifup"
++#define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/kvm/kvm-ifdown"
+ #ifdef __sun__
+ #define SMBD_COMMAND "/usr/sfw/sbin/smbd"
+ #else
+Index: new/configure
+===================================================================
+--- new.orig/configure	2011-08-11 10:04:51.000000000 +0200
++++ new/configure	2011-08-11 10:09:49.000000000 +0200
+@@ -157,7 +157,7 @@
+ bindir="\${prefix}/bin"
+ libdir="\${prefix}/lib"
+ sysconfdir="\${prefix}/etc"
+-confsuffix="/qemu"
++confsuffix="/kvm"
+ slirp="yes"
+ fmod_lib=""
+ fmod_inc=""
+Index: new/net/tap.h
+===================================================================
+--- new.orig/net/tap.h	2011-08-11 10:04:51.000000000 +0200
++++ new/net/tap.h	2011-08-11 10:09:49.000000000 +0200
+@@ -29,8 +29,6 @@
+ #include "qemu-common.h"
+ #include "qemu-option.h"
+ 
+-#define DEFAULT_NETWORK_SCRIPT "/etc/qemu-ifup"
+-#define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/qemu-ifdown"
+ 
+ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan);
+ 

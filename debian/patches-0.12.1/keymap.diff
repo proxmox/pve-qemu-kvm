@@ -1,0 +1,468 @@
+Index: kvm-86/curses.c
+===================================================================
+--- kvm-86.orig/curses.c	2009-05-22 10:09:19.000000000 +0200
++++ kvm-86/curses.c	2009-05-22 10:10:38.000000000 +0200
+@@ -238,7 +238,11 @@
+                 keysym = chr;
+ 
+             keycode &= ~KEY_MASK;
+-            keycode |= keysym2scancode(kbd_layout, keysym);
++
++	    keydata_t *kd = find_keysym(kbd_layout, keysym);
++	    if (kd) {
++	        keycode |= kd->keycode;
++	    }
+         }
+ 
+         if (is_graphic_console()) {
+Index: kvm-86/keymaps.c
+===================================================================
+--- kvm-86.orig/keymaps.c	2009-05-22 10:09:24.000000000 +0200
++++ kvm-86/keymaps.c	2009-05-22 10:10:38.000000000 +0200
+@@ -67,6 +67,7 @@
+     char file_name[1024];
+     char line[1024];
+     int len;
++    int upper;
+ 
+     snprintf(file_name, sizeof(file_name),
+              "%s/keymaps/%s", bios_dir, language);
+@@ -97,25 +98,66 @@
+ 	    if (*end_of_keysym) {
+ 		int keysym;
+ 		*end_of_keysym = 0;
++                uint8_t keymod;
++                int deadsym;
++
++                keymod = 0;
++                deadsym = 0;
++		upper = 0;
++redo:
++                if (upper==1){
++                    char *c;
++                    for(c=line;*c;c++)
++                        *c=toupper(*c);
++                    keymod |= KEYMOD_SHIFT;
++                    upper++;
++                }
++
+ 		keysym = get_keysym(table, line);
+ 		if (keysym == 0) {
+                     //		    fprintf(stderr, "Warning: unknown keysym %s\n", line);
+ 		} else {
+ 		    const char *rest = end_of_keysym + 1;
+ 		    char *rest2;
++		    char *modifier;
+ 		    int keycode = strtol(rest, &rest2, 0);
+ 
+-		    if (rest && strstr(rest, "numlock")) {
+-			add_to_key_range(&k->keypad_range, keycode);
+-			add_to_key_range(&k->numlock_range, keysym);
+-			//fprintf(stderr, "keypad keysym %04x keycode %d\n", keysym, keycode);
++                    modifier = strtok (rest2, " ");
++                    while (modifier != NULL) {
++                        if (!strcmp(modifier, "shift")) {
++                            keymod |= KEYMOD_SHIFT;
++                        } else
++			if (!strcmp(modifier, "addupper")) {
++			    upper++;
++			} else
++                        if (!strcmp(modifier, "ctrl")) {
++                            keymod |= KEYMOD_CTRL;
++                        } else
++                        if (!strcmp(modifier, "alt")) {
++                            keymod |= KEYMOD_ALT;
++                        } else
++                        if (!strcmp(modifier, "altgr")) {
++                            keymod |= KEYMOD_ALTGR;
++                        } else
++                        if (!strncmp(modifier, "dead_",5)) {
++                            keymod |= KEYMOD_DEAD;
++                            deadsym = get_keysym(table, modifier);
++                        } else
++                        if (!strcmp(modifier, "numlock")) {
++			    add_to_key_range(&k->keypad_range, keycode);
++			    add_to_key_range(&k->numlock_range, keysym);
++			    //fprintf(stderr, "keypad keysym %04x keycode %d\n", keysym, keycode);
++			}
++			modifier = strtok (NULL," ");
+ 		    }
+ 
+ 		    /* if(keycode&0x80)
+ 		       keycode=(keycode<<8)^0x80e0; */
+ 		    if (keysym < MAX_NORMAL_KEYCODE) {
+ 			//fprintf(stderr,"Setting keysym %s (%d) to %d\n",line,keysym,keycode);
+-			k->keysym2keycode[keysym] = keycode;
++                        k->keysym2keycode[keysym].keycode = keycode;
++                        k->keysym2keycode[keysym].keymod = keymod;
++                        k->keysym2keycode[keysym].deadsym = deadsym;
+ 		    } else {
+ 			if (k->extra_count >= MAX_EXTRA_COUNT) {
+ 			    fprintf(stderr,
+@@ -128,11 +170,18 @@
+ #endif
+ 			    k->keysym2keycode_extra[k->extra_count].
+ 				keysym = keysym;
+-			    k->keysym2keycode_extra[k->extra_count].
+-				keycode = keycode;
++			    k->keysym2keycode_extra[k->extra_count].kdata.
++			        keycode = keycode;
++			    k->keysym2keycode_extra[k->extra_count].kdata.
++			        keymod = keymod;
++                            k->keysym2keycode_extra[k->extra_count].kdata.
++			        deadsym = deadsym;
++
+ 			    k->extra_count++;
+ 			}
+ 		    }
++                    if (upper==1)
++                        goto redo;
+ 		}
+ 	    }
+ 	}
+@@ -148,14 +197,11 @@
+ }
+ 
+ 
+-int keysym2scancode(void *kbd_layout, int keysym)
++keydata_t *find_keysym(void *kbd_layout, int keysym)
+ {
+     kbd_layout_t *k = kbd_layout;
+     if (keysym < MAX_NORMAL_KEYCODE) {
+-	if (k->keysym2keycode[keysym] == 0)
+-	    fprintf(stderr, "Warning: no scancode found for keysym %d\n",
+-		    keysym);
+-	return k->keysym2keycode[keysym];
++        return &k->keysym2keycode[keysym];
+     } else {
+ 	int i;
+ #ifdef XK_ISO_Left_Tab
+@@ -163,10 +209,10 @@
+ 	    keysym = XK_Tab;
+ #endif
+ 	for (i = 0; i < k->extra_count; i++)
+-	    if (k->keysym2keycode_extra[i].keysym == keysym)
+-		return k->keysym2keycode_extra[i].keycode;
++            if (k->keysym2keycode_extra[i].keysym == keysym)
++                return &k->keysym2keycode_extra[i].kdata;
+     }
+-    return 0;
++    return NULL;
+ }
+ 
+ int keycode_is_keypad(void *kbd_layout, int keycode)
+Index: kvm-86/keymaps.h
+===================================================================
+--- kvm-86.orig/keymaps.h	2009-05-22 10:09:32.000000000 +0200
++++ kvm-86/keymaps.h	2009-05-22 10:10:38.000000000 +0200
+@@ -38,13 +38,26 @@
+     struct key_range *next;
+ };
+ 
++#define KEYMOD_SHIFT 0x01
++#define KEYMOD_CTRL  0x02
++#define KEYMOD_ALT   0x04
++#define KEYMOD_DEAD  0x08
++#define KEYMOD_ALTGR 0x10
++
+ #define MAX_NORMAL_KEYCODE 512
+ #define MAX_EXTRA_COUNT 256
++
++typedef struct {
++    uint16_t keycode;
++    uint8_t keymod;
++    int deadsym;
++} keydata_t;
++
+ typedef struct {
+-    uint16_t keysym2keycode[MAX_NORMAL_KEYCODE];
++    keydata_t keysym2keycode[MAX_NORMAL_KEYCODE];
+     struct {
+ 	int keysym;
+-	uint16_t keycode;
++        keydata_t kdata;
+     } keysym2keycode_extra[MAX_EXTRA_COUNT];
+     int extra_count;
+     struct key_range *keypad_range;
+@@ -53,7 +66,7 @@
+ 
+ 
+ void *init_keyboard_layout(const name2keysym_t *table, const char *language);
+-int keysym2scancode(void *kbd_layout, int keysym);
++keydata_t *find_keysym(void *kbd_layout, int keysym);
+ int keycode_is_keypad(void *kbd_layout, int keycode);
+ int keysym_is_numlock(void *kbd_layout, int keysym);
+ 
+Index: kvm-86/sdl.c
+===================================================================
+--- kvm-86.orig/sdl.c	2009-05-22 10:09:43.000000000 +0200
++++ kvm-86/sdl.c	2009-05-22 10:10:38.000000000 +0200
+@@ -214,7 +214,11 @@
+     if (keysym == 92 && ev->keysym.scancode == 133) {
+         keysym = 0xa5;
+     }
+-    return keysym2scancode(kbd_layout, keysym);
++    keydata_t *kd = find_keysym(kbd_layout, keysym);
++    if (kd==NULL)
++        return 0;
++    else
++        return kd->keycode;
+ }
+ 
+ /* specific keyboard conversions from scan codes */
+Index: kvm-86/vnc.c
+===================================================================
+--- kvm-86.orig/vnc.c	2009-05-22 10:09:54.000000000 +0200
++++ kvm-86/vnc.c	2009-05-22 10:10:38.000000000 +0200
+@@ -1257,27 +1257,85 @@
+     check_pointer_type_change(vs, kbd_mouse_is_absolute());
+ }
+ 
++static void do_keycode(int keycode, int down)
++{
++    // fprintf (stderr, "KEY: %04x %d\n", keycode, down);
++    if (keycode & 0x80)
++        kbd_put_keycode(0xe0);
++    if (down)
++        kbd_put_keycode(keycode & 0x7f);
++    else
++        kbd_put_keycode(keycode | 0x80);
++}
++
++static void do_modifier(VncState *vs, int keycode, int down, int level)
++{
++    do_keycode(keycode, down);
++    vs->modifiers_state[level][keycode] = down;
++    if (level==0) {
++        vs->modifiers_state[1][keycode] = down;
++    }
++}
++
+ static void reset_keys(VncState *vs)
+ {
+     int i;
+     for(i = 0; i < 256; i++) {
+-        if (vs->modifiers_state[i]) {
+-            if (i & 0x80)
+-                kbd_put_keycode(0xe0);
+-            kbd_put_keycode(i | 0x80);
+-            vs->modifiers_state[i] = 0;
++        if (vs->modifiers_state[0][i]) {
++	    do_modifier (vs, i, 0, 0);
++        }
++    }
++}
++
++static void set_modifiers(VncState *vs, uint8_t reqstate, int down, int full)
++{
++    modifier_t *m;
++    for(m=test_modifier; m->bit; m++) {
++        int requested = reqstate & m->bit;
++        /* Release unwanted modifiers */
++        if (!down || full) {
++            if (vs->modifiers_state[1][m->keycode] && !requested)
++                do_modifier(vs, m->keycode, 0, 1);
++        }
++        /* Press desired modifiers */
++        if (down || full) {
++            int already_set = vs->modifiers_state[1][m->keycode];
++            if (!already_set && requested)
++                do_modifier(vs, m->keycode, 1, 1);
+         }
+     }
+ }
+ 
++static void restore_modifiers(VncState *vs)
++{
++    /* Restore modifiers from reference */
++    modifier_t *m;
++    for(m=test_modifier; m->bit; m++) {
++        if (vs->modifiers_state[0][m->keycode] !=
++	    vs->modifiers_state[1][m->keycode])
++            do_modifier(vs, m->keycode, vs->modifiers_state[0][m->keycode], 0);
++    }
++}
+ static void press_key(VncState *vs, int keysym)
+ {
+-    kbd_put_keycode(keysym2scancode(vs->vd->kbd_layout, keysym) & 0x7f);
+-    kbd_put_keycode(keysym2scancode(vs->vd->kbd_layout, keysym) | 0x80);
++    keydata_t *kd = find_keysym(vs->vd->kbd_layout, keysym & 0xFFFF);
++    if (kd==NULL)
++        return;
++
++    kbd_put_keycode(kd->keycode & 0x7f);
++    kbd_put_keycode(kd->keycode | 0x80);
+ }
+ 
+-static void do_key_event(VncState *vs, int down, int keycode, int sym)
++static void do_key_event(VncState *vs, int down, keydata_t *kd, int sym)
+ {
++    if (kd==NULL)
++        return;
++
++    int keycode = kd->keycode;
++    //fprintf (stderr, "SYM: %04x SCANCODE: %04x MOD %04x\n",
++    //	     sym, keycode, kd->keymod);
++
++
+     /* QEMU console switch */
+     switch(keycode) {
+     case 0x2a:                          /* Left Shift */
+@@ -1286,23 +1344,24 @@
+     case 0x9d:                          /* Right CTRL */
+     case 0x38:                          /* Left ALT */
+     case 0xb8:                          /* Right ALT */
+-        if (down)
+-            vs->modifiers_state[keycode] = 1;
+-        else
+-            vs->modifiers_state[keycode] = 0;
+-        break;
++        do_modifier(vs, keycode, down, 0);
++        return;
+     case 0x02 ... 0x0a: /* '1' to '9' keys */
+-        if (down && vs->modifiers_state[0x1d] && vs->modifiers_state[0x38]) {
++        if (down && vs->modifiers_state[0][0x1d] && vs->modifiers_state[0][0x38]) {
+             /* Reset the modifiers sent to the current console */
+             reset_keys(vs);
+             console_select(keycode - 0x02);
+             return;
+         }
+         break;
+-    case 0x3a:                        /* CapsLock */
+-    case 0x45:                        /* NumLock */
+-        if (!down)
+-            vs->modifiers_state[keycode] ^= 1;
++    case 0x3a:			/* CapsLock */
++    case 0x45:			/* NumLock */
++        if (!down) {
++	    if (vs->modifiers_state[0][0x45])
++	        do_modifier(vs, keycode, 0, 0);
++	    else
++	        do_modifier(vs, keycode, 1, 0);
++	}
+         break;
+     }
+ 
+@@ -1312,25 +1371,42 @@
+            toggles numlock away from the VNC window.
+         */
+         if (keysym_is_numlock(vs->vd->kbd_layout, sym & 0xFFFF)) {
+-            if (!vs->modifiers_state[0x45]) {
+-                vs->modifiers_state[0x45] = 1;
++	    if (!vs->modifiers_state[0][0x45]) {
++	        do_modifier(vs, 0x45, 1, 0);
+                 press_key(vs, 0xff7f);
+             }
+         } else {
+-            if (vs->modifiers_state[0x45]) {
+-                vs->modifiers_state[0x45] = 0;
+-                press_key(vs, 0xff7f);
++            if (vs->modifiers_state[0][0x45]) {
++	        do_modifier(vs, 0x45, 0, 0);
++		press_key(vs, 0xff7f);
+             }
+         }
+     }
+ 
+     if (is_graphic_console()) {
+-        if (keycode & 0x80)
+-            kbd_put_keycode(0xe0);
+-        if (down)
+-            kbd_put_keycode(keycode & 0x7f);
+-        else
+-            kbd_put_keycode(keycode | 0x80);
++        if (down) {
++	    /* Send deadkey */
++	    if (kd->keymod & KEYMOD_DEAD) {
++	      keydata_t *deaddata;
++	      deaddata = find_keysym(vs->vd->kbd_layout, kd->deadsym);
++	      if (deaddata != NULL) {
++                set_modifiers(vs, deaddata->keymod, 0, 1);
++                do_keycode(deaddata->keycode, 1);
++                do_keycode(deaddata->keycode, 0);
++                restore_modifiers(vs);
++	      }
++	    }
++	    set_modifiers(vs, kd->keymod, 1, 0);
++	} else
++	    restore_modifiers(vs);
++
++        do_keycode (keycode, down);
++
++	/* vnc never sends ALTGR, so we create an artificial up event */
++	if (down && (kd->keymod & KEYMOD_ALTGR)) {
++	    set_modifiers(vs, kd->keymod, 0, 0);
++	}
++
+     } else {
+         /* QEMU console emulation */
+         if (down) {
+@@ -1388,13 +1464,9 @@
+ 
+ static void key_event(VncState *vs, int down, uint32_t sym)
+ {
+-    int keycode;
+-
+-    if (sym >= 'A' && sym <= 'Z' && is_graphic_console())
+-        sym = sym - 'A' + 'a';
++    keydata_t *kd = find_keysym(vs->vd->kbd_layout, sym & 0xFFFF);
+ 
+-    keycode = keysym2scancode(vs->vd->kbd_layout, sym & 0xFFFF);
+-    do_key_event(vs, down, keycode, sym);
++    do_key_event(vs, down, kd, sym & 0xFFFF);
+ }
+ 
+ static void ext_key_event(VncState *vs, int down,
+@@ -1403,8 +1475,15 @@
+     /* if the user specifies a keyboard layout, always use it */
+     if (keyboard_layout)
+         key_event(vs, down, sym);
+-    else
+-        do_key_event(vs, down, keycode, sym);
++    else {
++        keydata_t kd;
++
++        kd.keycode = keycode;
++	kd.keymod = 0;
++	kd.deadsym = 0;
++
++	do_key_event(vs, down, &kd, sym & 0xFFFF);
++    }
+ }
+ 
+ static void framebuffer_update_request(VncState *vs, int incremental,
+Index: kvm-86/vnc.h
+===================================================================
+--- kvm-86.orig/vnc.h	2009-05-22 10:10:08.000000000 +0200
++++ kvm-86/vnc.h	2009-05-22 10:10:38.000000000 +0200
+@@ -49,6 +49,21 @@
+  *
+  *****************************************************************************/
+ 
++typedef struct {
++    int keycode;
++    int bit;
++} modifier_t;
++
++static modifier_t test_modifier[]={
++    {0x2a, KEYMOD_SHIFT},
++    {0x36, KEYMOD_SHIFT},
++    {0x1d, KEYMOD_CTRL},
++    {0x9d, KEYMOD_CTRL},
++    {0x38, KEYMOD_ALT},
++    {0xb8, KEYMOD_ALTGR},
++    {0,0},
++};
++
+ typedef struct Buffer
+ {
+     size_t capacity;
+@@ -156,7 +171,7 @@
+     VncReadEvent *read_handler;
+     size_t read_handler_expect;
+     /* input */
+-    uint8_t modifiers_state[256];
++    uint8_t modifiers_state[2][256];
+ 
+     Buffer zlib;
+     Buffer zlib_tmp;

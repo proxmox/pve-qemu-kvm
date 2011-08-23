@@ -1,0 +1,7 @@
+adjust-path.diff
+fairsched.diff
+vncticket.diff
+#keymap.diff
+#multicore.diff
+live-migration-fixes.diff
+enable-ksm.diff

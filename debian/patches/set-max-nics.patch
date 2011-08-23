@@ -1,0 +1,13 @@
+Index: new/net.h
+===================================================================
+--- new.orig/net.h	2011-08-11 10:09:49.000000000 +0200
++++ new/net.h	2011-08-11 10:10:08.000000000 +0200
+@@ -126,7 +126,7 @@
+ 
+ /* NIC info */
+ 
+-#define MAX_NICS 8
++#define MAX_NICS 32
+ 
+ struct NICInfo {
+     MACAddr macaddr;
