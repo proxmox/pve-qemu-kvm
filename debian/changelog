@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.0-1) unstable; urgency=low
+
+  * update to upstream 1.0
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 07 Dec 2011 09:58:07 +0100
+
 pve-qemu-kvm (0.15.0-1) unstable; urgency=low
 
   * update to upstream 0.15.0

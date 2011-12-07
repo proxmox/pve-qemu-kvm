@@ -1,7 +1,7 @@
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2011-08-11 10:04:51.000000000 +0200
-+++ new/qemu-options.hx	2011-08-11 10:09:56.000000000 +0200
+--- new.orig/qemu-options.hx	2011-12-07 10:05:50.000000000 +0100
++++ new/qemu-options.hx	2011-12-07 10:10:11.000000000 +0100
 @@ -89,6 +89,12 @@
  are split equally.
  ETEXI
@@ -17,9 +17,9 @@ Index: new/qemu-options.hx
  DEF("fdb", HAS_ARG, QEMU_OPTION_fdb, "", QEMU_ARCH_ALL)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2011-08-11 10:04:51.000000000 +0200
-+++ new/vl.c	2011-08-11 10:09:56.000000000 +0200
-@@ -150,6 +150,8 @@
+--- new.orig/vl.c	2011-12-07 10:05:50.000000000 +0100
++++ new/vl.c	2011-12-07 10:11:50.000000000 +0100
+@@ -153,6 +153,8 @@
  #include "fsdev/qemu-fsdev.h"
  #endif
  
@@ -28,7 +28,7 @@ Index: new/vl.c
  #include "disas.h"
  
  #include "qemu_socket.h"
-@@ -203,6 +205,7 @@
+@@ -204,6 +206,7 @@
  int rtc_td_hack = 0;
  int usb_enabled = 0;
  int singlestep = 0;
@@ -36,7 +36,16 @@ Index: new/vl.c
  int smp_cpus = 1;
  int max_cpus = 0;
  int smp_cores = 1;
-@@ -2074,6 +2077,7 @@
+@@ -1949,7 +1952,7 @@
+ }
+ 
+ static int debugcon_parse(const char *devname)
+-{   
++{
+     QemuOpts *opts;
+ 
+     if (!qemu_chr_new("debugcon", devname, NULL)) {
+@@ -2165,6 +2168,7 @@
  {
      const char *gdbstub_dev = NULL;
      int i;
@@ -44,7 +53,7 @@ Index: new/vl.c
      int snapshot, linux_boot;
      const char *icount_option = NULL;
      const char *initrd_filename;
-@@ -2768,6 +2772,20 @@
+@@ -2903,6 +2907,20 @@
                      exit(1);
                  }
                  break;
@@ -65,9 +74,20 @@ Index: new/vl.c
  	    case QEMU_OPTION_vnc:
  #ifdef CONFIG_VNC
                  display_remote++;
-@@ -3141,6 +3159,39 @@
-     if (ram_size == 0)
-         ram_size = DEFAULT_RAM_SIZE * 1024 * 1024;
+@@ -2976,8 +2994,8 @@
+ 			}
+ 			p += 8;
+ 			os_set_proc_name(p);
+-		     }	
+-		 }	
++		     }
++		 }
+                 break;
+             case QEMU_OPTION_prom_env:
+                 if (nb_prom_envs >= MAX_PROM_ENVS) {
+@@ -3293,6 +3311,39 @@
+         }
+     }
  
 +    if (cpuunits && !fairsched_id) {
 +      fprintf(stderr, "cpuunits specified without -id");
@@ -75,40 +95,40 @@ Index: new/vl.c
 +    }
 +
 +    if (fairsched_id && cpuunits) {
-+      int ret;
-+      int weight = cpuunits ? 500000/cpuunits : 500;
-+      pid_t cpid = getpid();
++	int ret;
++	int weight = cpuunits ? 500000/cpuunits : 500;
++	pid_t cpid = getpid();
 +
-+      ret = syscall(__NR_fairsched_rmnod, fairsched_id);
-+      if (ret == -EBUSY) {
-+	fprintf (stderr, "unable to create fairsched node - still in use\n");
-+	exit(1);
-+      }
++	ret = syscall(__NR_fairsched_rmnod, fairsched_id);
++	if (ret == -EBUSY) {
++	    fprintf (stderr, "unable to create fairsched node - still in use\n");
++	    exit(1);
++	}
 +
-+      ret = syscall(__NR_fairsched_mknod, 0, weight, fairsched_id);
-+      if (ret != fairsched_id) {
-+	fprintf (stderr, "unable to create fairsched node\n");
-+	exit(1);
-+      }
++	ret = syscall(__NR_fairsched_mknod, 0, weight, fairsched_id);
++	if (ret != fairsched_id) {
++	    fprintf (stderr, "unable to create fairsched node\n");
++	    exit(1);
++	}
 +
-+      ret = syscall(__NR_fairsched_mvpr, cpid, fairsched_id);
-+      if (ret != 0) {
-+	fprintf (stderr, "unable to move procces to fairsched group");
-+	exit (1);
-+      }
++	ret = syscall(__NR_fairsched_mvpr, cpid, fairsched_id);
++	if (ret != 0) {
++	    fprintf (stderr, "unable to move procces to fairsched group");
++	    exit (1);
++	}
 +
-+      /* note: we can never remove ourself from the group, so the empty group
-+	 will exist after we finish
-+      */
++	/* note: we can never remove ourself from the group, so the empty group
++	   will exist after we finish
++	*/
 +    }
 +
-     /* init the dynamic translator */
-     cpu_exec_init_all(tb_size * 1024 * 1024);
+     cpu_exec_init_all();
  
+     bdrv_init_with_whitelist();
 Index: new/vzsyscalls.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vzsyscalls.h	2011-08-11 10:09:56.000000000 +0200
++++ new/vzsyscalls.h	2011-12-07 10:10:11.000000000 +0100
 @@ -0,0 +1,47 @@
 +/*
 + *  Copyright (C) 2000-2008, Parallels, Inc. All rights reserved.

@@ -1,20 +1,17 @@
 Index: new/arch_init.c
 ===================================================================
---- new.orig/arch_init.c	2011-08-11 10:04:51.000000000 +0200
-+++ new/arch_init.c	2011-08-11 10:10:04.000000000 +0200
-@@ -251,9 +251,10 @@
- int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
- {
-     ram_addr_t addr;
--    uint64_t bytes_transferred_last;
+--- new.orig/arch_init.c	2011-12-07 10:05:50.000000000 +0100
++++ new/arch_init.c	2011-12-07 10:14:09.000000000 +0100
+@@ -256,6 +256,8 @@
+     uint64_t bytes_transferred_last;
      double bwidth = 0;
      uint64_t expected_time = 0;
 +    static int64_t starttime = 0;
 +    double timediff;
+     int ret;
  
      if (stage < 0) {
-         cpu_physical_memory_set_dirty_tracking(0);
-@@ -293,10 +294,10 @@
+@@ -296,10 +298,10 @@
              qemu_put_buffer(f, (uint8_t *)block->idstr, strlen(block->idstr));
              qemu_put_be64(f, block->length);
          }
@@ -25,10 +22,10 @@ Index: new/arch_init.c
 -    bytes_transferred_last = bytes_transferred;
 -    bwidth = qemu_get_clock_ns(rt_clock);
  
-     while (!qemu_file_rate_limit(f)) {
+     while ((ret = qemu_file_rate_limit(f)) == 0) {
          int bytes_sent;
-@@ -308,8 +309,8 @@
-         }
+@@ -315,8 +317,8 @@
+         return ret;
      }
  
 -    bwidth = qemu_get_clock_ns(rt_clock) - bwidth;
@@ -38,7 +35,7 @@ Index: new/arch_init.c
  
      /* if we haven't transferred anything this round, force expected_time to a
       * a very high value, but without crashing */
-@@ -330,6 +331,10 @@
+@@ -337,6 +339,10 @@
  
      qemu_put_be64(f, RAM_SAVE_FLAG_EOS);
  
