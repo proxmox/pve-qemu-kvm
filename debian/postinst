@@ -7,8 +7,8 @@ case "$1" in
   configure)
 
     # remove stale /etc/qemu (files are in /etc/kvm)
-    rm /etc/qemu/target-x86_64.conf || true
-    rmdir /etc/qemu || true
+    rm -f /etc/qemu/target-x86_64.conf
+    if test -d /etc/qemu; then rmdir /etc/qemu; fi
 
     # There are three sub-cases:
     if test "${2+set}" != set; then
