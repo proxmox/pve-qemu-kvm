@@ -2,7 +2,7 @@ RELEASE=2.0
 
 # also update debian/changelog
 KVMVER=1.0
-KVMPKGREL=1
+KVMPKGREL=2
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm
@@ -16,7 +16,7 @@ all: ${KVM_DEB} ${KVMDIR}-src.tar.gz
 ${KVMDIR}.org/README:
 	rm -rf ${KVMDIR}.org
 	git clone git://git.kernel.org/pub/scm/virt/kvm/qemu-kvm.git ${KVMDIR}.org
-	cd ${KVMDIR}.org; git checkout -b local qemu-kvm-${KVMVER}
+	# cd ${KVMDIR}.org; git checkout -b local qemu-kvm-${KVMVER}
 	touch $@
 
 ${KVMDIR}-src.tar.gz: ${KVMDIR}.org/README

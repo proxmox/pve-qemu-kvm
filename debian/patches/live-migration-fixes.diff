@@ -1,8 +1,8 @@
 Index: new/arch_init.c
 ===================================================================
---- new.orig/arch_init.c	2011-12-07 10:05:50.000000000 +0100
-+++ new/arch_init.c	2011-12-07 10:14:09.000000000 +0100
-@@ -256,6 +256,8 @@
+--- new.orig/arch_init.c	2012-02-09 13:15:26.000000000 +0100
++++ new/arch_init.c	2012-02-09 13:22:53.000000000 +0100
+@@ -264,6 +264,8 @@
      uint64_t bytes_transferred_last;
      double bwidth = 0;
      uint64_t expected_time = 0;
@@ -11,7 +11,7 @@ Index: new/arch_init.c
      int ret;
  
      if (stage < 0) {
-@@ -296,10 +298,10 @@
+@@ -299,10 +301,10 @@
              qemu_put_buffer(f, (uint8_t *)block->idstr, strlen(block->idstr));
              qemu_put_be64(f, block->length);
          }
@@ -24,7 +24,7 @@ Index: new/arch_init.c
  
      while ((ret = qemu_file_rate_limit(f)) == 0) {
          int bytes_sent;
-@@ -315,8 +317,8 @@
+@@ -318,8 +320,8 @@
          return ret;
      }
  
@@ -35,7 +35,7 @@ Index: new/arch_init.c
  
      /* if we haven't transferred anything this round, force expected_time to a
       * a very high value, but without crashing */
-@@ -337,6 +339,10 @@
+@@ -340,6 +342,10 @@
  
      qemu_put_be64(f, RAM_SAVE_FLAG_EOS);
  

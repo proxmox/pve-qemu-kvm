@@ -1,7 +1,7 @@
 Index: new/net.h
 ===================================================================
---- new.orig/net.h	2011-12-07 10:05:50.000000000 +0100
-+++ new/net.h	2011-12-07 10:09:32.000000000 +0100
+--- new.orig/net.h	2012-02-09 13:22:23.000000000 +0100
++++ new/net.h	2012-02-09 13:22:30.000000000 +0100
 @@ -172,8 +172,8 @@
  int do_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
  int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
@@ -15,9 +15,9 @@ Index: new/net.h
  
 Index: new/configure
 ===================================================================
---- new.orig/configure	2011-12-07 10:05:50.000000000 +0100
-+++ new/configure	2011-12-07 10:08:48.000000000 +0100
-@@ -161,7 +161,7 @@
+--- new.orig/configure	2012-02-09 13:22:23.000000000 +0100
++++ new/configure	2012-02-09 13:22:30.000000000 +0100
+@@ -166,7 +166,7 @@
  libdir="\${prefix}/lib"
  includedir="\${prefix}/include"
  sysconfdir="\${prefix}/etc"
@@ -28,8 +28,8 @@ Index: new/configure
  fmod_inc=""
 Index: new/net/tap.h
 ===================================================================
---- new.orig/net/tap.h	2011-12-07 10:05:50.000000000 +0100
-+++ new/net/tap.h	2011-12-07 10:08:48.000000000 +0100
+--- new.orig/net/tap.h	2012-02-09 13:22:23.000000000 +0100
++++ new/net/tap.h	2012-02-09 13:22:30.000000000 +0100
 @@ -29,8 +29,6 @@
  #include "qemu-common.h"
  #include "qemu-option.h"

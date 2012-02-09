@@ -2,8 +2,6 @@ fr-ca-keymap-corrections.diff
 adjust-path.diff
 fairsched.diff
 keymap.diff
-live-migration-fixes.diff
 set-max-nics.patch
-use-local-linux-kvm-h.diff
 pve-auth.patch
 update-target-x86_64.conf-to-rhel6.2-version.patch
