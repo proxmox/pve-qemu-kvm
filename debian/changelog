@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.0-3) unstable; urgency=low
+
+  * include latest updates from master
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 15 Feb 2012 11:32:23 +0100
+
 pve-qemu-kvm (1.0-2) unstable; urgency=low
 
   * include post 1.0 changes from master
