@@ -93,7 +93,7 @@ index 43ad282..f4330ed 100644
 +
 +[cpudef]
 +   name = "Westmere"
-+   level = "11"
++   level = "2"
 +   vendor = "GenuineIntel"
 +   family = "6"
 +   model = "44"
