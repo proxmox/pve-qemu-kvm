@@ -1,19 +1,19 @@
-From c067160f72f9025f91eafaf40c317991fa28bd61 Mon Sep 17 00:00:00 2001
+From 861cf626eca5abb2fe7bc3be719acbf7086b94bb Mon Sep 17 00:00:00 2001
 From: Derumier Alexandre <aderumier@odiso.com>
-Date: Tue, 31 Jan 2012 17:49:28 +0100
-Subject: [PATCH] update target-x86_64.conf to rhel6.2 version
+Date: Thu, 1 Mar 2012 17:00:30 +0100
+Subject: [PATCH] update target to rhel 6.2 version
 
 
 Signed-off-by: Derumier Alexandre <aderumier@odiso.com>
 ---
- sysconfigs/target/target-x86_64.conf |   86 +++++++++++++++++++++++++---------
- 1 files changed, 64 insertions(+), 22 deletions(-)
+ sysconfigs/target/target-x86_64.conf |   36 ++++++++++++++++++++++++++++++---
+ 1 files changed, 32 insertions(+), 4 deletions(-)
 
 diff --git a/sysconfigs/target/target-x86_64.conf b/sysconfigs/target/target-x86_64.conf
-index 43ad282..f4330ed 100644
+index d050380..39a9a37 100644
 --- a/sysconfigs/target/target-x86_64.conf
 +++ b/sysconfigs/target/target-x86_64.conf
-@@ -1,15 +1,43 @@
+@@ -1,11 +1,39 @@
  # x86 CPU MODELS
  
  [cpudef]
@@ -52,106 +52,35 @@ index 43ad282..f4330ed 100644
 -   model = "2"
 +   model = "15"
     stepping = "3"
--   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
--   feature_ecx = "sse3 ssse3"
--   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
-+   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
-+   feature_ecx = "x2apic ssse3 sse3"
-+   extfeature_edx = "lm syscall nx"
-    extfeature_ecx = "lahf_lm"
-    xlevel = "0x8000000A"
-    model_id = "Intel Celeron_4x0 (Conroe/Merom Class Core 2)"
-@@ -19,11 +47,11 @@
+    feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
+    feature_ecx = "ssse3 sse3"
+@@ -19,7 +47,7 @@
     level = "2"
     vendor = "GenuineIntel"
     family = "6"
 -   model = "2"
 +   model = "23"
     stepping = "3"
--   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
--   feature_ecx = "sse3 cx16 ssse3 sse4.1"
--   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
-+   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
-+   feature_ecx = "x2apic sse4.1 cx16 ssse3 sse3"
-+   extfeature_edx = "lm syscall nx"
-    extfeature_ecx = "lahf_lm"
-    xlevel = "0x8000000A"
-    model_id = "Intel Core 2 Duo P9xxx (Penryn Class Core 2)"
-@@ -33,14 +61,28 @@
+    feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
+    feature_ecx = "sse4.1 cx16 ssse3 sse3"
+@@ -33,7 +61,7 @@
     level = "2"
     vendor = "GenuineIntel"
     family = "6"
 -   model = "2"
 +   model = "26"
     stepping = "3"
-+   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
-+   feature_ecx = "popcnt x2apic sse4.2 sse4.1 cx16 ssse3 sse3"
-+   extfeature_edx = "lm syscall nx"
-+   extfeature_ecx = "lahf_lm"
-+   xlevel = "0x8000000A"
-+   model_id = "Intel Core i7 9xx (Nehalem Class Core i7)"
-+
-+[cpudef]
-+   name = "Westmere"
-+   level = "2"
-+   vendor = "GenuineIntel"
-+   family = "6"
-+   model = "44"
-+   stepping = "1"
-    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
--   feature_ecx = "sse3 cx16 ssse3 sse4.1 sse4.2 popcnt"
-+   feature_ecx = "sse3 cx16 ssse3 sse4.1 sse4.2 x2apic popcnt aes"
-    extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
-    extfeature_ecx = "lahf_lm"
-    xlevel = "0x8000000A"
--   model_id = "Intel Core i7 9xx (Nehalem Class Core i7)"
-+   model_id = "Westmere E56xx/L56xx/X56xx (Nehalem-C)"
+    feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
+    feature_ecx = "popcnt sse4.2 sse4.1 cx16 ssse3 sse3"
+@@ -44,7 +72,7 @@
  
  [cpudef]
-    name = "Opteron_G1"
-@@ -49,10 +91,10 @@
-    family = "15"
-    model = "6"
-    stepping = "1"
--   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
--   feature_ecx = "sse3"
--   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
--#   extfeature_ecx = ""
-+   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
-+   feature_ecx = "x2apic sse3"	# x2apic kvm emulated
-+   extfeature_edx = "lm fxsr mmx nx pse36 pat cmov mca pge mtrr syscall apic cx8 mce pae msr tsc pse de fpu"
-+   extfeature_ecx = " "
-    xlevel = "0x80000008"
-    model_id = "AMD Opteron 240 (Gen 1 Class Opteron)"
- 
-@@ -63,9 +105,9 @@
-    family = "15"
-    model = "6"
-    stepping = "1"
--   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
--   feature_ecx = "sse3 cx16"
--   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx rdtscp"
-+   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
-+   feature_ecx = "x2apic cx16 sse3"	# x2apic kvm emulated
-+   extfeature_edx = "lm rdtscp fxsr mmx nx pse36 pat cmov mca pge mtrr syscall apic cx8 mce pae msr tsc pse de fpu"
-    extfeature_ecx = "svm lahf_lm"
-    xlevel = "0x80000008"
-    model_id = "AMD Opteron 22xx (Gen 2 Class Opteron)"
-@@ -77,10 +119,10 @@
-    family = "15"
-    model = "6"
-    stepping = "1"
--   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
--   feature_ecx = "sse3 cx16 monitor popcnt"
--   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx rdtscp"
--   extfeature_ecx = "svm sse4a  abm misalignsse lahf_lm"
-+   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
-+   feature_ecx = "popcnt x2apic cx16 monitor sse3"	# x2apic kvm emulated
-+   extfeature_edx = "lm rdtscp fxsr mmx nx pse36 pat cmov mca pge mtrr syscall apic cx8 mce pae msr tsc pse de fpu"
-+   extfeature_ecx = "misalignsse sse4a abm svm lahf_lm"
-    xlevel = "0x80000008"
-    model_id = "AMD Opteron 23xx (Gen 3 Class Opteron)"
- 
+    name = "Westmere"
+-   level = "11"
++   level = "2"
+    vendor = "GenuineIntel"
+    family = "6"
+    model = "44"
 -- 
 1.7.2.5
 
