@@ -1,0 +1,76 @@
+From: Alon Levy <alevy@redhat.com>
+
+Check for dev->config being NULL in two places:
+ USB_REQ_GET_CONFIGURATION and USB_REQ_GET_STATUS.
+
+The behavior of USB_REQ_GET_STATUS is unspecified in the Default state,
+that corresponds to dev->config being NULL (it defaults to NULL and is
+reset whenever a SET_CONFIGURATION with value 0, or attachment). I
+implemented it to correspond with the state before
+ed5a83ddd8c1d8ec7b1015315530cf29949e7c48, the commit moving SET_STATUS
+to usb-desc; if dev->config is not set we return whatever is in the
+first configuration.
+
+The behavior of USB_REQ_GET_CONFIGURATION is also undefined before any
+SET_CONFIGURATION, but here we just return 0 (same as specified for the
+Address state).
+
+A win7 guest failed to initialize the device before this patch,
+segfaulting when GET_STATUS was called with dev->config == NULL. With
+this patch the passthrough device still doesn't work but the failure is
+unrelated.
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-desc.c |   20 +++++++++++++++++---
+ 1 files changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index 3c3ed6a..ccf85ad 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -536,7 +536,11 @@ int usb_desc_handle_control(USBDevice *dev, USBPacket *p,
+         break;
+ 
+     case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+-        data[0] = dev->config->bConfigurationValue;
++        /*
++         * 9.4.2: 0 should be returned if the device is unconfigured, otherwise
++         * the non zero value of bConfigurationValue.
++         */
++        data[0] = dev->config ? dev->config->bConfigurationValue : 0;
+         ret = 1;
+         break;
+     case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+@@ -544,9 +548,18 @@ int usb_desc_handle_control(USBDevice *dev, USBPacket *p,
+         trace_usb_set_config(dev->addr, value, ret);
+         break;
+ 
+-    case DeviceRequest | USB_REQ_GET_STATUS:
++    case DeviceRequest | USB_REQ_GET_STATUS: {
++        const USBDescConfig *config = dev->config ?
++            dev->config : &dev->device->confs[0];
++
+         data[0] = 0;
+-        if (dev->config->bmAttributes & 0x40) {
++        /*
++         * Default state: Device behavior when this request is received while
++         *                the device is in the Default state is not specified.
++         * We return the same value that a configured device would return if
++         * it used the first configuration.
++         */
++        if (config->bmAttributes & 0x40) {
+             data[0] |= 1 << USB_DEVICE_SELF_POWERED;
+         }
+         if (dev->remote_wakeup) {
+@@ -555,6 +568,7 @@ int usb_desc_handle_control(USBDevice *dev, USBPacket *p,
+         data[1] = 0x00;
+         ret = 2;
+         break;
++    }
+     case DeviceOutRequest | USB_REQ_CLEAR_FEATURE:
+         if (value == USB_DEVICE_REMOTE_WAKEUP) {
+             dev->remote_wakeup = 0;
+-- 
+1.7.1
