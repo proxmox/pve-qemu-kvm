@@ -26,7 +26,7 @@ ${KVM_DEB} kvm: ${KVMSRC}
 	rm -rf ${KVMDIR}
 	tar xf ${KVMSRC} 
 	cp -a debian ${KVMDIR}/debian
-	cd ${KVMDIR}; dpkg-buildpackage -rfakeroot -us -uc
+	cd ${KVMDIR}; dpkg-buildpackage -b -rfakeroot -us -uc
 	lintian ${KVM_DEB} || true
 
 .PHONY: upload
