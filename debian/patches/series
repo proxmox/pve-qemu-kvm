@@ -5,5 +5,4 @@ keymap.diff
 set-max-nics.patch
 pve-auth.patch
 update-target-x86_64.conf-to-rhel6.2-version.patch
-usb-hid-fix-tablet-activation.diff
-usb-desc-fix-user-trigerrable-segfaults.diff
+libacard-fix-compilaton-with-gcc.4.7.diff
