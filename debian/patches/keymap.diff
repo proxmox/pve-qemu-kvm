@@ -1,8 +1,8 @@
 Index: new/ui/vnc.c
 ===================================================================
---- new.orig/ui/vnc.c	2011-12-07 10:05:50.000000000 +0100
-+++ new/ui/vnc.c	2011-12-07 10:12:06.000000000 +0100
-@@ -1475,6 +1475,10 @@
+--- new.orig/ui/vnc.c	2012-03-12 06:44:56.000000000 +0100
++++ new/ui/vnc.c	2012-03-13 07:25:34.000000000 +0100
+@@ -1501,6 +1501,10 @@
  
  static void do_key_event(VncState *vs, int down, int keycode, int sym)
  {
@@ -13,7 +13,7 @@ Index: new/ui/vnc.c
      /* QEMU console switch */
      switch(keycode) {
      case 0x2a:                          /* Left Shift */
-@@ -1545,12 +1549,42 @@
+@@ -1571,12 +1575,42 @@
      }
  
      if (is_graphic_console()) {
@@ -54,9 +54,9 @@ Index: new/ui/vnc.c
 +	}
 +
      } else {
-         /* QEMU console emulation */
-         if (down) {
-@@ -1658,7 +1692,8 @@
+         bool numlock = vs->modifiers_state[0x45];
+         bool control = (vs->modifiers_state[0x1d] ||
+@@ -1713,7 +1747,8 @@
          lsym = lsym - 'A' + 'a';
      }
  
