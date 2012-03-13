@@ -1,7 +1,7 @@
 Index: new/ui/vnc.c
 ===================================================================
---- new.orig/ui/vnc.c	2012-03-13 07:25:34.000000000 +0100
-+++ new/ui/vnc.c	2012-03-13 07:25:44.000000000 +0100
+--- new.orig/ui/vnc.c	2012-03-13 08:10:11.000000000 +0100
++++ new/ui/vnc.c	2012-03-13 08:10:20.000000000 +0100
 @@ -42,6 +42,125 @@
  #include "vnc_keysym.h"
  #include "d3des.h"
@@ -195,8 +195,8 @@ Index: new/ui/vnc.c
  #endif /* CONFIG_VNC_TLS */
 Index: new/ui/vnc-auth-vencrypt.c
 ===================================================================
---- new.orig/ui/vnc-auth-vencrypt.c	2012-03-12 06:44:56.000000000 +0100
-+++ new/ui/vnc-auth-vencrypt.c	2012-03-13 07:25:44.000000000 +0100
+--- new.orig/ui/vnc-auth-vencrypt.c	2012-03-13 07:26:50.000000000 +0100
++++ new/ui/vnc-auth-vencrypt.c	2012-03-13 08:10:20.000000000 +0100
 @@ -25,7 +25,107 @@
   */
  
@@ -320,8 +320,8 @@ Index: new/ui/vnc-auth-vencrypt.c
         VNC_DEBUG("Start TLS auth VNC\n");
 Index: new/ui/vnc.h
 ===================================================================
---- new.orig/ui/vnc.h	2012-03-12 06:44:56.000000000 +0100
-+++ new/ui/vnc.h	2012-03-13 07:25:44.000000000 +0100
+--- new.orig/ui/vnc.h	2012-03-13 07:26:50.000000000 +0100
++++ new/ui/vnc.h	2012-03-13 08:10:20.000000000 +0100
 @@ -276,6 +276,8 @@
      char challenge[VNC_AUTH_CHALLENGE_SIZE];
  #ifdef CONFIG_VNC_TLS
@@ -340,8 +340,8 @@ Index: new/ui/vnc.h
  #endif /* __QEMU_VNC_H */
 Index: new/ui/vnc-tls.c
 ===================================================================
---- new.orig/ui/vnc-tls.c	2012-03-12 06:44:56.000000000 +0100
-+++ new/ui/vnc-tls.c	2012-03-13 07:25:44.000000000 +0100
+--- new.orig/ui/vnc-tls.c	2012-03-13 07:26:50.000000000 +0100
++++ new/ui/vnc-tls.c	2012-03-13 08:10:20.000000000 +0100
 @@ -302,6 +302,14 @@
  
  static int vnc_set_gnutls_priority(gnutls_session_t s, int x509)
@@ -396,8 +396,8 @@ Index: new/ui/vnc-tls.c
                                 const char *certdir)
 Index: new/ui/vnc-tls.h
 ===================================================================
---- new.orig/ui/vnc-tls.h	2012-03-12 06:44:56.000000000 +0100
-+++ new/ui/vnc-tls.h	2012-03-13 07:25:44.000000000 +0100
+--- new.orig/ui/vnc-tls.h	2012-03-13 07:26:50.000000000 +0100
++++ new/ui/vnc-tls.h	2012-03-13 08:10:20.000000000 +0100
 @@ -68,6 +68,8 @@
  
  int vnc_tls_validate_certificate(VncState *vs);
@@ -409,20 +409,20 @@ Index: new/ui/vnc-tls.h
  
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2012-03-13 07:25:22.000000000 +0100
-+++ new/vl.c	2012-03-13 07:25:44.000000000 +0100
-@@ -3028,6 +3028,7 @@
-                 break;
-             case QEMU_OPTION_id:
-                 fairsched_id = atoi(optarg);
-+		pve_auth_setup(fairsched_id);
- 		if (fairsched_id < 100 || fairsched_id >= 1000000) {
+--- new.orig/vl.c	2012-03-13 08:09:04.000000000 +0100
++++ new/vl.c	2012-03-13 08:11:15.000000000 +0100
+@@ -3033,6 +3033,7 @@
  		    fprintf(stderr, "Invalid ID\n");
  		    exit(1);
+ 		}
++		pve_auth_setup(fairsched_id);
+                 break;
+             case QEMU_OPTION_cpuunits:
+                 cpuunits = atoi(optarg);
 Index: new/console.h
 ===================================================================
---- new.orig/console.h	2012-03-12 06:44:55.000000000 +0100
-+++ new/console.h	2012-03-13 07:25:44.000000000 +0100
+--- new.orig/console.h	2012-03-13 07:26:50.000000000 +0100
++++ new/console.h	2012-03-13 08:10:20.000000000 +0100
 @@ -371,6 +371,7 @@
  void cocoa_display_init(DisplayState *ds, int full_screen);
  
