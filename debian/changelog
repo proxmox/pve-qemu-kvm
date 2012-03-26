@@ -1,3 +1,10 @@
+pve-qemu-kvm (1.0-8) unstable; urgency=low
+
+  * include latest changes from master (update to commit 
+  a0bc8c313ce7da8937e190b1e0cfd051a9ba243e)
+  
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 26 Mar 2012 07:22:10 +0200
+
 pve-qemu-kvm (1.0-7) unstable; urgency=low
 
   * include latest changes from master
