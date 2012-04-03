@@ -6,3 +6,4 @@ set-max-nics.patch
 pve-auth.patch
 update-target-x86_64.conf-to-rhel6.2-version.patch
 libacard-fix-compilaton-with-gcc.4.7.diff
+revert-prefer_msi-and-share_intx-defaults.diff
