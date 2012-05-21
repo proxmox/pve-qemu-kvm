@@ -6,13 +6,13 @@ Subject: [PATCH] update target to rhel 6.2 version
 
 Signed-off-by: Derumier Alexandre <aderumier@odiso.com>
 ---
- sysconfigs/target/target-x86_64.conf |   36 ++++++++++++++++++++++++++++++---
+ sysconfigs/target/cpus-x86_64.conf |   36 ++++++++++++++++++++++++++++++---
  1 files changed, 32 insertions(+), 4 deletions(-)
 
-diff --git a/sysconfigs/target/target-x86_64.conf b/sysconfigs/target/target-x86_64.conf
+diff --git a/sysconfigs/target/cpus-x86_64.conf b/sysconfigs/target/cpus-x86_64.conf
 index d050380..39a9a37 100644
---- a/sysconfigs/target/target-x86_64.conf
-+++ b/sysconfigs/target/target-x86_64.conf
+--- a/sysconfigs/target/cpus-x86_64.conf
++++ b/sysconfigs/target/cpus-x86_64.conf
 @@ -1,11 +1,39 @@
  # x86 CPU MODELS
  

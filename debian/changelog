@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.1-1) unstable; urgency=low
+
+  * update to qemu-kvm-1.1-rc2
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 21 May 2012 06:15:49 +0200
+
 pve-qemu-kvm (1.0-9) unstable; urgency=low
 
   * revert patch to change prefer_msi and share_intx defaults

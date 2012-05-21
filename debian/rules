@@ -33,7 +33,7 @@ endif
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
-	./configure --prefix=/usr --datadir=/usr/share/kvm --docdir=/usr/share/doc/pve-qemu-kvm --sysconfdir=/etc --disable-xen --enable-vnc-tls --enable-sdl --enable-uuid --enable-linux-aio
+	./configure --prefix=/usr --datadir=/usr/share --docdir=/usr/share/doc/pve-qemu-kvm --sysconfdir=/etc --disable-xen --enable-vnc-tls --enable-sdl --enable-uuid --enable-linux-aio
 
 build: patch build-stamp
 
@@ -82,11 +82,8 @@ install: build
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifup $(destdir)/etc/kvm/kvm-ifup
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifdown $(destdir)/etc/kvm/kvm-ifdown
 
-	# move target-x86_64.conf to correct location
-	mv $(destdir)/etc/qemu/target-x86_64.conf $(destdir)/etc/kvm/
-
-	# /etc/qemu should be empty now
-	rmdir $(destdir)/etc/qemu
+	# do not install empty (now in /usr/share/kvm/cpus-x86_64.conf)	
+	rm $(destdir)/etc/kvm/target-x86_64.conf
 
 	# we do not need openbios files (sparc/ppc)
 	rm -rf $(destdir)/usr/share/kvm/openbios-*
