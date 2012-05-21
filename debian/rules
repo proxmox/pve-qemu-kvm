@@ -82,7 +82,7 @@ install: build
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifup $(destdir)/etc/kvm/kvm-ifup
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifdown $(destdir)/etc/kvm/kvm-ifdown
 
-	# do not install empty (now in /usr/share/kvm/cpus-x86_64.conf)	
+	# do not install empty file (now in /usr/share/kvm/cpus-x86_64.conf)	
 	rm $(destdir)/etc/kvm/target-x86_64.conf
 
 	# we do not need openbios files (sparc/ppc)
