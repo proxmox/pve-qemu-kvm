@@ -7,7 +7,7 @@ Standards-Version: 3.7.2
 
 Package: pve-qemu-kvm
 Architecture: any
-Depends: iproute, bridge-utils, python, libsdl1.2debian, libaio1, libuuid1, ceph-common (= 0.47.2-1~bpo60+1), ${shlibs:Depends}, ${misc:Depends}
+Depends: iproute, bridge-utils, python, libsdl1.2debian, libaio1, libuuid1, ceph-common (>= 0.47.2), ${shlibs:Depends}, ${misc:Depends}
 Conflicts: qemu, qemu-kvm, kvm, pve-kvm, pve-qemu-kvm-2.6.18
 Replaces: pve-kvm, pve-qemu-kvm-2.6.18
 Description: Full virtualization on x86 hardware
