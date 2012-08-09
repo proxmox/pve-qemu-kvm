@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.1-7) unstable; urgency=low
+
+  * Enable VeNCrypt PLAIN authentication
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 09 Aug 2012 10:05:52 +0200
+
 pve-qemu-kvm (1.1-6) unstable; urgency=low
 
   * enable libiscsi
