@@ -33,7 +33,7 @@ endif
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
-	./configure --prefix=/usr --datadir=/usr/share --docdir=/usr/share/doc/pve-qemu-kvm --sysconfdir=/etc --disable-xen --enable-vnc-tls --enable-sdl --enable-uuid --enable-linux-aio --enable-rbd --enable-libiscsi
+	./configure --prefix=/usr --datadir=/usr/share --docdir=/usr/share/doc/pve-qemu-kvm --sysconfdir=/etc --disable-xen --enable-vnc-tls --enable-sdl --enable-uuid --enable-linux-aio --enable-rbd --enable-libiscsi --audio-drv-list="alsa"
 
 build: patch build-stamp
 
