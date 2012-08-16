@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.1-8) unstable; urgency=low
+
+  * fix bug 241: compile it with alsa support instead of oss
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 16 Aug 2012 09:11:19 +0200
+
 pve-qemu-kvm (1.1-7) unstable; urgency=low
 
   * Enable VeNCrypt PLAIN authentication
