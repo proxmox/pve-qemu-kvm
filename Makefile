@@ -1,8 +1,8 @@
 RELEASE=2.1
 
 # also update debian/changelog
-KVMVER=1.1
-KVMPKGREL=8
+KVMVER=1.2
+KVMPKGREL=1
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm
@@ -17,9 +17,8 @@ all: ${KVM_DEB} ${KVMSRC}
 .PHONY: download
 download:
 	rm -rf ${KVMDIR} ${KVMSRC}
-	git clone git://git.kernel.org/pub/scm/virt/kvm/qemu-kvm.git -b stable-1.1 ${KVMDIR} 
-	# fixme checkout correct version
-	# cd ${KVMDIR}; git checkout -b local qemu-kvm-${KVMVER}
+	git clone git://git.kernel.org/pub/scm/virt/kvm/qemu-kvm.git -b master ${KVMDIR} 
+	#git clone git://git.kernel.org/pub/scm/virt/kvm/qemu-kvm.git -b stable-1.1 ${KVMDIR} 
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
 ${KVM_DEB} kvm: ${KVMSRC}

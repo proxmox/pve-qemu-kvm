@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.2-1) unstable; urgency=low
+
+  * update to 1.2.0-rc1
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 27 Aug 2012 14:12:22 +0200
+
 pve-qemu-kvm (1.1-8) unstable; urgency=low
 
   * fix bug 241: compile it with alsa support instead of oss
