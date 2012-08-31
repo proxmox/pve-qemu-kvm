@@ -1,0 +1,157 @@
+From: 	Jason Baron
+Subject: 	[Qemu-devel] [PATCH] ahci: add migration support
+Date: 	Thu, 30 Aug 2012 14:00:04 -0400
+
+Add support for ahci migration. This patch builds upon the patches posted
+previously by Andreas Faerber:
+
+http://lists.gnu.org/archive/html/qemu-devel/2012-08/msg01538.html
+
+(I hope I am giving Andreas proper credit for his work.)
+
+I've tested these patches by migrating Windows 7 and Fedora 16 guests on
+both piix with ahci attached and on q35 (which has a built-in ahci controller).
+
+Signed-off-by: Jason Baron <address@hidden>
+---
+ hw/ide/ahci.c |   64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ hw/ide/ahci.h |   10 +++++++++
+ hw/ide/ich.c  |   11 +++++++--
+ 3 files changed, 81 insertions(+), 4 deletions(-)
+
+diff --git a/hw/ide/ahci.c b/hw/ide/ahci.c
+index b53c757..e94509b 100644
+--- a/hw/ide/ahci.c
++++ b/hw/ide/ahci.c
+@@ -1204,6 +1204,65 @@ void ahci_reset(AHCIState *s)
+     }
+ }
+ 
++static const VMStateDescription vmstate_ahci_device = {
++    .name = "ahci port",
++    .version_id = 1,
++    .fields = (VMStateField []) {
++        VMSTATE_IDE_BUS(port, AHCIDevice),
++        VMSTATE_UINT32(port_state, AHCIDevice),
++        VMSTATE_UINT32(finished, AHCIDevice),
++        VMSTATE_UINT32(port_regs.lst_addr, AHCIDevice),
++        VMSTATE_UINT32(port_regs.lst_addr_hi, AHCIDevice),
++        VMSTATE_UINT32(port_regs.fis_addr, AHCIDevice),
++        VMSTATE_UINT32(port_regs.fis_addr_hi, AHCIDevice),
++        VMSTATE_UINT32(port_regs.irq_stat, AHCIDevice),
++        VMSTATE_UINT32(port_regs.irq_mask, AHCIDevice),
++        VMSTATE_UINT32(port_regs.cmd, AHCIDevice),
++        VMSTATE_UINT32(port_regs.tfdata, AHCIDevice),
++        VMSTATE_UINT32(port_regs.sig, AHCIDevice),
++        VMSTATE_UINT32(port_regs.scr_stat, AHCIDevice),
++        VMSTATE_UINT32(port_regs.scr_ctl, AHCIDevice),
++        VMSTATE_UINT32(port_regs.scr_err, AHCIDevice),
++        VMSTATE_UINT32(port_regs.scr_act, AHCIDevice),
++        VMSTATE_UINT32(port_regs.cmd_issue, AHCIDevice),
++        VMSTATE_END_OF_LIST()
++    },
++};
++
++static int ahci_state_post_load(void *opaque, int version_id)
++{
++    int i;
++    AHCIState *s = opaque;
++
++    for (i = 0; i < s->ports; i++) {
++        AHCIPortRegs *pr = &s->dev[i].port_regs;
++
++        map_page(&s->dev[i].lst,
++                 ((uint64_t)pr->lst_addr_hi << 32) | pr->lst_addr, 1024);
++        map_page(&s->dev[i].res_fis,
++                 ((uint64_t)pr->fis_addr_hi << 32) | pr->fis_addr, 256);
++    }
++
++    return 0;
++}
++
++const VMStateDescription vmstate_ahci = {
++    .name = "ahci",
++    .version_id = 1,
++    .post_load = ahci_state_post_load,
++    .fields = (VMStateField []) {
++        VMSTATE_STRUCT_VARRAY_POINTER_INT32(dev, AHCIState, ports,
++                                     vmstate_ahci_device, AHCIDevice),
++        VMSTATE_UINT32(control_regs.cap, AHCIState),
++        VMSTATE_UINT32(control_regs.ghc, AHCIState),
++        VMSTATE_UINT32(control_regs.irqstatus, AHCIState),
++        VMSTATE_UINT32(control_regs.impl, AHCIState),
++        VMSTATE_UINT32(control_regs.version, AHCIState),
++        VMSTATE_UINT32(idp_index, AHCIState),
++        VMSTATE_END_OF_LIST()
++    },
++};
++
+ typedef struct SysbusAHCIState {
+     SysBusDevice busdev;
+     AHCIState ahci;
+@@ -1212,7 +1271,10 @@ typedef struct SysbusAHCIState {
+ 
+ static const VMStateDescription vmstate_sysbus_ahci = {
+     .name = "sysbus-ahci",
+-    .unmigratable = 1,
++    .fields = (VMStateField []) {
++        VMSTATE_AHCI(ahci, AHCIPCIState),
++        VMSTATE_END_OF_LIST()
++    },
+ };
+ 
+ static void sysbus_ahci_reset(DeviceState *dev)
+diff --git a/hw/ide/ahci.h b/hw/ide/ahci.h
+index 1200a56..7719dbf 100644
+--- a/hw/ide/ahci.h
++++ b/hw/ide/ahci.h
+@@ -307,6 +307,16 @@ typedef struct AHCIPCIState {
+     AHCIState ahci;
+ } AHCIPCIState;
+ 
++extern const VMStateDescription vmstate_ahci;
++
++#define VMSTATE_AHCI(_field, _state) {                               \
++    .name       = (stringify(_field)),                               \
++    .size       = sizeof(AHCIState),                                 \
++    .vmsd       = &vmstate_ahci,                                     \
++    .flags      = VMS_STRUCT,                                        \
++    .offset     = vmstate_offset_value(_state, _field, AHCIState),   \
++}
++
+ typedef struct NCQFrame {
+     uint8_t fis_type;
+     uint8_t c;
+diff --git a/hw/ide/ich.c b/hw/ide/ich.c
+index 272b773..ae6f56f 100644
+--- a/hw/ide/ich.c
++++ b/hw/ide/ich.c
+@@ -79,9 +79,14 @@
+ #define ICH9_IDP_INDEX          0x10
+ #define ICH9_IDP_INDEX_LOG2     0x04
+ 
+-static const VMStateDescription vmstate_ahci = {
++static const VMStateDescription vmstate_ich9_ahci = {
+     .name = "ahci",
+-    .unmigratable = 1,
++    .version_id = 1,
++    .fields = (VMStateField []) {
++        VMSTATE_PCI_DEVICE(card, AHCIPCIState),
++        VMSTATE_AHCI(ahci, AHCIPCIState),
++        VMSTATE_END_OF_LIST()
++    },
+ };
+ 
+ static void pci_ich9_reset(DeviceState *dev)
+@@ -152,7 +157,7 @@ static void ich_ahci_class_init(ObjectClass *klass, void 
+*data)
+     k->device_id = PCI_DEVICE_ID_INTEL_82801IR;
+     k->revision = 0x02;
+     k->class_id = PCI_CLASS_STORAGE_SATA;
+-    dc->vmsd = &vmstate_ahci;
++    dc->vmsd = &vmstate_ich9_ahci;
+     dc->reset = pci_ich9_reset;
+ }
+ 
+-- 
+1.7.1
