@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.2-4) unstable; urgency=low
+
+  * update to 1.2.0-rc2
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 04 Sep 2012 07:26:31 +0200
+
 pve-qemu-kvm (1.2-3) unstable; urgency=low
 
   * fix ahci for win7
