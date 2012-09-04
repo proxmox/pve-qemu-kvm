@@ -8,3 +8,6 @@ update-cpus-x86_64.conf-to-rhel6.2-version.patch
 vencrypt-auth-plain.patch
 ahci-add_migration-support.patch
 ahci-properly-reset-pxcmd.patch
+#modify-qapi-schema.patch
+#implement-snapshot-drive.patch
+internal-snapshot.patch

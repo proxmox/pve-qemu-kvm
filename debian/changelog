@@ -1,6 +1,8 @@
 pve-qemu-kvm (1.2-4) unstable; urgency=low
 
   * update to 1.2.0-rc2
+  
+  * add patch for experimental snapshot support
 
  -- Proxmox Support Team <support@proxmox.com>  Tue, 04 Sep 2012 07:26:31 +0200
 

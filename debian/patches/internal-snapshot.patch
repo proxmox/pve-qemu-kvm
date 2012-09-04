@@ -1,0 +1,272 @@
+Index: new/qapi-schema.json
+===================================================================
+--- new.orig/qapi-schema.json	2012-09-04 12:52:21.000000000 +0200
++++ new/qapi-schema.json	2012-09-04 12:53:35.000000000 +0200
+@@ -2493,3 +2493,10 @@
+ # Since: 1.2.0
+ ##
+ { 'command': 'query-target', 'returns': 'TargetInfo' }
++
++
++{ 'command': 'snapshot-start' 'data': { 'statefile': 'str' } }
++
++{ 'command': 'snapshot-drive', 'data': { 'device': 'str', 'name': 'str' } }
++
++{ 'command': 'snapshot-end' }
+Index: new/qmp.c
+===================================================================
+--- new.orig/qmp.c	2012-09-04 12:52:21.000000000 +0200
++++ new/qmp.c	2012-09-04 12:53:35.000000000 +0200
+@@ -479,3 +479,145 @@
+     return arch_query_cpu_definitions(errp);
+ }
+ 
++static struct SnapshotState {
++	int in_progress;
++	int saved_vm_running;
++} snap_state;
++
++void qmp_snapshot_start(const char *statefile, Error **errp)
++{
++	QEMUFile *f;
++	int ret;
++
++	if (snap_state.in_progress) {
++		error_set(errp, ERROR_CLASS_GENERIC_ERROR,
++			  "VM snapshot already started\n");
++		return;
++	}
++	snap_state.in_progress = 1;
++
++	snap_state.saved_vm_running = runstate_is_running();
++
++	vm_stop(RUN_STATE_SAVE_VM);
++
++	f = qemu_fopen(statefile, "wb");
++	if (!f) {
++		error_set(errp, QERR_OPEN_FILE_FAILED, statefile);
++		return;
++	}
++
++	/* todo: does that save complete state? */
++	ret = qemu_savevm_state_complete(f);
++	qemu_fclose(f);
++	if (ret < 0) {
++		error_set(errp, ERROR_CLASS_GENERIC_ERROR,
++			  "Error %d while writing VM state\n", ret);
++		return;
++	}
++}
++
++void qmp_snapshot_end(Error **errp)
++{
++	if (!snap_state.in_progress) {
++		error_set(errp, ERROR_CLASS_GENERIC_ERROR,
++			  "VM snapshot not started\n");
++		return;
++	}
++	snap_state.in_progress = 0;
++
++	if (snap_state.saved_vm_running) {
++		vm_start();
++	}
++}
++
++/* Fixme: Copied from savevm */
++static int bdrv_snapshot_find(BlockDriverState *bs, QEMUSnapshotInfo *sn_info,
++                              const char *name)
++{
++    QEMUSnapshotInfo *sn_tab, *sn;
++    int nb_sns, i, ret;
++
++    ret = -ENOENT;
++    nb_sns = bdrv_snapshot_list(bs, &sn_tab);
++    if (nb_sns < 0)
++        return ret;
++    for(i = 0; i < nb_sns; i++) {
++        sn = &sn_tab[i];
++        if (!strcmp(sn->id_str, name) || !strcmp(sn->name, name)) {
++            *sn_info = *sn;
++            ret = 0;
++            break;
++        }
++    }
++    g_free(sn_tab);
++    return ret;
++}
++
++void qmp_snapshot_drive(const char *device, const char *name, Error **errp)
++{
++	BlockDriverState *bs;
++	QEMUSnapshotInfo sn1, *sn = &sn1;
++	int ret;
++#ifdef _WIN32
++	struct _timeb tb;
++#else
++	struct timeval tv;
++#endif
++
++	if (!snap_state.in_progress) {
++		error_set(errp, ERROR_CLASS_GENERIC_ERROR,
++			  "VM snapshot not started\n");
++		return;
++	}
++
++	bs = bdrv_find(device);
++        if (!bs) {
++		error_set(errp, QERR_DEVICE_NOT_FOUND, device);
++		return;
++	}
++
++        if (!bdrv_is_inserted(bs)) {
++		error_set(errp, QERR_DEVICE_HAS_NO_MEDIUM, device);
++		return;
++	}
++
++	if (bdrv_is_read_only(bs)) {
++		error_set(errp, QERR_DEVICE_IS_READ_ONLY, device);
++		return;
++	}
++
++	if (!bdrv_can_snapshot(bs)) {
++		error_set(errp, QERR_NOT_SUPPORTED);
++		return;
++	}
++
++	if (bdrv_snapshot_find(bs, sn, name) >= 0) {
++		error_set(errp, ERROR_CLASS_GENERIC_ERROR,
++			  "snapshot '%s' already exists", name);
++		return;
++	}
++
++	sn = &sn1;
++	memset(sn, 0, sizeof(*sn));
++
++#ifdef _WIN32
++	_ftime(&tb);
++	sn->date_sec = tb.time;
++	sn->date_nsec = tb.millitm * 1000000;
++#else
++	gettimeofday(&tv, NULL);
++	sn->date_sec = tv.tv_sec;
++	sn->date_nsec = tv.tv_usec * 1000;
++#endif
++	sn->vm_clock_nsec = qemu_get_clock_ns(vm_clock);
++
++	pstrcpy(sn->name, sizeof(sn->name), name);
++
++	sn->vm_state_size = 0; /* do not save state */
++
++	ret = bdrv_snapshot_create(bs, sn);
++	if (ret < 0) {
++                error_set(errp, ERROR_CLASS_GENERIC_ERROR, "Error while creating snapshot on '%s'\n", device);
++		return;
++	}
++}
+Index: new/qmp-commands.hx
+===================================================================
+--- new.orig/qmp-commands.hx	2012-09-04 12:52:21.000000000 +0200
++++ new/qmp-commands.hx	2012-09-04 12:53:35.000000000 +0200
+@@ -2514,3 +2514,21 @@
+         .args_type  = "",
+         .mhandler.cmd_new = qmp_marshal_input_query_target,
+     },
++
++    {
++        .name       = "snapshot-start",
++        .args_type  = "statefile:s",
++        .mhandler.cmd_new = qmp_marshal_input_snapshot_start,
++    },
++
++    {
++        .name       = "snapshot-drive",
++        .args_type  = "device:s,name:s",
++        .mhandler.cmd_new = qmp_marshal_input_snapshot_drive,
++    },
++
++    {
++        .name       = "snapshot-end",
++        .args_type  = "",
++        .mhandler.cmd_new = qmp_marshal_input_snapshot_end,
++    },
+Index: new/hmp.c
+===================================================================
+--- new.orig/hmp.c	2012-09-04 12:52:21.000000000 +0200
++++ new/hmp.c	2012-09-04 12:53:35.000000000 +0200
+@@ -1102,3 +1102,30 @@
+     qmp_closefd(fdname, &errp);
+     hmp_handle_error(mon, &errp);
+ }
++
++void hmp_snapshot_start(Monitor *mon, const QDict *qdict)
++{
++    Error *errp = NULL;
++    const char *statefile = qdict_get_str(qdict, "statefile");
++
++    qmp_snapshot_start(statefile, &errp);
++    hmp_handle_error(mon, &errp);
++}
++
++void hmp_snapshot_drive(Monitor *mon, const QDict *qdict)
++{
++    Error *errp = NULL;
++    const char *name = qdict_get_str(qdict, "name");
++    const char *device = qdict_get_str(qdict, "device");
++
++    qmp_snapshot_drive(device, name, &errp);
++    hmp_handle_error(mon, &errp);
++}
++
++void hmp_snapshot_end(Monitor *mon, const QDict *qdict)
++{
++    Error *errp = NULL;
++
++    qmp_snapshot_end(&errp);
++    hmp_handle_error(mon, &errp);
++}
+Index: new/hmp.h
+===================================================================
+--- new.orig/hmp.h	2012-09-04 12:52:21.000000000 +0200
++++ new/hmp.h	2012-09-04 12:53:35.000000000 +0200
+@@ -71,5 +71,8 @@
+ void hmp_netdev_del(Monitor *mon, const QDict *qdict);
+ void hmp_getfd(Monitor *mon, const QDict *qdict);
+ void hmp_closefd(Monitor *mon, const QDict *qdict);
++void hmp_snapshot_start(Monitor *mon, const QDict *qdict);
++void hmp_snapshot_drive(Monitor *mon, const QDict *qdict);
++void hmp_snapshot_end(Monitor *mon, const QDict *qdict);
+ 
+ #endif
+Index: new/hmp-commands.hx
+===================================================================
+--- new.orig/hmp-commands.hx	2012-09-04 12:52:21.000000000 +0200
++++ new/hmp-commands.hx	2012-09-04 12:53:35.000000000 +0200
+@@ -1494,3 +1494,28 @@
+ STEXI
+ @end table
+ ETEXI
++
++    {
++        .name       = "snapshot-start",
++        .args_type  = "statefile:s",
++        .params     = "statefile",
++        .help       = "Prepare for snapshot and halt VM. Save VM state to statefile.",
++        .mhandler.cmd = hmp_snapshot_start,
++    },
++
++
++    {
++        .name       = "snapshot-drive",
++        .args_type  = "device:s,name:s",
++        .params     = "device name",
++        .help       = "Create internal snapshot.",
++        .mhandler.cmd = hmp_snapshot_drive,
++    },
++
++    {
++        .name       = "snapshot-end",
++        .args_type  = "",
++        .params     = "",
++        .help       = "Resume VM after snaphot.",
++        .mhandler.cmd = hmp_snapshot_end,
++    },
