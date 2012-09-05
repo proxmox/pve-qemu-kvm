@@ -16,8 +16,8 @@ Index: new/qapi-schema.json
 Index: new/qmp.c
 ===================================================================
 --- new.orig/qmp.c	2012-09-04 12:52:21.000000000 +0200
-+++ new/qmp.c	2012-09-04 12:53:35.000000000 +0200
-@@ -479,3 +479,145 @@
++++ new/qmp.c	2012-09-05 10:34:10.000000000 +0200
+@@ -479,3 +479,155 @@
      return arch_query_cpu_definitions(errp);
  }
  
@@ -36,6 +36,7 @@ Index: new/qmp.c
 +			  "VM snapshot already started\n");
 +		return;
 +	}
++
 +	snap_state.in_progress = 1;
 +
 +	snap_state.saved_vm_running = runstate_is_running();
@@ -45,16 +46,25 @@ Index: new/qmp.c
 +	f = qemu_fopen(statefile, "wb");
 +	if (!f) {
 +		error_set(errp, QERR_OPEN_FILE_FAILED, statefile);
-+		return;
++		goto restart;
 +	}
 +
-+	/* todo: does that save complete state? */
-+	ret = qemu_savevm_state_complete(f);
++	ret = qemu_savevm_state(f);
 +	qemu_fclose(f);
 +	if (ret < 0) {
 +		error_set(errp, ERROR_CLASS_GENERIC_ERROR,
 +			  "Error %d while writing VM state\n", ret);
-+		return;
++		goto restart;
++	}
++
++	return;
++
++restart:
++
++	snap_state.in_progress = 0;
++
++	if (snap_state.saved_vm_running) {
++		vm_start();
 +	}
 +}
 +
@@ -270,3 +280,28 @@ Index: new/hmp-commands.hx
 +        .help       = "Resume VM after snaphot.",
 +        .mhandler.cmd = hmp_snapshot_end,
 +    },
+Index: new/savevm.c
+===================================================================
+--- new.orig/savevm.c	2012-09-05 10:27:37.000000000 +0200
++++ new/savevm.c	2012-09-05 10:27:44.000000000 +0200
+@@ -1724,7 +1724,7 @@
+     }
+ }
+ 
+-static int qemu_savevm_state(QEMUFile *f)
++int qemu_savevm_state(QEMUFile *f)
+ {
+     int ret;
+     MigrationParams params = {
+Index: new/sysemu.h
+===================================================================
+--- new.orig/sysemu.h	2012-09-05 10:30:42.000000000 +0200
++++ new/sysemu.h	2012-09-05 10:30:58.000000000 +0200
+@@ -83,6 +83,7 @@
+ int qemu_savevm_state_iterate(QEMUFile *f);
+ int qemu_savevm_state_complete(QEMUFile *f);
+ void qemu_savevm_state_cancel(QEMUFile *f);
++int qemu_savevm_state(QEMUFile *f);
+ int qemu_loadvm_state(QEMUFile *f);
+ 
+ /* SLIRP */
