@@ -1,7 +1,7 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2012-09-04 12:52:21.000000000 +0200
-+++ new/qapi-schema.json	2012-09-06 11:26:26.000000000 +0200
+--- new.orig/qapi-schema.json	2012-09-07 07:41:45.000000000 +0200
++++ new/qapi-schema.json	2012-09-13 09:22:06.000000000 +0200
 @@ -2493,3 +2493,12 @@
  # Since: 1.2.0
  ##
@@ -17,8 +17,8 @@ Index: new/qapi-schema.json
 +{ 'command': 'snapshot-end' }
 Index: new/qmp.c
 ===================================================================
---- new.orig/qmp.c	2012-09-04 12:52:21.000000000 +0200
-+++ new/qmp.c	2012-09-06 11:28:14.000000000 +0200
+--- new.orig/qmp.c	2012-09-07 07:41:45.000000000 +0200
++++ new/qmp.c	2012-09-13 09:22:06.000000000 +0200
 @@ -479,3 +479,191 @@
      return arch_query_cpu_definitions(errp);
  }
@@ -213,8 +213,8 @@ Index: new/qmp.c
 +}
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2012-09-04 12:52:21.000000000 +0200
-+++ new/qmp-commands.hx	2012-09-06 11:13:10.000000000 +0200
+--- new.orig/qmp-commands.hx	2012-09-07 07:41:45.000000000 +0200
++++ new/qmp-commands.hx	2012-09-13 09:30:33.000000000 +0200
 @@ -2514,3 +2514,27 @@
          .args_type  = "",
          .mhandler.cmd_new = qmp_marshal_input_query_target,
@@ -222,7 +222,7 @@ Index: new/qmp-commands.hx
 +
 +    {
 +        .name       = "snapshot-start",
-+        .args_type  = "statefile:s",
++        .args_type  = "statefile:s?",
 +        .mhandler.cmd_new = qmp_marshal_input_snapshot_start,
 +    },
 +
@@ -245,8 +245,8 @@ Index: new/qmp-commands.hx
 +    },
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2012-09-04 12:52:21.000000000 +0200
-+++ new/hmp.c	2012-09-06 11:30:32.000000000 +0200
+--- new.orig/hmp.c	2012-09-07 07:41:45.000000000 +0200
++++ new/hmp.c	2012-09-13 09:22:06.000000000 +0200
 @@ -1102,3 +1102,40 @@
      qmp_closefd(fdname, &errp);
      hmp_handle_error(mon, &errp);
@@ -290,8 +290,8 @@ Index: new/hmp.c
 +}
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2012-09-04 12:52:21.000000000 +0200
-+++ new/hmp.h	2012-09-06 11:14:38.000000000 +0200
+--- new.orig/hmp.h	2012-09-07 07:41:45.000000000 +0200
++++ new/hmp.h	2012-09-13 09:22:06.000000000 +0200
 @@ -71,5 +71,9 @@
  void hmp_netdev_del(Monitor *mon, const QDict *qdict);
  void hmp_getfd(Monitor *mon, const QDict *qdict);
@@ -304,8 +304,8 @@ Index: new/hmp.h
  #endif
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2012-09-04 12:52:21.000000000 +0200
-+++ new/hmp-commands.hx	2012-09-06 11:29:05.000000000 +0200
+--- new.orig/hmp-commands.hx	2012-09-07 07:41:45.000000000 +0200
++++ new/hmp-commands.hx	2012-09-13 09:22:06.000000000 +0200
 @@ -1494,3 +1494,35 @@
  STEXI
  @end table
@@ -344,8 +344,8 @@ Index: new/hmp-commands.hx
 +    },
 Index: new/savevm.c
 ===================================================================
---- new.orig/savevm.c	2012-09-05 10:27:37.000000000 +0200
-+++ new/savevm.c	2012-09-05 10:27:44.000000000 +0200
+--- new.orig/savevm.c	2012-09-07 07:41:45.000000000 +0200
++++ new/savevm.c	2012-09-13 09:22:06.000000000 +0200
 @@ -1724,7 +1724,7 @@
      }
  }
@@ -357,8 +357,8 @@ Index: new/savevm.c
      MigrationParams params = {
 Index: new/sysemu.h
 ===================================================================
---- new.orig/sysemu.h	2012-09-05 10:30:42.000000000 +0200
-+++ new/sysemu.h	2012-09-05 10:30:58.000000000 +0200
+--- new.orig/sysemu.h	2012-09-07 07:41:46.000000000 +0200
++++ new/sysemu.h	2012-09-13 09:22:06.000000000 +0200
 @@ -83,6 +83,7 @@
  int qemu_savevm_state_iterate(QEMUFile *f);
  int qemu_savevm_state_complete(QEMUFile *f);
