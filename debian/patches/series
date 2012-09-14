@@ -11,3 +11,4 @@ ahci-properly-reset-pxcmd.patch
 #modify-qapi-schema.patch
 #implement-snapshot-drive.patch
 internal-snapshot.patch
+fix-qemu-img-snapshot-removal.patch

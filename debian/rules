@@ -41,7 +41,7 @@ build-stamp:  config.status
 	dh_testdir
 
 	# Add here commands to compile the package.
-	$(MAKE) V=1
+	$(MAKE)
 
 	#docbook-to-man debian/kvm.sgml > kvm.1
 

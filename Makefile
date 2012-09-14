@@ -2,7 +2,7 @@ RELEASE=2.2
 
 # also update debian/changelog
 KVMVER=1.2
-KVMPKGREL=5
+KVMPKGREL=6
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm

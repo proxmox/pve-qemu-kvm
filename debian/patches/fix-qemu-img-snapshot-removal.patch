@@ -1,0 +1,15 @@
+Index: new/qemu-img.c
+===================================================================
+--- new.orig/qemu-img.c	2012-09-14 11:03:04.000000000 +0200
++++ new/qemu-img.c	2012-09-14 11:13:39.000000000 +0200
+@@ -1288,7 +1288,9 @@
+             error_report("Could not delete snapshot '%s': %d (%s)",
+                 snapshot_name, ret, strerror(-ret));
+         }
+-        break;
++ 	// return success if snapshot does not exists
++	if (ret == -ENOENT) ret = 0;
++       break;
+     }
+ 
+     /* Cleanup */

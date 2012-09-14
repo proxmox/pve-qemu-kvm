@@ -1,7 +1,13 @@
+pve-qemu-kvm (1.2-6) unstable; urgency=low
+
+  * qemu-img: return success for non-existing snapshots on snapshot removal
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 14 Sep 2012 11:09:09 +0200
+
 pve-qemu-kvm (1.2-5) unstable; urgency=low
 
   * update to 1.2.0
-
+  
  -- Proxmox Support Team <support@proxmox.com>  Fri, 07 Sep 2012 07:40:06 +0200
 
 pve-qemu-kvm (1.2-4) unstable; urgency=low
