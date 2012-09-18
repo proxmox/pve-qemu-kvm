@@ -1,0 +1,124 @@
+Index: new/savevm.c
+===================================================================
+--- new.orig/savevm.c	2012-09-18 07:20:45.000000000 +0200
++++ new/savevm.c	2012-09-18 07:36:55.000000000 +0200
+@@ -2223,6 +2223,50 @@
+     return;
+ }
+ 
++int load_state_from_blockdev(const char *filename)
++{
++    BlockDriverState *bs = NULL;
++    BlockDriver *drv = NULL;
++    QEMUFile *f;
++    int bdrv_oflags = BDRV_O_NOCACHE | BDRV_O_RDWR;
++    int ret = -1;
++
++    bs = bdrv_new("vmstate");
++    ret = bdrv_open(bs, filename, bdrv_oflags, drv);
++    if (ret < 0) {
++        error_report("Could not open VM state file");
++        goto the_end;
++    }
++
++    /* Flush all IO requests so they don't interfere with the new state.  */
++    bdrv_drain_all();
++
++    /* restore the VM state */
++    f = qemu_fopen_bdrv(bs, 0);
++    if (!f) {
++        error_report("Could not open VM state file");
++        ret = -EINVAL;
++        goto the_end;
++    }
++
++    qemu_system_reset(VMRESET_SILENT);
++    ret = qemu_loadvm_state(f);
++
++    qemu_fclose(f);
++    if (ret < 0) {
++        error_report("Error %d while loading VM state", ret);
++        goto the_end;
++    }
++
++    ret = 0;
++
++ the_end:
++    if (bs) {
++        bdrv_delete(bs);
++    }
++    return ret;
++}
++
+ int load_vmstate(const char *name)
+ {
+     BlockDriverState *bs, *bs_vm_state;
+Index: new/sysemu.h
+===================================================================
+--- new.orig/sysemu.h	2012-09-18 07:35:26.000000000 +0200
++++ new/sysemu.h	2012-09-18 07:35:53.000000000 +0200
+@@ -72,6 +72,7 @@
+ 
+ void do_savevm(Monitor *mon, const QDict *qdict);
+ int load_vmstate(const char *name);
++int load_state_from_blockdev(const char *filename);
+ void do_delvm(Monitor *mon, const QDict *qdict);
+ void do_info_snapshots(Monitor *mon);
+ 
+Index: new/qemu-options.hx
+===================================================================
+--- new.orig/qemu-options.hx	2012-09-18 07:39:54.000000000 +0200
++++ new/qemu-options.hx	2012-09-18 07:52:56.000000000 +0200
+@@ -2477,6 +2477,19 @@
+ Start right away with a saved state (@code{loadvm} in monitor)
+ ETEXI
+ 
++DEF("loadstate", HAS_ARG, QEMU_OPTION_loadstate, \
++    "-loadstate file\n" \
++    "                start right away with a saved state\n",
++    QEMU_ARCH_ALL)
++STEXI
++@item -loadstate @var{file}
++@findex -loadstate
++Start right away with a saved state. This option does not rollback
++disk state like @code{loadvm}, so user must make sure that disk
++have correct state. @var{file} can be any valid device URL. See the section
++for "Device URL Syntax" for more information.
++ETEXI
++
+ #ifndef _WIN32
+ DEF("daemonize", 0, QEMU_OPTION_daemonize, \
+     "-daemonize      daemonize QEMU after initializing\n", QEMU_ARCH_ALL)
+Index: new/vl.c
+===================================================================
+--- new.orig/vl.c	2012-09-18 07:53:19.000000000 +0200
++++ new/vl.c	2012-09-18 07:55:47.000000000 +0200
+@@ -2364,6 +2364,7 @@
+     int optind;
+     const char *optarg;
+     const char *loadvm = NULL;
++    const char *loadstate = NULL;
+     QEMUMachine *machine;
+     const char *cpu_model;
+     const char *vga_model = "none";
+@@ -2998,6 +2999,9 @@
+ 	    case QEMU_OPTION_loadvm:
+ 		loadvm = optarg;
+ 		break;
++	    case QEMU_OPTION_loadstate:
++		loadstate = optarg;
++		break;
+             case QEMU_OPTION_full_screen:
+                 full_screen = 1;
+                 break;
+@@ -3821,6 +3825,10 @@
+         if (load_vmstate(loadvm) < 0) {
+             autostart = 0;
+         }
++    } else if (loadstate) {
++        if (load_state_from_blockdev(loadstate) < 0) {
++            autostart = 0;
++        }
+     }
+ 
+     if (incoming) {

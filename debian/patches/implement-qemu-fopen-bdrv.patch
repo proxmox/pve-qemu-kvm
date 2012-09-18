@@ -1,0 +1,90 @@
+Index: new/savevm.c
+===================================================================
+--- new.orig/savevm.c	2012-09-18 07:05:08.000000000 +0200
++++ new/savevm.c	2012-09-18 07:19:31.000000000 +0200
+@@ -387,29 +387,48 @@
+     return NULL;
+ }
+ 
+-static int block_put_buffer(void *opaque, const uint8_t *buf,
++static int block_state_put_buffer(void *opaque, const uint8_t *buf,
+                            int64_t pos, int size)
+ {
+-    bdrv_save_vmstate(opaque, buf, pos, size);
+-    return size;
++    return bdrv_save_vmstate(opaque, buf, pos, size);
+ }
+ 
+-static int block_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
++static int block_state_get_buffer(void *opaque, uint8_t *buf, int64_t pos,
++                                  int size)
+ {
+     return bdrv_load_vmstate(opaque, buf, pos, size);
+ }
+ 
++static int block_put_buffer(void *opaque, const uint8_t *buf, int64_t pos,
++                            int size)
++{
++    return bdrv_pwrite(opaque, pos, buf, size);
++}
++
++static int block_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
++{
++    return bdrv_pread(opaque, pos, buf, size);
++}
++
+ static int bdrv_fclose(void *opaque)
+ {
+     return bdrv_flush(opaque);
+ }
+ 
+-static QEMUFile *qemu_fopen_bdrv(BlockDriverState *bs, int is_writable)
++QEMUFile *qemu_fopen_bdrv(BlockDriverState *bs, int is_writable)
++{
++    return qemu_fopen_ops(bs, is_writable ? block_put_buffer : NULL,
++                          block_get_buffer, bdrv_fclose,
++                          NULL, NULL, NULL);
++}
++
++static QEMUFile *qemu_fopen_bdrv_state(BlockDriverState *bs, int is_writable)
+ {
+     if (is_writable)
+-        return qemu_fopen_ops(bs, block_put_buffer, NULL, bdrv_fclose, 
++        return qemu_fopen_ops(bs, block_state_put_buffer, NULL, bdrv_fclose,
+ 			      NULL, NULL, NULL);
+-    return qemu_fopen_ops(bs, NULL, block_get_buffer, bdrv_fclose, NULL, NULL, NULL);
++    return qemu_fopen_ops(bs, NULL, block_state_get_buffer, bdrv_fclose,
++                          NULL, NULL, NULL);
+ }
+ 
+ QEMUFile *qemu_fopen_ops(void *opaque, QEMUFilePutBufferFunc *put_buffer,
+@@ -2145,7 +2164,7 @@
+     }
+ 
+     /* save the VM state */
+-    f = qemu_fopen_bdrv(bs, 1);
++    f = qemu_fopen_bdrv_state(bs, 1);
+     if (!f) {
+         monitor_printf(mon, "Could not open VM state file\n");
+         goto the_end;
+@@ -2266,7 +2285,7 @@
+     }
+ 
+     /* restore the VM state */
+-    f = qemu_fopen_bdrv(bs_vm_state, 0);
++    f = qemu_fopen_bdrv_state(bs_vm_state, 0);
+     if (!f) {
+         error_report("Could not open VM state file");
+         return -EINVAL;
+Index: new/qemu-file.h
+===================================================================
+--- new.orig/qemu-file.h	2012-09-18 07:05:08.000000000 +0200
++++ new/qemu-file.h	2012-09-18 07:07:26.000000000 +0200
+@@ -68,6 +68,7 @@
+ QEMUFile *qemu_fopen(const char *filename, const char *mode);
+ QEMUFile *qemu_fdopen(int fd, const char *mode);
+ QEMUFile *qemu_fopen_socket(int fd);
++QEMUFile *qemu_fopen_bdrv(BlockDriverState *bs, int is_writable);
+ QEMUFile *qemu_popen(FILE *popen_file, const char *mode);
+ QEMUFile *qemu_popen_cmd(const char *command, const char *mode);
+ int qemu_stdio_fd(QEMUFile *f);

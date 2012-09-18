@@ -1,0 +1,79 @@
+Index: new/block.c
+===================================================================
+--- new.orig/block.c	2012-09-18 08:38:03.000000000 +0200
++++ new/block.c	2012-09-18 08:39:00.000000000 +0200
+@@ -2724,6 +2724,28 @@
+     return -ENOTSUP;
+ }
+ 
++int bdrv_snapshot_find(BlockDriverState *bs, QEMUSnapshotInfo *sn_info,
++		       const char *name)
++{
++    QEMUSnapshotInfo *sn_tab, *sn;
++    int nb_sns, i, ret;
++
++    ret = -ENOENT;
++    nb_sns = bdrv_snapshot_list(bs, &sn_tab);
++    if (nb_sns < 0)
++        return ret;
++    for(i = 0; i < nb_sns; i++) {
++        sn = &sn_tab[i];
++        if (!strcmp(sn->id_str, name) || !strcmp(sn->name, name)) {
++            *sn_info = *sn;
++            ret = 0;
++            break;
++        }
++    }
++    g_free(sn_tab);
++    return ret;
++}
++
+ int bdrv_snapshot_load_tmp(BlockDriverState *bs,
+         const char *snapshot_name)
+ {
+Index: new/block.h
+===================================================================
+--- new.orig/block.h	2012-09-18 08:38:03.000000000 +0200
++++ new/block.h	2012-09-18 08:39:42.000000000 +0200
+@@ -302,6 +302,8 @@
+ int bdrv_snapshot_delete(BlockDriverState *bs, const char *snapshot_id);
+ int bdrv_snapshot_list(BlockDriverState *bs,
+                        QEMUSnapshotInfo **psn_info);
++int bdrv_snapshot_find(BlockDriverState *bs, QEMUSnapshotInfo *sn_info,
++		       const char *name);
+ int bdrv_snapshot_load_tmp(BlockDriverState *bs,
+                            const char *snapshot_name);
+ char *bdrv_snapshot_dump(char *buf, int buf_size, QEMUSnapshotInfo *sn);
+Index: new/savevm.c
+===================================================================
+--- new.orig/savevm.c	2012-09-18 08:38:03.000000000 +0200
++++ new/savevm.c	2012-09-18 08:39:05.000000000 +0200
+@@ -2034,28 +2034,6 @@
+     return ret;
+ }
+ 
+-static int bdrv_snapshot_find(BlockDriverState *bs, QEMUSnapshotInfo *sn_info,
+-                              const char *name)
+-{
+-    QEMUSnapshotInfo *sn_tab, *sn;
+-    int nb_sns, i, ret;
+-
+-    ret = -ENOENT;
+-    nb_sns = bdrv_snapshot_list(bs, &sn_tab);
+-    if (nb_sns < 0)
+-        return ret;
+-    for(i = 0; i < nb_sns; i++) {
+-        sn = &sn_tab[i];
+-        if (!strcmp(sn->id_str, name) || !strcmp(sn->name, name)) {
+-            *sn_info = *sn;
+-            ret = 0;
+-            break;
+-        }
+-    }
+-    g_free(sn_tab);
+-    return ret;
+-}
+-
+ /*
+  * Deletes snapshots of a given name in all opened images.
+  */
