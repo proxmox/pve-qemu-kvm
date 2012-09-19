@@ -1,7 +1,7 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2012-09-18 06:20:41.000000000 +0200
-+++ new/qapi-schema.json	2012-09-18 08:43:25.000000000 +0200
+--- new.orig/qapi-schema.json	2012-09-19 12:46:53.000000000 +0200
++++ new/qapi-schema.json	2012-09-19 12:51:10.000000000 +0200
 @@ -2493,3 +2493,12 @@
  # Since: 1.2.0
  ##
@@ -17,9 +17,9 @@ Index: new/qapi-schema.json
 +{ 'command': 'snapshot-end' }
 Index: new/qmp.c
 ===================================================================
---- new.orig/qmp.c	2012-09-18 06:20:41.000000000 +0200
-+++ new/qmp.c	2012-09-18 08:54:54.000000000 +0200
-@@ -479,3 +479,193 @@
+--- new.orig/qmp.c	2012-09-19 12:46:53.000000000 +0200
++++ new/qmp.c	2012-09-19 12:51:10.000000000 +0200
+@@ -479,3 +479,196 @@
      return arch_query_cpu_definitions(errp);
  }
  
@@ -33,6 +33,7 @@ Index: new/qmp.c
 +    BlockDriverState *bs = NULL;
 +    BlockDriver *drv = NULL;
 +    int bdrv_oflags = BDRV_O_NOCACHE | BDRV_O_RDWR;
++    int64_t pos;
 +    QEMUFile *f;
 +    int ret;
 +
@@ -69,7 +70,9 @@ Index: new/qmp.c
 +    ret = qemu_savevm_state(f);
 +
 +    // try to truncate, but ignore errors (will fail on block devices).
-+    bdrv_truncate(bs, qemu_ftell(f));
++    // note: bdrv_read() need whole blocks, so we round up
++    pos = qemu_ftell(f);
++    bdrv_truncate(bs, (pos + BDRV_SECTOR_SIZE) & BDRV_SECTOR_MASK);
 +
 +    qemu_fclose(f);
 +
@@ -215,8 +218,8 @@ Index: new/qmp.c
 +}
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2012-09-18 06:20:41.000000000 +0200
-+++ new/qmp-commands.hx	2012-09-18 08:43:25.000000000 +0200
+--- new.orig/qmp-commands.hx	2012-09-19 12:46:53.000000000 +0200
++++ new/qmp-commands.hx	2012-09-19 12:51:10.000000000 +0200
 @@ -2514,3 +2514,27 @@
          .args_type  = "",
          .mhandler.cmd_new = qmp_marshal_input_query_target,
@@ -247,8 +250,8 @@ Index: new/qmp-commands.hx
 +    },
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2012-09-18 06:20:41.000000000 +0200
-+++ new/hmp.c	2012-09-18 08:43:25.000000000 +0200
+--- new.orig/hmp.c	2012-09-19 12:46:53.000000000 +0200
++++ new/hmp.c	2012-09-19 12:51:10.000000000 +0200
 @@ -1102,3 +1102,40 @@
      qmp_closefd(fdname, &errp);
      hmp_handle_error(mon, &errp);
@@ -292,8 +295,8 @@ Index: new/hmp.c
 +}
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2012-09-18 06:20:41.000000000 +0200
-+++ new/hmp.h	2012-09-18 08:43:25.000000000 +0200
+--- new.orig/hmp.h	2012-09-19 12:46:53.000000000 +0200
++++ new/hmp.h	2012-09-19 12:51:10.000000000 +0200
 @@ -71,5 +71,9 @@
  void hmp_netdev_del(Monitor *mon, const QDict *qdict);
  void hmp_getfd(Monitor *mon, const QDict *qdict);
@@ -306,8 +309,8 @@ Index: new/hmp.h
  #endif
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2012-09-18 06:20:41.000000000 +0200
-+++ new/hmp-commands.hx	2012-09-18 08:43:25.000000000 +0200
+--- new.orig/hmp-commands.hx	2012-09-19 12:46:53.000000000 +0200
++++ new/hmp-commands.hx	2012-09-19 12:51:10.000000000 +0200
 @@ -1494,3 +1494,35 @@
  STEXI
  @end table
@@ -346,8 +349,8 @@ Index: new/hmp-commands.hx
 +    },
 Index: new/sysemu.h
 ===================================================================
---- new.orig/sysemu.h	2012-09-18 07:35:53.000000000 +0200
-+++ new/sysemu.h	2012-09-18 08:43:25.000000000 +0200
+--- new.orig/sysemu.h	2012-09-19 12:46:53.000000000 +0200
++++ new/sysemu.h	2012-09-19 12:51:10.000000000 +0200
 @@ -84,6 +84,7 @@
  int qemu_savevm_state_iterate(QEMUFile *f);
  int qemu_savevm_state_complete(QEMUFile *f);
@@ -358,9 +361,9 @@ Index: new/sysemu.h
  /* SLIRP */
 Index: new/savevm.c
 ===================================================================
---- new.orig/savevm.c	2012-09-18 08:53:28.000000000 +0200
-+++ new/savevm.c	2012-09-18 08:53:55.000000000 +0200
-@@ -1743,7 +1743,7 @@
+--- new.orig/savevm.c	2012-09-19 12:51:07.000000000 +0200
++++ new/savevm.c	2012-09-19 12:51:10.000000000 +0200
+@@ -1754,7 +1754,7 @@
      }
  }
  

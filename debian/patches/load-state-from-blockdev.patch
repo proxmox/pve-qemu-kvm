@@ -1,8 +1,26 @@
 Index: new/savevm.c
 ===================================================================
---- new.orig/savevm.c	2012-09-18 07:20:45.000000000 +0200
-+++ new/savevm.c	2012-09-18 07:36:55.000000000 +0200
-@@ -2223,6 +2223,50 @@
+--- new.orig/savevm.c	2012-09-19 07:17:28.000000000 +0200
++++ new/savevm.c	2012-09-19 12:53:58.000000000 +0200
+@@ -407,6 +407,17 @@
+ 
+ static int block_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
+ {
++    int ret;
++    int64_t maxlen = bdrv_getlength(opaque);
++    if (pos > maxlen) {
++        return -EIO;
++    }
++    if ((pos + size) > maxlen) {
++        size = maxlen - pos - 1;
++    }
++    if (size == 0) {
++        return 0;
++    }
+     return bdrv_pread(opaque, pos, buf, size);
+ }
+ 
+@@ -2223,6 +2234,50 @@
      return;
  }
  
@@ -55,8 +73,8 @@ Index: new/savevm.c
      BlockDriverState *bs, *bs_vm_state;
 Index: new/sysemu.h
 ===================================================================
---- new.orig/sysemu.h	2012-09-18 07:35:26.000000000 +0200
-+++ new/sysemu.h	2012-09-18 07:35:53.000000000 +0200
+--- new.orig/sysemu.h	2012-09-19 07:17:21.000000000 +0200
++++ new/sysemu.h	2012-09-19 12:53:31.000000000 +0200
 @@ -72,6 +72,7 @@
  
  void do_savevm(Monitor *mon, const QDict *qdict);
@@ -67,8 +85,8 @@ Index: new/sysemu.h
  
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2012-09-18 07:39:54.000000000 +0200
-+++ new/qemu-options.hx	2012-09-18 07:52:56.000000000 +0200
+--- new.orig/qemu-options.hx	2012-09-19 07:17:28.000000000 +0200
++++ new/qemu-options.hx	2012-09-19 07:17:28.000000000 +0200
 @@ -2477,6 +2477,19 @@
  Start right away with a saved state (@code{loadvm} in monitor)
  ETEXI
@@ -91,8 +109,8 @@ Index: new/qemu-options.hx
      "-daemonize      daemonize QEMU after initializing\n", QEMU_ARCH_ALL)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2012-09-18 07:53:19.000000000 +0200
-+++ new/vl.c	2012-09-18 07:55:47.000000000 +0200
+--- new.orig/vl.c	2012-09-19 07:17:28.000000000 +0200
++++ new/vl.c	2012-09-19 07:17:28.000000000 +0200
 @@ -2364,6 +2364,7 @@
      int optind;
      const char *optarg;
