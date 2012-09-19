@@ -1,7 +1,7 @@
 Index: new/savevm.c
 ===================================================================
 --- new.orig/savevm.c	2012-09-19 07:17:28.000000000 +0200
-+++ new/savevm.c	2012-09-19 12:53:58.000000000 +0200
++++ new/savevm.c	2012-09-19 14:10:02.000000000 +0200
 @@ -407,6 +407,17 @@
  
  static int block_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
@@ -29,7 +29,7 @@ Index: new/savevm.c
 +    BlockDriverState *bs = NULL;
 +    BlockDriver *drv = NULL;
 +    QEMUFile *f;
-+    int bdrv_oflags = BDRV_O_NOCACHE | BDRV_O_RDWR;
++    int bdrv_oflags = BDRV_O_CACHE_WB | BDRV_O_RDWR;
 +    int ret = -1;
 +
 +    bs = bdrv_new("vmstate");
@@ -74,7 +74,7 @@ Index: new/savevm.c
 Index: new/sysemu.h
 ===================================================================
 --- new.orig/sysemu.h	2012-09-19 07:17:21.000000000 +0200
-+++ new/sysemu.h	2012-09-19 12:53:31.000000000 +0200
++++ new/sysemu.h	2012-09-19 14:09:51.000000000 +0200
 @@ -72,6 +72,7 @@
  
  void do_savevm(Monitor *mon, const QDict *qdict);
