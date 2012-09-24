@@ -12,3 +12,4 @@ sheepdog-fix-savevm-loadvm.patch
 fix-qemu-img-snapshot-removal.patch
 move-bdrv-snapshot-find.patch
 internal-snapshot-async.patch
+savevm-live.patch

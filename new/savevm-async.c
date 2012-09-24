@@ -151,6 +151,8 @@ static ssize_t block_state_put_buffer(void *opaque, const void *buf,
 
 static void block_state_put_ready(void *opaque)
 {
+    uint64_t remaining;
+    int64_t maxlen;
     int ret;
 
     if (snap_state.state != SAVE_STATE_ACTIVE) {
@@ -158,16 +160,25 @@ static void block_state_put_ready(void *opaque)
         return;
     }
 
-    if (!runstate_check(RUN_STATE_SAVE_VM)) {
-        save_snapshot_error("put_ready returning because of wrong run state");
-        return;
+    ret = qemu_savevm_state_iterate(snap_state.file);
+    remaining = ram_bytes_remaining();
+
+    // stop if we get to the end of available space,
+    // or if remaining is just a few MB
+    maxlen = bdrv_getlength(snap_state.bs) - 30*1024*1024;
+    if ((remaining < 100000) || ((snap_state.bs_pos + remaining) >= maxlen)) {
+        if (runstate_is_running()) {
+            vm_stop(RUN_STATE_SAVE_VM);
+        }
     }
 
-    ret = qemu_savevm_state_iterate(snap_state.file);
     if (ret < 0) {
         save_snapshot_error("qemu_savevm_state_iterate error %d", ret);
         return;
     } else if (ret == 1) {
+        if (runstate_is_running()) {
+            vm_stop(RUN_STATE_SAVE_VM);
+        }
         DPRINTF("savevm inerate finished\n");
         if ((ret = qemu_savevm_state_complete(snap_state.file)) < 0) {
             save_snapshot_error("qemu_savevm_state_complete error %d", ret);
@@ -211,10 +222,8 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
         snap_state.error = NULL;
     }
 
-    /* stop the VM */
-    vm_stop(RUN_STATE_SAVE_VM);
-
     if (!has_statefile) {
+        vm_stop(RUN_STATE_SAVE_VM);
         snap_state.state = SAVE_STATE_COMPLETED;
         return;
     }
