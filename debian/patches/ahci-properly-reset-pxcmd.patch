@@ -29,11 +29,11 @@ Signed-off-by: Jason Baron <address@hidden>
  hw/ide/ahci.c |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/hw/ide/ahci.c b/hw/ide/ahci.c
-index 9fe89a5..06c236f 100644
---- a/hw/ide/ahci.c
-+++ b/hw/ide/ahci.c
-@@ -1199,6 +1199,7 @@ void ahci_reset(AHCIState *s)
+Index: new/hw/ide/ahci.c
+===================================================================
+--- new.orig/hw/ide/ahci.c	2012-09-24 07:15:28.000000000 +0200
++++ new/hw/ide/ahci.c	2012-09-24 07:15:29.000000000 +0200
+@@ -1199,6 +1199,7 @@
          pr->irq_stat = 0;
          pr->irq_mask = 0;
          pr->scr_ctl = 0;
@@ -41,5 +41,3 @@ index 9fe89a5..06c236f 100644
          ahci_reset_port(s, i);
      }
  }
--- 
-1.7.1

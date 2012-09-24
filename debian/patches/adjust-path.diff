@@ -1,10 +1,10 @@
 Index: new/net.h
 ===================================================================
---- new.orig/net.h	2012-03-12 06:44:55.000000000 +0100
-+++ new/net.h	2012-03-13 07:25:07.000000000 +0100
-@@ -173,8 +173,9 @@
- int do_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
- int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
+--- new.orig/net.h	2012-09-24 07:15:00.000000000 +0200
++++ new/net.h	2012-09-24 07:15:16.000000000 +0200
+@@ -161,8 +161,9 @@
+ void netdev_add(QemuOpts *opts, Error **errp);
+ int qmp_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret);
  
 -#define DEFAULT_NETWORK_SCRIPT "/etc/qemu-ifup"
 -#define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/qemu-ifdown"
@@ -16,9 +16,9 @@ Index: new/net.h
  
 Index: new/configure
 ===================================================================
---- new.orig/configure	2012-03-12 06:44:55.000000000 +0100
-+++ new/configure	2012-03-13 07:25:07.000000000 +0100
-@@ -169,7 +169,7 @@
+--- new.orig/configure	2012-09-24 07:15:00.000000000 +0200
++++ new/configure	2012-09-24 07:15:16.000000000 +0200
+@@ -195,7 +195,7 @@
  libdir="\${prefix}/lib"
  includedir="\${prefix}/include"
  sysconfdir="\${prefix}/etc"
@@ -29,14 +29,14 @@ Index: new/configure
  fmod_inc=""
 Index: new/net/tap.h
 ===================================================================
---- new.orig/net/tap.h	2012-03-12 06:44:55.000000000 +0100
-+++ new/net/tap.h	2012-03-13 07:25:07.000000000 +0100
+--- new.orig/net/tap.h	2012-09-24 07:15:00.000000000 +0200
++++ new/net/tap.h	2012-09-24 07:15:16.000000000 +0200
 @@ -29,8 +29,6 @@
  #include "qemu-common.h"
- #include "qemu-option.h"
+ #include "qapi-types.h"
  
 -#define DEFAULT_NETWORK_SCRIPT "/etc/qemu-ifup"
 -#define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/qemu-ifdown"
  
- int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan);
- 
+ int net_init_tap(const NetClientOptions *opts, const char *name,
+                  NetClientState *peer);

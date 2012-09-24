@@ -1,7 +1,7 @@
 Index: new/pc-bios/keymaps/fr-ca
 ===================================================================
---- new.orig/pc-bios/keymaps/fr-ca	2011-08-11 10:04:51.000000000 +0200
-+++ new/pc-bios/keymaps/fr-ca	2011-08-11 10:09:38.000000000 +0200
+--- new.orig/pc-bios/keymaps/fr-ca	2012-09-24 07:15:00.000000000 +0200
++++ new/pc-bios/keymaps/fr-ca	2012-09-24 07:15:04.000000000 +0200
 @@ -14,22 +14,31 @@
  twosuperior 0x9 altgr
  threesuperior 0xa altgr

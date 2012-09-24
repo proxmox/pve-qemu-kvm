@@ -1,7 +1,7 @@
 Index: new/ui/vnc-auth-vencrypt.c
 ===================================================================
---- new.orig/ui/vnc-auth-vencrypt.c	2012-08-09 10:02:20.000000000 +0200
-+++ new/ui/vnc-auth-vencrypt.c	2012-08-09 10:03:01.000000000 +0200
+--- new.orig/ui/vnc-auth-vencrypt.c	2012-09-24 07:15:24.000000000 +0200
++++ new/ui/vnc-auth-vencrypt.c	2012-09-24 07:15:27.000000000 +0200
 @@ -143,6 +143,11 @@
         vnc_read_when(vs, protocol_client_auth_plain_start, 8);
         break;
@@ -14,7 +14,7 @@ Index: new/ui/vnc-auth-vencrypt.c
      case VNC_AUTH_VENCRYPT_TLSVNC:
      case VNC_AUTH_VENCRYPT_X509VNC:
         VNC_DEBUG("Start TLS auth VNC\n");
-@@ -226,25 +231,32 @@
+@@ -227,25 +232,32 @@
  {
      int auth = read_u32(data, 0);
  
@@ -60,7 +60,7 @@ Index: new/ui/vnc-auth-vencrypt.c
          }
      }
      return 0;
-@@ -259,10 +271,11 @@
+@@ -260,10 +272,11 @@
          vnc_flush(vs);
          vnc_client_error(vs);
      } else {

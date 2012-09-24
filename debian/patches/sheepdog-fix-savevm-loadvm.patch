@@ -12,11 +12,11 @@ Signed-off-by: Kevin Wolf <kwolf@redhat.com>
  block/sheepdog.c |    3 ++-
  1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/block/sheepdog.c b/block/sheepdog.c
-index df4f441..e0753ee 100644
---- a/block/sheepdog.c
-+++ b/block/sheepdog.c
-@@ -1986,7 +1986,7 @@ static int do_load_save_vmstate(BDRVSheepdogState *s, uint8_t *data,
+Index: new/block/sheepdog.c
+===================================================================
+--- new.orig/block/sheepdog.c	2012-09-24 07:15:00.000000000 +0200
++++ new/block/sheepdog.c	2012-09-24 07:15:30.000000000 +0200
+@@ -1986,7 +1986,7 @@
          vdi_index = pos / SD_DATA_OBJ_SIZE;
          offset = pos % SD_DATA_OBJ_SIZE;
  
@@ -25,7 +25,7 @@ index df4f441..e0753ee 100644
  
          vmstate_oid = vid_to_vmstate_oid(s->inode.vdi_id, vdi_index);
  
-@@ -2007,6 +2007,7 @@ static int do_load_save_vmstate(BDRVSheepdogState *s, uint8_t *data,
+@@ -2007,6 +2007,7 @@
          }
  
          pos += data_len;
@@ -33,5 +33,3 @@ index df4f441..e0753ee 100644
          remaining -= data_len;
      }
      ret = size;
--- 
-1.7.0.4

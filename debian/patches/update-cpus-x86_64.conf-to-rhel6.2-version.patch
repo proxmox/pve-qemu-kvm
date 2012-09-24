@@ -9,10 +9,10 @@ Signed-off-by: Derumier Alexandre <aderumier@odiso.com>
  sysconfigs/target/cpus-x86_64.conf |   36 ++++++++++++++++++++++++++++++---
  1 files changed, 32 insertions(+), 4 deletions(-)
 
-diff --git a/sysconfigs/target/cpus-x86_64.conf b/sysconfigs/target/cpus-x86_64.conf
-index d050380..39a9a37 100644
---- a/sysconfigs/target/cpus-x86_64.conf
-+++ b/sysconfigs/target/cpus-x86_64.conf
+Index: new/sysconfigs/target/cpus-x86_64.conf
+===================================================================
+--- new.orig/sysconfigs/target/cpus-x86_64.conf	2012-09-24 07:15:00.000000000 +0200
++++ new/sysconfigs/target/cpus-x86_64.conf	2012-09-24 07:15:25.000000000 +0200
 @@ -1,11 +1,39 @@
  # x86 CPU MODELS
  
@@ -81,6 +81,3 @@ index d050380..39a9a37 100644
     vendor = "GenuineIntel"
     family = "6"
     model = "44"
--- 
-1.7.2.5
-
