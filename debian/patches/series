@@ -10,7 +10,5 @@ ahci-add_migration-support.patch
 ahci-properly-reset-pxcmd.patch
 sheepdog-fix-savevm-loadvm.patch
 fix-qemu-img-snapshot-removal.patch
-implement-qemu-fopen-bdrv.patch
-load-state-from-blockdev.patch
 move-bdrv-snapshot-find.patch
-internal-snapshot.patch
+internal-snapshot-async.patch
