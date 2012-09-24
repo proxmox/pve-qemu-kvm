@@ -1,7 +1,7 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2012-09-24 07:15:00.000000000 +0200
-+++ new/qapi-schema.json	2012-09-24 07:15:34.000000000 +0200
+--- new.orig/qapi-schema.json	2012-09-24 07:15:44.000000000 +0200
++++ new/qapi-schema.json	2012-09-24 07:15:58.000000000 +0200
 @@ -358,6 +358,40 @@
             '*total-time': 'int'} }
  
@@ -58,9 +58,9 @@ Index: new/qapi-schema.json
 +{ 'command': 'savevm-end' }
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2012-09-24 07:15:00.000000000 +0200
-+++ new/qmp-commands.hx	2012-09-24 07:15:34.000000000 +0200
-@@ -2514,3 +2514,27 @@
+--- new.orig/qmp-commands.hx	2012-09-24 07:15:44.000000000 +0200
++++ new/qmp-commands.hx	2012-09-24 08:58:56.000000000 +0200
+@@ -2514,3 +2514,34 @@
          .args_type  = "",
          .mhandler.cmd_new = qmp_marshal_input_query_target,
      },
@@ -88,10 +88,17 @@ Index: new/qmp-commands.hx
 +        .args_type  = "",
 +        .mhandler.cmd_new = qmp_marshal_input_savevm_end,
 +    },
++
++    {
++        .name       = "query-savevm",
++        .args_type  = "",
++        .mhandler.cmd_new = qmp_marshal_input_query_savevm,
++    },
++
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2012-09-24 07:15:00.000000000 +0200
-+++ new/hmp.c	2012-09-24 07:15:34.000000000 +0200
+--- new.orig/hmp.c	2012-09-24 07:15:44.000000000 +0200
++++ new/hmp.c	2012-09-24 07:15:58.000000000 +0200
 @@ -1102,3 +1102,60 @@
      qmp_closefd(fdname, &errp);
      hmp_handle_error(mon, &errp);
@@ -155,8 +162,8 @@ Index: new/hmp.c
 +}
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2012-09-24 07:15:00.000000000 +0200
-+++ new/hmp.h	2012-09-24 07:15:34.000000000 +0200
+--- new.orig/hmp.h	2012-09-24 07:15:44.000000000 +0200
++++ new/hmp.h	2012-09-24 07:15:58.000000000 +0200
 @@ -25,6 +25,7 @@
  void hmp_info_uuid(Monitor *mon);
  void hmp_info_chardev(Monitor *mon);
@@ -177,8 +184,8 @@ Index: new/hmp.h
  #endif
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2012-09-24 07:15:00.000000000 +0200
-+++ new/hmp-commands.hx	2012-09-24 07:15:34.000000000 +0200
+--- new.orig/hmp-commands.hx	2012-09-24 07:15:44.000000000 +0200
++++ new/hmp-commands.hx	2012-09-24 07:15:58.000000000 +0200
 @@ -1468,6 +1468,8 @@
  show current migration capabilities
  @item info migrate_cache_size
@@ -227,7 +234,7 @@ Index: new/hmp-commands.hx
 Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/savevm-async.c	2012-09-24 07:15:34.000000000 +0200
++++ new/savevm-async.c	2012-09-24 09:17:54.000000000 +0200
 @@ -0,0 +1,441 @@
 +#include "qemu-common.h"
 +#include "qerror.h"
@@ -462,7 +469,7 @@ Index: new/savevm-async.c
 +        goto restart;
 +    }
 +
-+    snap_state.file = qemu_fopen_ops_buffered(&snap_state, 1000, //000000,
++    snap_state.file = qemu_fopen_ops_buffered(&snap_state, 1000000000,
 +                                              block_state_put_buffer,
 +                                              block_state_put_ready,
 +                                              block_state_wait_for_unfreeze,
@@ -672,8 +679,8 @@ Index: new/savevm-async.c
 +}
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2012-09-24 07:15:00.000000000 +0200
-+++ new/Makefile.objs	2012-09-24 07:15:34.000000000 +0200
+--- new.orig/Makefile.objs	2012-09-24 07:15:44.000000000 +0200
++++ new/Makefile.objs	2012-09-24 07:15:58.000000000 +0200
 @@ -78,6 +78,7 @@
  common-obj-y += pflib.o
  common-obj-y += bitmap.o bitops.o
@@ -684,8 +691,8 @@ Index: new/Makefile.objs
  common-obj-$(CONFIG_WIN32) += version.o
 Index: new/sysemu.h
 ===================================================================
---- new.orig/sysemu.h	2012-09-24 07:15:00.000000000 +0200
-+++ new/sysemu.h	2012-09-24 07:15:34.000000000 +0200
+--- new.orig/sysemu.h	2012-09-24 07:15:44.000000000 +0200
++++ new/sysemu.h	2012-09-24 07:15:58.000000000 +0200
 @@ -72,6 +72,7 @@
  
  void do_savevm(Monitor *mon, const QDict *qdict);
@@ -696,8 +703,8 @@ Index: new/sysemu.h
  
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2012-09-24 07:15:20.000000000 +0200
-+++ new/qemu-options.hx	2012-09-24 07:15:34.000000000 +0200
+--- new.orig/qemu-options.hx	2012-09-24 07:15:51.000000000 +0200
++++ new/qemu-options.hx	2012-09-24 07:15:58.000000000 +0200
 @@ -2477,6 +2477,19 @@
  Start right away with a saved state (@code{loadvm} in monitor)
  ETEXI
@@ -720,8 +727,8 @@ Index: new/qemu-options.hx
      "-daemonize      daemonize QEMU after initializing\n", QEMU_ARCH_ALL)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2012-09-24 07:15:24.000000000 +0200
-+++ new/vl.c	2012-09-24 07:15:34.000000000 +0200
+--- new.orig/vl.c	2012-09-24 07:15:53.000000000 +0200
++++ new/vl.c	2012-09-24 07:15:58.000000000 +0200
 @@ -2364,6 +2364,7 @@
      int optind;
      const char *optarg;
@@ -751,3 +758,21 @@ Index: new/vl.c
      }
  
      if (incoming) {
+Index: new/monitor.c
+===================================================================
+--- new.orig/monitor.c	2012-09-24 09:21:18.000000000 +0200
++++ new/monitor.c	2012-09-24 09:21:32.000000000 +0200
+@@ -2952,6 +2952,13 @@
+         .mhandler.info = hmp_info_migrate_cache_size,
+     },
+     {
++        .name       = "savevm",
++        .args_type  = "",
++        .params     = "",
++        .help       = "show savevm status",
++        .mhandler.info = hmp_info_savevm,
++    },
++    {
+         .name       = "balloon",
+         .args_type  = "",
+         .params     = "",
