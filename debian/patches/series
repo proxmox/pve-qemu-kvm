@@ -13,3 +13,4 @@ fix-qemu-img-snapshot-removal.patch
 move-bdrv-snapshot-find.patch
 internal-snapshot-async.patch
 savevm-live.patch
+stream-fix-ratelimit_set_speed.patch
