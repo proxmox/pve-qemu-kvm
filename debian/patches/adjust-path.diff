@@ -1,7 +1,7 @@
 Index: new/net.h
 ===================================================================
---- new.orig/net.h	2012-09-24 07:15:00.000000000 +0200
-+++ new/net.h	2012-09-24 07:15:16.000000000 +0200
+--- new.orig/net.h	2012-11-21 11:11:22.000000000 +0100
++++ new/net.h	2012-11-21 11:17:51.000000000 +0100
 @@ -161,8 +161,9 @@
  void netdev_add(QemuOpts *opts, Error **errp);
  int qmp_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret);
@@ -14,23 +14,10 @@ Index: new/net.h
  #define DEFAULT_BRIDGE_HELPER CONFIG_QEMU_HELPERDIR "/qemu-bridge-helper"
  #define DEFAULT_BRIDGE_INTERFACE "br0"
  
-Index: new/configure
-===================================================================
---- new.orig/configure	2012-09-24 07:15:00.000000000 +0200
-+++ new/configure	2012-09-24 07:15:16.000000000 +0200
-@@ -195,7 +195,7 @@
- libdir="\${prefix}/lib"
- includedir="\${prefix}/include"
- sysconfdir="\${prefix}/etc"
--confsuffix="/qemu"
-+confsuffix="/kvm"
- slirp="yes"
- fmod_lib=""
- fmod_inc=""
 Index: new/net/tap.h
 ===================================================================
---- new.orig/net/tap.h	2012-09-24 07:15:00.000000000 +0200
-+++ new/net/tap.h	2012-09-24 07:15:16.000000000 +0200
+--- new.orig/net/tap.h	2012-11-21 11:11:22.000000000 +0100
++++ new/net/tap.h	2012-11-21 11:17:51.000000000 +0100
 @@ -29,8 +29,6 @@
  #include "qemu-common.h"
  #include "qapi-types.h"
@@ -38,5 +25,5 @@ Index: new/net/tap.h
 -#define DEFAULT_NETWORK_SCRIPT "/etc/qemu-ifup"
 -#define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/qemu-ifdown"
  
- int net_init_tap(const NetClientOptions *opts, const char *name,
-                  NetClientState *peer);
+ int tap_open(char *ifname, int ifname_size, int *vnet_hdr, int vnet_hdr_required);
+ 

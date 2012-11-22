@@ -33,7 +33,7 @@ endif
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
-	./configure --prefix=/usr --datadir=/usr/share --docdir=/usr/share/doc/pve-qemu-kvm --sysconfdir=/etc --disable-xen --enable-vnc-tls --enable-sdl --enable-uuid --enable-linux-aio --enable-rbd --enable-libiscsi --audio-drv-list="alsa"
+	./configure --with-confsuffix="/kvm" --target-list=x86_64-softmmu --prefix=/usr --datadir=/usr/share --docdir=/usr/share/doc/pve-qemu-kvm --sysconfdir=/etc --disable-xen --enable-vnc-tls --enable-sdl --enable-uuid --enable-linux-aio --enable-rbd --enable-libiscsi --audio-drv-list="alsa"
 
 build: patch build-stamp
 
@@ -50,7 +50,7 @@ build-stamp:  config.status
 clean: unpatch
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp 
+	rm -f build-stamp
 
 	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
@@ -62,12 +62,12 @@ ifneq "$(wildcard /usr/share/misc/config.guess)" ""
 endif
 
 
-	dh_clean 
+	dh_clean
 
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k 
+	dh_clean -k
 	dh_installdirs
 
 	# Add here commands to install the package into debian/pve-kvm.
@@ -82,7 +82,7 @@ install: build
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifup $(destdir)/etc/kvm/kvm-ifup
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifdown $(destdir)/etc/kvm/kvm-ifdown
 
-	# do not install empty file (now in /usr/share/kvm/cpus-x86_64.conf)	
+	# do not install empty file (now in /usr/share/kvm/cpus-x86_64.conf)
 	rm $(destdir)/etc/kvm/target-x86_64.conf
 
 	# we do not need openbios files (sparc/ppc)
@@ -112,12 +112,12 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs 
+	dh_installchangelogs
 	dh_installdocs
 	dh_installexamples
 #	dh_install
 #	dh_installmenu
-#	dh_installdebconf	
+#	dh_installdebconf
 #	dh_installlogrotate
 #	dh_installemacsen
 #	dh_installpam
@@ -140,4 +140,4 @@ binary-arch: build install
 	dh_builddeb
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install 
+.PHONY: build clean binary-indep binary-arch binary install

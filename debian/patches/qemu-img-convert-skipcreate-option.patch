@@ -9,11 +9,11 @@ Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
  qemu-img.c |   36 +++++++++++++++++++++---------------
  1 file changed, 21 insertions(+), 15 deletions(-)
 
-diff --git a/qemu-img.c b/qemu-img.c
-index b41e670..d399ccd 100644
---- a/qemu-img.c
-+++ b/qemu-img.c
-@@ -654,7 +654,7 @@ static int compare_sectors(const uint8_t *buf1, const uint8_t *buf2, int n,
+Index: new/qemu-img.c
+===================================================================
+--- new.orig/qemu-img.c	2012-11-21 11:51:19.000000000 +0100
++++ new/qemu-img.c	2012-11-21 12:45:10.000000000 +0100
+@@ -660,7 +660,7 @@
  
  static int img_convert(int argc, char **argv)
  {
@@ -22,7 +22,7 @@ index b41e670..d399ccd 100644
      int progress = 0, flags;
      const char *fmt, *out_fmt, *cache, *out_baseimg, *out_filename;
      BlockDriver *drv, *proto_drv;
-@@ -676,8 +676,9 @@ static int img_convert(int argc, char **argv)
+@@ -682,8 +682,9 @@
      cache = "unsafe";
      out_baseimg = NULL;
      compress = 0;
@@ -33,7 +33,7 @@ index b41e670..d399ccd 100644
          if (c == -1) {
              break;
          }
-@@ -698,6 +699,9 @@ static int img_convert(int argc, char **argv)
+@@ -704,6 +705,9 @@
          case 'c':
              compress = 1;
              break;
@@ -43,7 +43,7 @@ index b41e670..d399ccd 100644
          case 'e':
              error_report("option -e is deprecated, please use \'-o "
                    "encryption\' instead!");
-@@ -858,20 +862,22 @@ static int img_convert(int argc, char **argv)
+@@ -864,20 +868,22 @@
          }
      }
  
@@ -79,6 +79,3 @@ index b41e670..d399ccd 100644
      }
  
      flags = BDRV_O_RDWR;
--- 
-1.7.10.4
-

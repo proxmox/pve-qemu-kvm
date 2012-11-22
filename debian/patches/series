@@ -4,14 +4,12 @@ fairsched.diff
 keymap.diff
 set-max-nics.patch
 pve-auth.patch
-update-cpus-x86_64.conf-to-rhel6.2-version.patch
 vencrypt-auth-plain.patch
 ahci-add_migration-support.patch
-ahci-properly-reset-pxcmd.patch
-sheepdog-fix-savevm-loadvm.patch
 fix-qemu-img-snapshot-removal.patch
 move-bdrv-snapshot-find.patch
 internal-snapshot-async.patch
 savevm-live.patch
 stream-fix-ratelimit_set_speed.patch
 qemu-img-convert-skipcreate-option.patch
+enable-kvm-by-default.patch
