@@ -1,7 +1,7 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2012-11-21 11:11:22.000000000 +0100
-+++ new/qapi-schema.json	2012-11-21 12:44:30.000000000 +0100
+--- new.orig/qapi-schema.json	2012-11-23 07:30:15.000000000 +0100
++++ new/qapi-schema.json	2012-11-23 07:31:44.000000000 +0100
 @@ -461,6 +461,40 @@
             '*downtime': 'int'} }
  
@@ -60,8 +60,8 @@ Index: new/qapi-schema.json
  #
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2012-11-21 11:11:22.000000000 +0100
-+++ new/qmp-commands.hx	2012-11-21 12:41:51.000000000 +0100
+--- new.orig/qmp-commands.hx	2012-11-23 07:30:15.000000000 +0100
++++ new/qmp-commands.hx	2012-11-23 07:31:44.000000000 +0100
 @@ -2654,3 +2654,34 @@
          .args_type  = "",
          .mhandler.cmd_new = qmp_marshal_input_query_target,
@@ -99,8 +99,8 @@ Index: new/qmp-commands.hx
 +
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2012-11-21 11:11:22.000000000 +0100
-+++ new/hmp.c	2012-11-21 12:41:51.000000000 +0100
+--- new.orig/hmp.c	2012-11-23 07:30:15.000000000 +0100
++++ new/hmp.c	2012-11-23 07:31:44.000000000 +0100
 @@ -1335,3 +1335,60 @@
      qmp_nbd_server_stop(&errp);
      hmp_handle_error(mon, &errp);
@@ -164,8 +164,8 @@ Index: new/hmp.c
 +}
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2012-11-21 11:11:22.000000000 +0100
-+++ new/hmp.h	2012-11-21 12:43:32.000000000 +0100
+--- new.orig/hmp.h	2012-11-23 07:30:15.000000000 +0100
++++ new/hmp.h	2012-11-23 07:31:44.000000000 +0100
 @@ -25,6 +25,7 @@
  void hmp_info_uuid(Monitor *mon);
  void hmp_info_chardev(Monitor *mon);
@@ -187,8 +187,8 @@ Index: new/hmp.h
  void hmp_nbd_server_start(Monitor *mon, const QDict *qdict);
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2012-11-21 11:11:22.000000000 +0100
-+++ new/hmp-commands.hx	2012-11-21 12:41:51.000000000 +0100
+--- new.orig/hmp-commands.hx	2012-11-23 07:30:15.000000000 +0100
++++ new/hmp-commands.hx	2012-11-23 07:31:44.000000000 +0100
 @@ -1562,6 +1562,8 @@
  show current migration capabilities
  @item info migrate_cache_size
@@ -237,8 +237,8 @@ Index: new/hmp-commands.hx
 Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/savevm-async.c	2012-11-21 12:41:51.000000000 +0100
-@@ -0,0 +1,441 @@
++++ new/savevm-async.c	2012-11-23 07:32:48.000000000 +0100
+@@ -0,0 +1,458 @@
 +#include "qemu-common.h"
 +#include "qerror.h"
 +#include "sysemu.h"
@@ -248,7 +248,7 @@ Index: new/savevm-async.c
 +#include "buffered_file.h"
 +#include "migration.h"
 +
-+//#define DEBUG_SAVEVM_STATE
++/* #define DEBUG_SAVEVM_STATE */
 +
 +#ifdef DEBUG_SAVEVM_STATE
 +#define DPRINTF(fmt, ...) \
@@ -327,11 +327,11 @@ Index: new/savevm-async.c
 +    }
 +
 +    if (snap_state.bs) {
-+        // try to truncate, but ignore errors (will fail on block devices).
-+        // note: bdrv_read() need whole blocks, so we round up
++        /* try to truncate, but ignore errors (will fail on block devices).
++         * note: bdrv_read() need whole blocks, so we round up
++         */
 +        size_t size = (snap_state.bs_pos + BDRV_SECTOR_SIZE) & BDRV_SECTOR_MASK;
 +        bdrv_truncate(snap_state.bs, size);
-+
 +        bdrv_delete(snap_state.bs);
 +        snap_state.bs = NULL;
 +    }
@@ -378,10 +378,12 @@ Index: new/savevm-async.c
 +    return bdrv_flush(snap_state.bs);
 +}
 +
-+static ssize_t block_state_put_buffer(void *opaque, const void *buf,
-+                                      size_t size)
++static int block_state_put_buffer(void *opaque, const uint8_t *buf,
++                                  int64_t pos, int size)
 +{
 +    int ret;
++
++    assert(pos == snap_state.bs_pos);
 +
 +    if ((ret = bdrv_pwrite(snap_state.bs, snap_state.bs_pos, buf, size)) > 0) {
 +        snap_state.bs_pos += ret;
@@ -390,50 +392,74 @@ Index: new/savevm-async.c
 +    return ret;
 +}
 +
-+static void block_state_put_ready(void *opaque)
++static void process_savevm_co(void *opaque)
 +{
 +    int ret;
++    uint64_t remaining;
++    int64_t maxlen;
++    MigrationParams params = {
++        .blk = 0,
++        .shared = 0
++    };
 +
-+    if (snap_state.state != SAVE_STATE_ACTIVE) {
-+        save_snapshot_error("put_ready returning because of non-active state");
-+        return;
-+    }
++    snap_state.state = SAVE_STATE_ACTIVE;
 +
-+    if (!runstate_check(RUN_STATE_SAVE_VM)) {
-+        save_snapshot_error("put_ready returning because of wrong run state");
-+        return;
-+    }
-+
-+    ret = qemu_savevm_state_iterate(snap_state.file);
++    ret = qemu_savevm_state_begin(snap_state.file, &params);
 +    if (ret < 0) {
-+        save_snapshot_error("qemu_savevm_state_iterate error %d", ret);
++        save_snapshot_error("qemu_savevm_state_begin failed");
 +        return;
-+    } else if (ret == 1) {
-+        DPRINTF("savevm inerate finished\n");
-+        if ((ret = qemu_savevm_state_complete(snap_state.file)) < 0) {
-+            save_snapshot_error("qemu_savevm_state_complete error %d", ret);
++    }
++
++    while (snap_state.state == SAVE_STATE_ACTIVE) {
++
++        ret = qemu_savevm_state_iterate(snap_state.file);
++        remaining = ram_bytes_remaining();
++
++        DPRINTF("savevm inerate %zd %d\n", remaining, ret);
++
++        if (ret < 0) {
++            save_snapshot_error("qemu_savevm_state_iterate error %d", ret);
 +            return;
-+        } else {
-+            DPRINTF("save complete\n");
-+            save_snapshot_completed();
-+            return;
++        }
++
++        /* stop the VM if we get to the end of available space,
++         * or if remaining is just a few MB
++         */
++        maxlen = bdrv_getlength(snap_state.bs) - 30*1024*1024;
++        if ((remaining < 100000) ||
++            ((snap_state.bs_pos + remaining) >= maxlen)) {
++            if (runstate_is_running()) {
++                vm_stop(RUN_STATE_SAVE_VM);
++            }
++        }
++
++        if (ret == 1) { /* finished */
++            if (runstate_is_running()) {
++                vm_stop(RUN_STATE_SAVE_VM);
++            }
++            DPRINTF("savevm inerate finished\n");
++            if ((ret = qemu_savevm_state_complete(snap_state.file)) < 0) {
++                save_snapshot_error("qemu_savevm_state_complete error %d", ret);
++                return;
++            } else {
++                DPRINTF("save complete\n");
++                save_snapshot_completed();
++                return;
++            }
 +        }
 +    }
 +}
 +
-+static void block_state_wait_for_unfreeze(void *opaque)
-+{
-+    /* do nothing here - should not be called */
-+}
++static const QEMUFileOps block_file_ops = {
++    .put_buffer =     block_state_put_buffer,
++    .close =          block_state_close,
++};
++
 +
 +void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
 +{
 +    BlockDriver *drv = NULL;
 +    int bdrv_oflags = BDRV_O_CACHE_WB | BDRV_O_RDWR;
-+    MigrationParams params = {
-+        .blk = 0,
-+        .shared = 0
-+    };
 +    int ret;
 +
 +    if (snap_state.state != SAVE_STATE_DONE) {
@@ -452,10 +478,8 @@ Index: new/savevm-async.c
 +        snap_state.error = NULL;
 +    }
 +
-+    /* stop the VM */
-+    vm_stop(RUN_STATE_SAVE_VM);
-+
 +    if (!has_statefile) {
++        vm_stop(RUN_STATE_SAVE_VM);
 +        snap_state.state = SAVE_STATE_COMPLETED;
 +        return;
 +    }
@@ -472,27 +496,15 @@ Index: new/savevm-async.c
 +        goto restart;
 +    }
 +
-+    snap_state.file = qemu_fopen_ops_buffered(&snap_state, 1000000000,
-+                                              block_state_put_buffer,
-+                                              block_state_put_ready,
-+                                              block_state_wait_for_unfreeze,
-+                                              block_state_close);
++    snap_state.file = qemu_fopen_ops(&snap_state, &block_file_ops);
 +
 +    if (!snap_state.file) {
 +        error_set(errp, QERR_OPEN_FILE_FAILED, statefile);
 +        goto restart;
 +    }
 +
-+    snap_state.state = SAVE_STATE_ACTIVE;
-+
-+    ret = qemu_savevm_state_begin(snap_state.file, &params);
-+    if (ret < 0) {
-+        error_set(errp, ERROR_CLASS_GENERIC_ERROR,
-+                  "qemu_savevm_state_begin failed\n");
-+        goto restart;
-+    }
-+
-+    block_state_put_ready(&snap_state);
++    Coroutine *co = qemu_coroutine_create(process_savevm_co);
++    qemu_coroutine_enter(co, NULL);
 +
 +    return;
 +
@@ -625,7 +637,8 @@ Index: new/savevm-async.c
 +    }
 +}
 +
-+static int loadstate_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
++static int loadstate_get_buffer(void *opaque, uint8_t *buf, int64_t pos,
++                                int size)
 +{
 +    BlockDriverState *bs = (BlockDriverState *)opaque;
 +    int64_t maxlen = bdrv_getlength(bs);
@@ -640,6 +653,10 @@ Index: new/savevm-async.c
 +    }
 +    return bdrv_pread(bs, pos, buf, size);
 +}
++
++static const QEMUFileOps loadstate_file_ops = {
++    .get_buffer = loadstate_get_buffer,
++};
 +
 +int load_state_from_blockdev(const char *filename)
 +{
@@ -656,7 +673,7 @@ Index: new/savevm-async.c
 +    }
 +
 +    /* restore the VM state */
-+    f = qemu_fopen_ops(bs, NULL, loadstate_get_buffer, NULL, NULL, NULL, NULL);
++    f = qemu_fopen_ops(bs, &loadstate_file_ops);
 +    if (!f) {
 +        error_report("Could not open VM state file");
 +        ret = -EINVAL;
@@ -682,8 +699,8 @@ Index: new/savevm-async.c
 +}
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2012-11-21 11:11:22.000000000 +0100
-+++ new/Makefile.objs	2012-11-21 12:41:51.000000000 +0100
+--- new.orig/Makefile.objs	2012-11-23 07:30:15.000000000 +0100
++++ new/Makefile.objs	2012-11-23 07:31:44.000000000 +0100
 @@ -84,6 +84,7 @@
  common-obj-y += block-migration.o iohandler.o
  common-obj-y += bitmap.o bitops.o
@@ -694,8 +711,8 @@ Index: new/Makefile.objs
  common-obj-$(CONFIG_WIN32) += version.o
 Index: new/sysemu.h
 ===================================================================
---- new.orig/sysemu.h	2012-11-21 11:11:22.000000000 +0100
-+++ new/sysemu.h	2012-11-21 12:41:51.000000000 +0100
+--- new.orig/sysemu.h	2012-11-23 07:30:15.000000000 +0100
++++ new/sysemu.h	2012-11-23 07:31:44.000000000 +0100
 @@ -67,6 +67,7 @@
  
  void do_savevm(Monitor *mon, const QDict *qdict);
@@ -706,8 +723,8 @@ Index: new/sysemu.h
  
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2012-11-21 11:25:23.000000000 +0100
-+++ new/qemu-options.hx	2012-11-21 12:41:51.000000000 +0100
+--- new.orig/qemu-options.hx	2012-11-23 07:31:24.000000000 +0100
++++ new/qemu-options.hx	2012-11-23 07:31:44.000000000 +0100
 @@ -2575,6 +2575,19 @@
  Start right away with a saved state (@code{loadvm} in monitor)
  ETEXI
@@ -730,8 +747,8 @@ Index: new/qemu-options.hx
      "-daemonize      daemonize QEMU after initializing\n", QEMU_ARCH_ALL)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2012-11-21 11:26:06.000000000 +0100
-+++ new/vl.c	2012-11-21 12:41:51.000000000 +0100
+--- new.orig/vl.c	2012-11-23 07:31:29.000000000 +0100
++++ new/vl.c	2012-11-23 07:31:44.000000000 +0100
 @@ -2545,6 +2545,7 @@
      int optind;
      const char *optarg;
@@ -763,8 +780,8 @@ Index: new/vl.c
      if (incoming) {
 Index: new/monitor.c
 ===================================================================
---- new.orig/monitor.c	2012-11-21 11:11:22.000000000 +0100
-+++ new/monitor.c	2012-11-21 12:41:51.000000000 +0100
+--- new.orig/monitor.c	2012-11-23 07:30:15.000000000 +0100
++++ new/monitor.c	2012-11-23 07:31:44.000000000 +0100
 @@ -2701,6 +2701,13 @@
          .mhandler.info = hmp_info_migrate_cache_size,
      },
