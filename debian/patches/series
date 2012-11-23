@@ -2,7 +2,6 @@ fr-ca-keymap-corrections.diff
 adjust-path.diff
 fairsched.diff
 keymap.diff
-set-max-nics.patch
 pve-auth.patch
 vencrypt-auth-plain.patch
 ahci-add_migration-support.patch
