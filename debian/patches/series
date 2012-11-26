@@ -11,4 +11,3 @@ internal-snapshot-async.patch
 stream-fix-ratelimit_set_speed.patch
 qemu-img-convert-skipcreate-option.patch
 enable-kvm-by-default.patch
-fix-alarm-timer-setup.patch
