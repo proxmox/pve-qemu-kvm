@@ -8,6 +8,13 @@ ahci-add_migration-support.patch
 fix-qemu-img-snapshot-removal.patch
 move-bdrv-snapshot-find.patch
 internal-snapshot-async.patch
-stream-fix-ratelimit_set_speed.patch
+# (included in backup series): stream-fix-ratelimit_set_speed.patch
 qemu-img-convert-skipcreate-option.patch
 enable-kvm-by-default.patch
+# include qemu backup series
+0001-RFC-Efficient-VM-backup-for-qemu.patch
+0002-add-basic-backup-support-to-block-driver.patch
+0003-add-backup-related-monitor-commands.patch
+0004-introduce-new-vma-archive-format.patch
+0005-add-regression-tests-for-backup.patch
+0006-add-vm-state-to-backups.patch

@@ -1,0 +1,572 @@
+From 4a8d3de07ce2989390f2b0a42a81884d3300d516 Mon Sep 17 00:00:00 2001
+From: Dietmar Maurer <dietmar@proxmox.com>
+Date: Tue, 13 Nov 2012 10:03:52 +0100
+Subject: [PATCH v3 2/6] add basic backup support to block driver
+
+Function backup_job_start() creates a block job to backup a block device.
+
+We call backup_do_cow() for each write during backup. That function
+reads the original data and pass it to backup_dump_cb().
+
+The tracked_request infrastructure is used to serialize access.
+
+Currently backup cluster size is hardcoded to 65536 bytes.
+
+Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
+---
+ Makefile.objs |    1 +
+ backup.c      |  302 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ backup.h      |   30 ++++++
+ block.c       |   71 ++++++++++++-
+ block.h       |    2 +
+ blockjob.h    |   10 ++
+ 6 files changed, 410 insertions(+), 6 deletions(-)
+ create mode 100644 backup.c
+ create mode 100644 backup.h
+
+diff --git a/Makefile.objs b/Makefile.objs
+index 3c7abca..cb46be5 100644
+--- a/Makefile.objs
++++ b/Makefile.objs
+@@ -48,6 +48,7 @@ coroutine-obj-$(CONFIG_WIN32) += coroutine-win32.o
+ block-obj-y = iov.o cache-utils.o qemu-option.o module.o async.o
+ block-obj-y += nbd.o block.o blockjob.o aes.o qemu-config.o
+ block-obj-y += thread-pool.o qemu-progress.o qemu-sockets.o uri.o notify.o
++block-obj-y += backup.o
+ block-obj-y += $(coroutine-obj-y) $(qobject-obj-y) $(version-obj-y)
+ block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
+ block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
+diff --git a/backup.c b/backup.c
+new file mode 100644
+index 0000000..6a44974
+--- /dev/null
++++ b/backup.c
+@@ -0,0 +1,302 @@
++/*
++ * QEMU backup
++ *
++ * Copyright (C) 2012 Proxmox Server Solutions
++ *
++ * Authors:
++ *  Dietmar Maurer (dietmar@proxmox.com)
++ *
++ * This work is licensed under the terms of the GNU GPL, version 2 or later.
++ * See the COPYING file in the top-level directory.
++ *
++ */
++
++#include <stdio.h>
++#include <errno.h>
++#include <unistd.h>
++
++#include "block.h"
++#include "block_int.h"
++#include "blockjob.h"
++#include "backup.h"
++
++#define DEBUG_BACKUP 0
++
++#define DPRINTF(fmt, ...) \
++    do { if (DEBUG_BACKUP) { printf("backup: " fmt, ## __VA_ARGS__); } } \
++    while (0)
++
++
++#define BITS_PER_LONG  (sizeof(unsigned long) * 8)
++
++typedef struct BackupBlockJob {
++    BlockJob common;
++    unsigned long *bitmap;
++    int bitmap_size;
++    BackupDumpFunc *backup_dump_cb;
++    BlockDriverCompletionFunc *backup_complete_cb;
++    void *opaque;
++} BackupBlockJob;
++
++static int backup_get_bitmap(BlockDriverState *bs, int64_t cluster_num)
++{
++    assert(bs);
++    BackupBlockJob *job = (BackupBlockJob *)bs->job;
++    assert(job);
++    assert(job->bitmap);
++
++    unsigned long val, idx, bit;
++
++    idx = cluster_num / BITS_PER_LONG;
++
++    assert(job->bitmap_size > idx);
++
++    bit = cluster_num % BITS_PER_LONG;
++    val = job->bitmap[idx];
++
++    return !!(val & (1UL << bit));
++}
++
++static void backup_set_bitmap(BlockDriverState *bs, int64_t cluster_num,
++                              int dirty)
++{
++    assert(bs);
++    BackupBlockJob *job = (BackupBlockJob *)bs->job;
++    assert(job);
++    assert(job->bitmap);
++
++    unsigned long val, idx, bit;
++
++    idx = cluster_num / BITS_PER_LONG;
++
++    assert(job->bitmap_size > idx);
++
++    bit = cluster_num % BITS_PER_LONG;
++    val = job->bitmap[idx];
++    if (dirty) {
++        if (!(val & (1UL << bit))) {
++            val |= 1UL << bit;
++        }
++    } else {
++        if (val & (1UL << bit)) {
++            val &= ~(1UL << bit);
++        }
++    }
++    job->bitmap[idx] = val;
++}
++
++static int backup_in_progress_count;
++
++static int coroutine_fn backup_do_cow(BlockDriverState *bs,
++                                      int64_t sector_num, int nb_sectors)
++{
++    assert(bs);
++    BackupBlockJob *job = (BackupBlockJob *)bs->job;
++    assert(job);
++
++    BlockDriver *drv = bs->drv;
++    struct iovec iov;
++    QEMUIOVector bounce_qiov;
++    void *bounce_buffer = NULL;
++    int ret = 0;
++
++    backup_in_progress_count++;
++
++    int64_t start, end;
++
++    start = sector_num / BACKUP_BLOCKS_PER_CLUSTER;
++    end = (sector_num + nb_sectors + BACKUP_BLOCKS_PER_CLUSTER - 1) /
++        BACKUP_BLOCKS_PER_CLUSTER;
++
++    DPRINTF("brdv_co_backup_cow enter %s C%zd %zd %d\n",
++            bdrv_get_device_name(bs), start, sector_num, nb_sectors);
++
++    for (; start < end; start++) {
++        if (backup_get_bitmap(bs, start)) {
++            DPRINTF("brdv_co_backup_cow skip C%zd\n", start);
++            continue; /* already copied */
++        }
++
++        /* immediately set bitmap (avoid coroutine race) */
++        backup_set_bitmap(bs, start, 1);
++
++        DPRINTF("brdv_co_backup_cow C%zd\n", start);
++
++        if (!bounce_buffer) {
++            iov.iov_len = BACKUP_CLUSTER_SIZE;
++            iov.iov_base = bounce_buffer = qemu_blockalign(bs, iov.iov_len);
++            qemu_iovec_init_external(&bounce_qiov, &iov, 1);
++        }
++
++        ret = drv->bdrv_co_readv(bs, start * BACKUP_BLOCKS_PER_CLUSTER,
++                                 BACKUP_BLOCKS_PER_CLUSTER,
++                                 &bounce_qiov);
++        if (ret < 0) {
++            DPRINTF("brdv_co_backup_cow bdrv_read C%zd failed\n", start);
++            goto out;
++        }
++
++        ret = job->backup_dump_cb(job->opaque, bs, start, bounce_buffer);
++        if (ret < 0) {
++            DPRINTF("brdv_co_backup_cow dump_cluster_cb C%zd failed\n", start);
++            goto out;
++        }
++
++        DPRINTF("brdv_co_backup_cow done C%zd\n", start);
++    }
++
++out:
++    if (bounce_buffer) {
++        qemu_vfree(bounce_buffer);
++    }
++
++    backup_in_progress_count--;
++
++    return ret;
++}
++
++static int coroutine_fn backup_before_read(BlockDriverState *bs,
++                                           int64_t sector_num,
++                                           int nb_sectors, QEMUIOVector *qiov)
++{
++    return backup_do_cow(bs, sector_num, nb_sectors);
++}
++
++static int coroutine_fn backup_before_write(BlockDriverState *bs,
++                                            int64_t sector_num,
++                                            int nb_sectors, QEMUIOVector *qiov)
++{
++    return backup_do_cow(bs, sector_num, nb_sectors);
++}
++
++
++static BlockJobType backup_job_type = {
++    .instance_size = sizeof(BackupBlockJob),
++    .before_read = backup_before_read,
++    .before_write = backup_before_write,
++    .job_type      = "backup",
++};
++
++static void coroutine_fn backup_run(void *opaque)
++{
++    BackupBlockJob *job = opaque;
++    BlockDriverState *bs = job->common.bs;
++    assert(bs);
++
++    int64_t start, end;
++
++    start = 0;
++    end = (bs->total_sectors + BACKUP_BLOCKS_PER_CLUSTER - 1) /
++        BACKUP_BLOCKS_PER_CLUSTER;
++
++    DPRINTF("backup_run start %s %zd %zd\n", bdrv_get_device_name(bs),
++            start, end);
++
++    int ret = 0;
++
++    for (; start < end; start++) {
++        if (block_job_is_cancelled(&job->common)) {
++            ret = -1;
++            break;
++        }
++
++        if (backup_get_bitmap(bs, start)) {
++            continue; /* already copied */
++        }
++
++        /* we need to yield so that qemu_aio_flush() returns.
++         * (without, VM does not reboot)
++         * todo: can we avoid that?
++         */
++        co_sleep_ns(rt_clock, 0);
++        if (block_job_is_cancelled(&job->common)) {
++            ret = -1;
++            break;
++        }
++        DPRINTF("backup_run loop C%zd\n", start);
++
++        /**
++         * This triggers a cluster copy
++         * Note: avoid direct call to brdv_co_backup_cow, because
++         * this does not call tracked_request_begin()
++         */
++        ret = bdrv_co_backup(bs, start*BACKUP_BLOCKS_PER_CLUSTER, 1);
++        if (ret < 0) {
++            break;
++        }
++        /* Publish progress */
++        job->common.offset += BACKUP_CLUSTER_SIZE;
++    }
++
++    while (backup_in_progress_count > 0) {
++        DPRINTF("backup_run backup_in_progress_count != 0 (%d)",
++                backup_in_progress_count);
++        co_sleep_ns(rt_clock, 10000);
++    }
++
++    DPRINTF("backup_run complete %d\n", ret);
++    block_job_completed(&job->common, ret);
++}
++
++static void backup_job_cleanup_cb(void *opaque, int ret)
++{
++    BlockDriverState *bs = opaque;
++    assert(bs);
++    BackupBlockJob *job = (BackupBlockJob *)bs->job;
++    assert(job);
++
++    DPRINTF("backup_job_cleanup_cb start %d\n", ret);
++
++    job->backup_complete_cb(job->opaque, ret);
++
++    DPRINTF("backup_job_cleanup_cb end\n");
++
++    g_free(job->bitmap);
++}
++
++int
++backup_job_start(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
++                 BlockDriverCompletionFunc *backup_complete_cb,
++                 void *opaque)
++{
++    assert(bs);
++    assert(backup_dump_cb);
++    assert(backup_complete_cb);
++
++    if (bs->job) {
++        DPRINTF("bdrv_backup_init failed - running job on %s\n",
++                bdrv_get_device_name(bs));
++        return -1;
++    }
++
++    int64_t bitmap_size;
++    const char *devname = bdrv_get_device_name(bs);
++
++    if (!devname || !devname[0]) {
++        return -1;
++    }
++
++    DPRINTF("bdrv_backup_init %s\n", bdrv_get_device_name(bs));
++
++    Error *errp;
++    BackupBlockJob *job = block_job_create(&backup_job_type, bs, 0,
++                                           backup_job_cleanup_cb, bs, &errp);
++
++    job->common.cluster_size = BACKUP_CLUSTER_SIZE;
++
++    bitmap_size = bs->total_sectors +
++        BACKUP_BLOCKS_PER_CLUSTER * BITS_PER_LONG - 1;
++    bitmap_size /= BACKUP_BLOCKS_PER_CLUSTER * BITS_PER_LONG;
++
++    job->backup_dump_cb = backup_dump_cb;
++    job->backup_complete_cb = backup_complete_cb;
++    job->opaque = opaque;
++    job->bitmap_size = bitmap_size;
++    job->bitmap = g_new0(unsigned long, bitmap_size);
++
++    job->common.len = bs->total_sectors*BDRV_SECTOR_SIZE;
++    job->common.co = qemu_coroutine_create(backup_run);
++    qemu_coroutine_enter(job->common.co, job);
++
++    return 0;
++}
+diff --git a/backup.h b/backup.h
+new file mode 100644
+index 0000000..e1f0290
+--- /dev/null
++++ b/backup.h
+@@ -0,0 +1,30 @@
++/*
++ * QEMU backup related definitions
++ *
++ * Copyright (C) Proxmox Server Solutions
++ *
++ * Authors:
++ *  Dietmar Maurer (dietmar@proxmox.com)
++ *
++ * This work is licensed under the terms of the GNU GPL, version 2 or later.
++ * See the COPYING file in the top-level directory.
++ *
++ */
++
++#ifndef QEMU_BACKUP_H
++#define QEMU_BACKUP_H
++
++#include <uuid/uuid.h>
++
++#define BACKUP_CLUSTER_BITS 16
++#define BACKUP_CLUSTER_SIZE (1<<BACKUP_CLUSTER_BITS)
++#define BACKUP_BLOCKS_PER_CLUSTER (BACKUP_CLUSTER_SIZE/BDRV_SECTOR_SIZE)
++
++typedef int BackupDumpFunc(void *opaque, BlockDriverState *bs,
++                           int64_t cluster_num, unsigned char *buf);
++
++int backup_job_start(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
++                     BlockDriverCompletionFunc *backup_complete_cb,
++                     void *opaque);
++
++#endif /* QEMU_BACKUP_H */
+diff --git a/block.c b/block.c
+index c05875f..2f7c2eb 100644
+--- a/block.c
++++ b/block.c
+@@ -54,6 +54,7 @@
+ typedef enum {
+     BDRV_REQ_COPY_ON_READ = 0x1,
+     BDRV_REQ_ZERO_WRITE   = 0x2,
++    BDRV_REQ_BACKUP_ONLY  = 0x4,
+ } BdrvRequestFlags;
+ 
+ static void bdrv_dev_change_media_cb(BlockDriverState *bs, bool load);
+@@ -1542,7 +1543,7 @@ int bdrv_commit(BlockDriverState *bs)
+ 
+     if (!drv)
+         return -ENOMEDIUM;
+-    
++
+     if (!bs->backing_hd) {
+         return -ENOTSUP;
+     }
+@@ -1679,6 +1680,22 @@ static void round_to_clusters(BlockDriverState *bs,
+     }
+ }
+ 
++/**
++ * Round a region to job cluster boundaries
++ */
++static void round_to_job_clusters(BlockDriverState *bs,
++                                  int64_t sector_num, int nb_sectors,
++                                  int job_cluster_size,
++                                  int64_t *cluster_sector_num,
++                                  int *cluster_nb_sectors)
++{
++    int64_t c = job_cluster_size/BDRV_SECTOR_SIZE;
++
++    *cluster_sector_num = QEMU_ALIGN_DOWN(sector_num, c);
++    *cluster_nb_sectors = QEMU_ALIGN_UP(sector_num - *cluster_sector_num +
++                                        nb_sectors, c);
++}
++
+ static bool tracked_request_overlaps(BdrvTrackedRequest *req,
+                                      int64_t sector_num, int nb_sectors) {
+     /*        aaaa   bbbb */
+@@ -1693,7 +1710,9 @@ static bool tracked_request_overlaps(BdrvTrackedRequest *req,
+ }
+ 
+ static void coroutine_fn wait_for_overlapping_requests(BlockDriverState *bs,
+-        int64_t sector_num, int nb_sectors)
++                                                       int64_t sector_num,
++                                                       int nb_sectors,
++                                                       int job_cluster_size)
+ {
+     BdrvTrackedRequest *req;
+     int64_t cluster_sector_num;
+@@ -1709,6 +1728,11 @@ static void coroutine_fn wait_for_overlapping_requests(BlockDriverState *bs,
+     round_to_clusters(bs, sector_num, nb_sectors,
+                       &cluster_sector_num, &cluster_nb_sectors);
+ 
++    if (job_cluster_size) {
++        round_to_job_clusters(bs, sector_num, nb_sectors, job_cluster_size,
++                              &cluster_sector_num, &cluster_nb_sectors);
++    }
++
+     do {
+         retry = false;
+         QLIST_FOREACH(req, &bs->tracked_requests, list) {
+@@ -2278,12 +2302,24 @@ static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
+         bs->copy_on_read_in_flight++;
+     }
+ 
+-    if (bs->copy_on_read_in_flight) {
+-        wait_for_overlapping_requests(bs, sector_num, nb_sectors);
++    int job_cluster_size = bs->job && bs->job->cluster_size ?
++        bs->job->cluster_size : 0;
++
++    if (bs->copy_on_read_in_flight || job_cluster_size) {
++        wait_for_overlapping_requests(bs, sector_num, nb_sectors,
++                                      job_cluster_size);
+     }
+ 
+     tracked_request_begin(&req, bs, sector_num, nb_sectors, false);
+ 
++    if (bs->job && bs->job->job_type->before_read) {
++        ret = bs->job->job_type->before_read(bs, sector_num, nb_sectors, qiov);
++        if (flags & BDRV_REQ_BACKUP_ONLY) {
++            /* Note: We do not return any data to the caller */
++            goto out;
++        }
++    }
++
+     if (flags & BDRV_REQ_COPY_ON_READ) {
+         int pnum;
+ 
+@@ -2327,6 +2363,17 @@ int coroutine_fn bdrv_co_copy_on_readv(BlockDriverState *bs,
+                             BDRV_REQ_COPY_ON_READ);
+ }
+ 
++int coroutine_fn bdrv_co_backup(BlockDriverState *bs,
++    int64_t sector_num, int nb_sectors)
++{
++    if (!bs->job) {
++        return -ENOTSUP;
++    }
++
++    return bdrv_co_do_readv(bs, sector_num, nb_sectors, NULL,
++                            BDRV_REQ_BACKUP_ONLY);
++}
++
+ static int coroutine_fn bdrv_co_do_write_zeroes(BlockDriverState *bs,
+     int64_t sector_num, int nb_sectors)
+ {
+@@ -2384,12 +2431,23 @@ static int coroutine_fn bdrv_co_do_writev(BlockDriverState *bs,
+         bdrv_io_limits_intercept(bs, true, nb_sectors);
+     }
+ 
+-    if (bs->copy_on_read_in_flight) {
+-        wait_for_overlapping_requests(bs, sector_num, nb_sectors);
++    int job_cluster_size = bs->job && bs->job->cluster_size ?
++        bs->job->cluster_size : 0;
++
++    if (bs->copy_on_read_in_flight || job_cluster_size) {
++        wait_for_overlapping_requests(bs, sector_num, nb_sectors,
++                                      job_cluster_size);
+     }
+ 
+     tracked_request_begin(&req, bs, sector_num, nb_sectors, true);
+ 
++    if (bs->job && bs->job->job_type->before_write) {
++        ret = bs->job->job_type->before_write(bs, sector_num, nb_sectors, qiov);
++        if (ret < 0) {
++            goto out;
++        }
++    }
++
+     if (flags & BDRV_REQ_ZERO_WRITE) {
+         ret = bdrv_co_do_write_zeroes(bs, sector_num, nb_sectors);
+     } else {
+@@ -2408,6 +2466,7 @@ static int coroutine_fn bdrv_co_do_writev(BlockDriverState *bs,
+         bs->wr_highest_sector = sector_num + nb_sectors - 1;
+     }
+ 
++out:
+     tracked_request_end(&req);
+ 
+     return ret;
+diff --git a/block.h b/block.h
+index 722c620..94e5903 100644
+--- a/block.h
++++ b/block.h
+@@ -172,6 +172,8 @@ int coroutine_fn bdrv_co_readv(BlockDriverState *bs, int64_t sector_num,
+     int nb_sectors, QEMUIOVector *qiov);
+ int coroutine_fn bdrv_co_copy_on_readv(BlockDriverState *bs,
+     int64_t sector_num, int nb_sectors, QEMUIOVector *qiov);
++int coroutine_fn bdrv_co_backup(BlockDriverState *bs,
++    int64_t sector_num, int nb_sectors);
+ int coroutine_fn bdrv_co_writev(BlockDriverState *bs, int64_t sector_num,
+     int nb_sectors, QEMUIOVector *qiov);
+ /*
+diff --git a/blockjob.h b/blockjob.h
+index 3792b73..6621173 100644
+--- a/blockjob.h
++++ b/blockjob.h
+@@ -50,6 +50,13 @@ typedef struct BlockJobType {
+      * manually.
+      */
+     void (*complete)(BlockJob *job, Error **errp);
++
++    /** tracked requests */
++    int coroutine_fn (*before_read)(BlockDriverState *bs, int64_t sector_num,
++                                    int nb_sectors, QEMUIOVector *qiov);
++    int coroutine_fn (*before_write)(BlockDriverState *bs, int64_t sector_num,
++                                     int nb_sectors, QEMUIOVector *qiov);
++
+ } BlockJobType;
+ 
+ /**
+@@ -103,6 +110,9 @@ struct BlockJob {
+     /** Speed that was set with @block_job_set_speed.  */
+     int64_t speed;
+ 
++    /** tracked requests */
++    int cluster_size;
++
+     /** The completion function that will be called when the job completes.  */
+     BlockDriverCompletionFunc *cb;
+ 
+-- 
+1.7.2.5
+
