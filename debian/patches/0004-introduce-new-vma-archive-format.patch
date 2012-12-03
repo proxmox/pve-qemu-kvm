@@ -1,4 +1,4 @@
-From ff878b16c010752dd46a474329d523cded78a004 Mon Sep 17 00:00:00 2001
+From 07c102f539d0ee90afbd695cdb1a8955a141d8c1 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format

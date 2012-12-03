@@ -8,7 +8,6 @@ ahci-add_migration-support.patch
 fix-qemu-img-snapshot-removal.patch
 move-bdrv-snapshot-find.patch
 internal-snapshot-async.patch
-# (included in backup series): stream-fix-ratelimit_set_speed.patch
 qemu-img-convert-skipcreate-option.patch
 enable-kvm-by-default.patch
 # include qemu backup series

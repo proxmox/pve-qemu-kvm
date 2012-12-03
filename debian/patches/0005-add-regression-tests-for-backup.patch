@@ -1,31 +1,17 @@
-From d22192dbb5515b4bf0bf2ceed7d16cf6a18769f9 Mon Sep 17 00:00:00 2001
+From 2a7c5bdf32295a97fdfe63783fcdc846c92e50a9 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Wed, 14 Nov 2012 09:57:04 +0100
 Subject: [PATCH v3 5/6] add regression tests for backup
 
-Also added the ratelimit.h fix here, because it is still not upstream.
+Simple regression tests using vma-reader and vma-writer.
 
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
- include/qemu/ratelimit.h |    2 +-
- tests/Makefile           |   11 +-
- tests/backup-test.c      |  511 ++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 521 insertions(+), 3 deletions(-)
+ tests/Makefile      |   11 +-
+ tests/backup-test.c |  511 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 520 insertions(+), 2 deletions(-)
  create mode 100644 tests/backup-test.c
 
-diff --git a/include/qemu/ratelimit.h b/include/qemu/ratelimit.h
-index c6ac281..d1610f1 100644
---- a/include/qemu/ratelimit.h
-+++ b/include/qemu/ratelimit.h
-@@ -42,7 +42,7 @@ static inline void ratelimit_set_speed(RateLimit *limit, uint64_t speed,
-                                        uint64_t slice_ns)
- {
-     limit->slice_ns = slice_ns;
--    limit->slice_quota = ((double)speed * 1000000000ULL) / slice_ns;
-+    limit->slice_quota = ((double)speed * slice_ns)/1000000000ULL;
- }
- 
- #endif
 diff --git a/tests/Makefile b/tests/Makefile
 index b60f0fb..cffbd22 100644
 --- a/tests/Makefile

@@ -1,4 +1,4 @@
-From 32e6a75c9ee5ceadf1e236787cfb3834d0d3a0ca Mon Sep 17 00:00:00 2001
+From 8c867119798abdd8f16b6fdf738aa0682cb4e713 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Thu, 29 Nov 2012 10:46:49 +0100
 Subject: [PATCH v3 6/6] add vm state to backups

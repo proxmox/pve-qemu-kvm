@@ -1,4 +1,4 @@
-From 4a8d3de07ce2989390f2b0a42a81884d3300d516 Mon Sep 17 00:00:00 2001
+From 7ec08213d1b7c9de3b83016db81efd8337838ad2 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 10:03:52 +0100
 Subject: [PATCH v3 2/6] add basic backup support to block driver
