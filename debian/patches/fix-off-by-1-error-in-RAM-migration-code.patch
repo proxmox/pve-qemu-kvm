@@ -1,0 +1,22 @@
+The code for migrating (or savevm-ing) memory pages starts off by creating a dirty bitmap and filling it with 1s.  Except, actually, because bit addresses are 0-based it fills every bit except bit 0 with 1s and puts an extra 1 beyond the end of the bitmap, potentially corrupting unrelated memory.  Oops.  This patch fixes it.
+
+Signed-off-by: David Gibson <david@gibson.dropbear.id.au>
+---
+ arch_init.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch_init.c b/arch_init.c
+index e6effe8..b75a4c5 100644
+--- a/arch_init.c
++++ b/arch_init.c
+@@ -568,7 +568,7 @@ static int ram_save_setup(QEMUFile *f, void *opaque)
+     int64_t ram_pages = last_ram_offset() >> TARGET_PAGE_BITS;
+ 
+     migration_bitmap = bitmap_new(ram_pages);
+-    bitmap_set(migration_bitmap, 1, ram_pages);
++    bitmap_set(migration_bitmap, 0, ram_pages);
+     migration_dirty_pages = ram_pages;
+ 
+     bytes_transferred = 0;
+--
+1.7.10.4

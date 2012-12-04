@@ -1,3 +1,4 @@
+fix-off-by-1-error-in-RAM-migration-code.patch
 fr-ca-keymap-corrections.diff
 adjust-path.diff
 fairsched.diff
