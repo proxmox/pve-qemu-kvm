@@ -1,4 +1,4 @@
-From 12a179d66c3ead14c821dbc570f2448c8c8b355f Mon Sep 17 00:00:00 2001
+From ada8961d41298b340dc624da571cba760ab39158 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -11,11 +11,11 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  Makefile.objs           |    2 +-
  blockdev.c              |    6 +-
  docs/specs/vma_spec.txt |   24 ++
- vma-reader.c            |  772 ++++++++++++++++++++++++++++++++++++++++
- vma-writer.c            |  907 +++++++++++++++++++++++++++++++++++++++++++++++
- vma.c                   |  550 ++++++++++++++++++++++++++++
+ vma-reader.c            |  776 +++++++++++++++++++++++++++++++++++++++
+ vma-writer.c            |  920 +++++++++++++++++++++++++++++++++++++++++++++++
+ vma.c                   |  555 ++++++++++++++++++++++++++++
  vma.h                   |  145 ++++++++
- 8 files changed, 2405 insertions(+), 4 deletions(-)
+ 8 files changed, 2427 insertions(+), 4 deletions(-)
  create mode 100644 docs/specs/vma_spec.txt
  create mode 100644 vma-reader.c
  create mode 100644 vma-writer.c
@@ -114,10 +114,10 @@ index 0000000..052c629
 +
 diff --git a/vma-reader.c b/vma-reader.c
 new file mode 100644
-index 0000000..154c96b
+index 0000000..b05d7da
 --- /dev/null
 +++ b/vma-reader.c
-@@ -0,0 +1,772 @@
+@@ -0,0 +1,776 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -487,7 +487,11 @@ index 0000000..154c96b
 +
 +    VmaReader *vmar = g_new0(VmaReader, 1);
 +
-+    vmar->fd = open(filename, O_RDONLY);
++    if (strcmp(filename, "-") == 0) {
++        vmar->fd = dup(0);
++    } else {
++        vmar->fd = open(filename, O_RDONLY);
++    }
 +
 +    if (vmar->fd < 0) {
 +        error_setg(errp, "can't open file %s - %s\n", filename,
@@ -892,10 +896,10 @@ index 0000000..154c96b
 +
 diff --git a/vma-writer.c b/vma-writer.c
 new file mode 100644
-index 0000000..917c77f
+index 0000000..c1e1afe
 --- /dev/null
 +++ b/vma-writer.c
-@@ -0,0 +1,907 @@
+@@ -0,0 +1,920 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -927,6 +931,7 @@ index 0000000..917c77f
 +#include "qemu/ratelimit.h"
 +#include "vma.h"
 +#include "block.h"
++#include "monitor.h"
 +
 +#define DEBUG_VMA 0
 +
@@ -1284,12 +1289,24 @@ index 0000000..917c77f
 +    } else {
 +        struct stat st;
 +        int oflags;
++	const char *tmp_id_str;
++
 +        if ((stat(filename, &st) == 0) && S_ISFIFO(st.st_mode)) {
 +            oflags = O_NONBLOCK|O_WRONLY;
-+        } else  {
++	    vmaw->fd = qemu_open(filename, oflags, 0644);
++        } else if (strstart(filename, "/dev/fdset/", &tmp_id_str)) {
++            oflags = O_NONBLOCK|O_WRONLY;
++            vmaw->fd = qemu_open(filename, oflags, 0644);
++	} else if (strstart(filename, "/dev/fdname/", &tmp_id_str)) {
++            vmaw->fd = monitor_get_fd(cur_mon, tmp_id_str, errp);
++            if (vmaw->fd < 0) {
++                goto err;
++            }
++	} else  {
 +            oflags = O_NONBLOCK|O_WRONLY|O_CREAT|O_EXCL;
++	    vmaw->fd = qemu_open(filename, oflags, 0644);
 +        }
-+        vmaw->fd = open(filename, oflags, 0644);
++
 +        if (vmaw->fd < 0) {
 +            error_setg(errp, "can't open file %s - %s\n", filename,
 +                       strerror(errno));
@@ -1805,10 +1822,10 @@ index 0000000..917c77f
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..69af80c
+index 0000000..7a88d3f
 --- /dev/null
 +++ b/vma.c
-@@ -0,0 +1,550 @@
+@@ -0,0 +1,555 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -1956,10 +1973,10 @@ index 0000000..69af80c
 +    int c, ret = 0;
 +    const char *filename;
 +    const char *dirname;
-+    int readmap = 0;
++    const char *readmap = NULL;
 +
 +    for (;;) {
-+        c = getopt(argc, argv, "hr");
++        c = getopt(argc, argv, "hr:");
 +        if (c == -1) {
 +            break;
 +        }
@@ -1969,7 +1986,7 @@ index 0000000..69af80c
 +            help();
 +            break;
 +        case 'r':
-+            readmap = 1;
++            readmap = optarg;
 +            break;
 +        default:
 +            help();
@@ -2003,7 +2020,7 @@ index 0000000..69af80c
 +        GError *err = NULL;
 +        if (!g_file_set_contents(cfgfn, (gchar *)cdata->data, cdata->len,
 +                                 &err)) {
-+            g_error("Unable to write file: %s", err->message);
++            g_error("unable to write file: %s", err->message);
 +        }
 +    }
 +
@@ -2012,9 +2029,14 @@ index 0000000..69af80c
 +    if (readmap) {
 +        print_content(vmar);
 +
++        FILE *map = fopen(readmap, "r");
++        if (!map) {
++            g_error("unable to open fifo %s - %s", readmap, strerror(errno));
++        }
++
 +        while (1) {
 +            char inbuf[8192];
-+            char *line = fgets(inbuf, sizeof(inbuf), stdin);
++            char *line = fgets(inbuf, sizeof(inbuf), map);
 +            if (!line || line[0] == '\0' || !strcmp(line, "done\n")) {
 +                break;
 +            }
@@ -2034,7 +2056,7 @@ index 0000000..69af80c
 +            } else if (line[0] == '1' && line[1] == ':') {
 +                path = inbuf + 2;
 +                write_zero = true;
-+           } else {
++            } else {
 +                g_error("read map failed - parse error ('%s')", inbuf);
 +            }
 +

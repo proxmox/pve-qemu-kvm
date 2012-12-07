@@ -1,4 +1,4 @@
-From 491d4eb9d078b68616205c0c89de9909df990014 Mon Sep 17 00:00:00 2001
+From 95b9266b030a4962284a0b9eebf9849291809fee Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 09:24:50 +0100
 Subject: [PATCH v3 1/6] RFC: Efficient VM backup for qemu
