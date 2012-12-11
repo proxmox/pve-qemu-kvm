@@ -1,3 +1,11 @@
+pve-qemu-kvm (1.3-7) unstable; urgency=low
+
+  * update seabios to e8a76b0f225bba5ba9d63ab227e0a37b3beb1059
+  
+  * update vma patches
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 11 Dec 2012 11:06:43 +0100
+
 pve-qemu-kvm (1.3-6) unstable; urgency=low
 
   * include vma utility

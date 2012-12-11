@@ -1,4 +1,4 @@
-From ada8961d41298b340dc624da571cba760ab39158 Mon Sep 17 00:00:00 2001
+From e156b88f194c269e708bf604982db3927f0dbc21 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -13,9 +13,9 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  docs/specs/vma_spec.txt |   24 ++
  vma-reader.c            |  776 +++++++++++++++++++++++++++++++++++++++
  vma-writer.c            |  920 +++++++++++++++++++++++++++++++++++++++++++++++
- vma.c                   |  555 ++++++++++++++++++++++++++++
+ vma.c                   |  556 ++++++++++++++++++++++++++++
  vma.h                   |  145 ++++++++
- 8 files changed, 2427 insertions(+), 4 deletions(-)
+ 8 files changed, 2428 insertions(+), 4 deletions(-)
  create mode 100644 docs/specs/vma_spec.txt
  create mode 100644 vma-reader.c
  create mode 100644 vma-writer.c
@@ -1822,10 +1822,10 @@ index 0000000..c1e1afe
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..7a88d3f
+index 0000000..64dde97
 --- /dev/null
 +++ b/vma.c
-@@ -0,0 +1,555 @@
+@@ -0,0 +1,556 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -1898,8 +1898,6 @@ index 0000000..7a88d3f
 +
 +    VmaHeader *head = vma_reader_get_header(vmar);
 +
-+    printf("CTIME: %s", ctime(&head->ctime));
-+
 +    GList *l = vma_reader_get_config_data(vmar);
 +    while (l && l->data) {
 +        VmaConfigData *cdata = (VmaConfigData *)l->data;
@@ -1920,6 +1918,9 @@ index 0000000..7a88d3f
 +            }
 +        }
 +    }
++    /* ctime is the last entry we print */
++    printf("CTIME: %s", ctime(&head->ctime));
++    fflush(stdout);
 +}
 +
 +static int list_content(int argc, char **argv)
