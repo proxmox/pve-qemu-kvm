@@ -1,0 +1,275 @@
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Subject: [Qemu-devel] [PATCH 2/3] virtio-balloon: re-enable balloon stats
+
+The statistics are now available through device properties via a
+polling mechanism. First a client has to enable polling, then it
+can query each stat individually.
+
+The following control properties are introduced:
+
+ o stats-polling-interval: a value greater than zero enables polling
+   in the specified interval (in seconds). When value equals zero,
+   polling is disabled. If polling is already enabled and a value
+   greater than zero is written, the polling interval time is changed
+
+ o stats-last-update: last stats update timestamp, in seconds.
+
+The following stats properties are introduced, all values are in bytes:
+
+ o stat-swap-in
+ o stat-swap-out
+ o stat-major-faults
+ o stat-minor-faults
+ o stat-free-memory
+ o stat-total-memory
+
+Please, refer to the documentation introduced by the next commit for
+more information and examples.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-balloon.c | 167 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 165 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 4398025..4bab2ae 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -22,6 +22,8 @@
+ #include "virtio-balloon.h"
+ #include "kvm.h"
+ #include "exec-memory.h"
++#include "qemu-timer.h"
++#include "qapi/qapi-visit-core.h"
+ 
+ #if defined(__linux__)
+ #include <sys/mman.h>
+@@ -36,6 +38,9 @@ typedef struct VirtIOBalloon
+     uint64_t stats[VIRTIO_BALLOON_S_NR];
+     VirtQueueElement stats_vq_elem;
+     size_t stats_vq_offset;
++    QEMUTimer *stats_timer;
++    int64_t stats_last_update;
++    int64_t stats_poll_interval;
+     DeviceState *qdev;
+ } VirtIOBalloon;
+ 
+@@ -53,6 +58,16 @@ static void balloon_page(void *addr, int deflate)
+ #endif
+ }
+ 
++static const char *balloon_stat_names[] = {
++   [VIRTIO_BALLOON_S_SWAP_IN] = "stat-swap-in", 
++   [VIRTIO_BALLOON_S_SWAP_OUT] = "stat-swap-out",
++   [VIRTIO_BALLOON_S_MAJFLT] = "stat-major-faults",
++   [VIRTIO_BALLOON_S_MINFLT] = "stat-minor-faults",
++   [VIRTIO_BALLOON_S_MEMFREE] = "stat-free-memory",
++   [VIRTIO_BALLOON_S_MEMTOT] = "stat-total-memory",
++   [VIRTIO_BALLOON_S_NR] = NULL
++};
++
+ /*
+  * reset_stats - Mark all items in the stats array as unset
+  *
+@@ -67,6 +82,127 @@ static inline void reset_stats(VirtIOBalloon *dev)
+     for (i = 0; i < VIRTIO_BALLOON_S_NR; dev->stats[i++] = -1);
+ }
+ 
++static bool balloon_stats_supported(const VirtIOBalloon *s)
++{
++    return s->vdev.guest_features & (1 << VIRTIO_BALLOON_F_STATS_VQ);
++}
++
++static bool balloon_stats_enabled(const VirtIOBalloon *s)
++{
++    return s->stats_poll_interval > 0;
++}
++
++static void balloon_stats_destroy_timer(VirtIOBalloon *s)
++{
++    if (balloon_stats_enabled(s)) {
++        qemu_del_timer(s->stats_timer);
++        qemu_free_timer(s->stats_timer);
++        s->stats_timer = NULL;
++        s->stats_poll_interval = 0;
++    }
++}
++
++static void balloon_stats_change_timer(VirtIOBalloon *s, int secs)
++{
++    qemu_mod_timer(s->stats_timer, qemu_get_clock_ms(vm_clock) + secs * 1000);
++}
++
++static void balloon_stats_poll_cb(void *opaque)
++{
++    VirtIOBalloon *s = opaque;
++
++    virtqueue_push(s->svq, &s->stats_vq_elem, s->stats_vq_offset);
++    virtio_notify(&s->vdev, s->svq);
++}
++
++static void balloon_stats_get_last_update(Object *obj, struct Visitor *v,
++                                          void *opaque, const char *name,
++                                          Error **errp)
++{
++    VirtIOBalloon *s = opaque;
++    visit_type_int(v, &s->stats_last_update, name, errp);
++}
++
++static void balloon_stats_get_stat(Object *obj, struct Visitor *v,
++                                   void *opaque, const char *name, Error **errp)
++{
++    VirtIOBalloon *s = opaque;
++    int i;
++
++    for (i = 0; i < VIRTIO_BALLOON_S_NR; i++) {
++        if (!strcmp(balloon_stat_names[i], name)) {
++            break;
++        }
++    }
++
++    if (i == VIRTIO_BALLOON_S_NR) {
++        error_setg(errp, "invalid stat name '%s'", name);
++        return;
++    }
++
++    if (s->stats[i] == -1) {
++        error_setg(errp,
++            "timer hasn't been enabled or guest doesn't support '%s'", name);
++        return;
++    }
++
++    visit_type_int(v, (int64_t *) &s->stats[i], name, errp);
++}
++
++static void balloon_stats_get_poll_interval(Object *obj, struct Visitor *v,
++                                            void *opaque, const char *name,
++                                            Error **errp)
++{
++    VirtIOBalloon *s = opaque;
++    visit_type_int(v, &s->stats_poll_interval, name, errp);
++}
++
++static void balloon_stats_set_poll_interval(Object *obj, struct Visitor *v,
++                                            void *opaque, const char *name,
++                                            Error **errp)
++{
++    VirtIOBalloon *s = opaque;
++    int64_t value;
++
++    if (!balloon_stats_supported(s)) {
++        error_setg(errp, "guest doesn\'t support balloon stats");
++        return;
++    }
++
++    visit_type_int(v, &value, name, errp);
++    if (error_is_set(errp)) {
++        return;
++    }
++
++    if (value < 0) {
++        error_setg(errp, "timer value must be positive");
++        return;
++    }
++
++    if (value == s->stats_poll_interval) {
++        return;
++    }
++
++    if (value == 0) {
++        /* timer=0 disables the timer */
++        balloon_stats_destroy_timer(s);
++        return;
++    }
++
++    if (balloon_stats_enabled(s)) {
++        /* timer interval change */
++        s->stats_poll_interval = value;
++        balloon_stats_change_timer(s, value);
++        return;
++    }
++
++    /* create a new timer */
++    g_assert(s->stats_timer == NULL);
++    s->stats_timer = qemu_new_timer_ms(vm_clock, balloon_stats_poll_cb, s);
++    s->stats_poll_interval = value;
++    balloon_stats_change_timer(s, 0);
++}
++
+ static void virtio_balloon_handle_output(VirtIODevice *vdev, VirtQueue *vq)
+ {
+     VirtIOBalloon *s = to_virtio_balloon(vdev);
+@@ -107,9 +243,10 @@ static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
+     VirtQueueElement *elem = &s->stats_vq_elem;
+     VirtIOBalloonStat stat;
+     size_t offset = 0;
++    qemu_timeval tv;
+ 
+     if (!virtqueue_pop(vq, elem)) {
+-        return;
++        goto out;
+     }
+ 
+     /* Initialize the stats to get rid of any stale values.  This is only
+@@ -128,6 +265,18 @@ static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
+             s->stats[tag] = val;
+     }
+     s->stats_vq_offset = offset;
++
++    if (qemu_gettimeofday(&tv) < 0) {
++        fprintf(stderr, "warning: %s: failed to get time of day\n", __func__);
++        goto out;
++    }
++
++    s->stats_last_update = tv.tv_sec;
++
++out:
++    if (balloon_stats_enabled(s)) {
++        balloon_stats_change_timer(s, s->stats_poll_interval);
++    }
+ }
+ 
+ static void virtio_balloon_get_config(VirtIODevice *vdev, uint8_t *config_data)
+@@ -212,7 +361,7 @@ static int virtio_balloon_load(QEMUFile *f, void *opaque, int version_id)
+ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+ {
+     VirtIOBalloon *s;
+-    int ret;
++    int i, ret;
+ 
+     s = (VirtIOBalloon *)virtio_common_init("virtio-balloon",
+                                             VIRTIO_ID_BALLOON,
+@@ -239,6 +388,19 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+     register_savevm(dev, "virtio-balloon", -1, 1,
+                     virtio_balloon_save, virtio_balloon_load, s);
+ 
++    for (i = 0; i < VIRTIO_BALLOON_S_NR; i++) {
++        object_property_add(OBJECT(dev), balloon_stat_names[i], "int",
++                            balloon_stats_get_stat, NULL, NULL, s, NULL);
++    }
++
++    object_property_add(OBJECT(dev), "stats-last-update", "int",
++                        balloon_stats_get_last_update, NULL, NULL, s, NULL);
++
++    object_property_add(OBJECT(dev), "stats-polling-interval", "int",
++                        balloon_stats_get_poll_interval,
++                        balloon_stats_set_poll_interval,
++                        NULL, s, NULL);
++
+     return &s->vdev;
+ }
+ 
+@@ -246,6 +408,7 @@ void virtio_balloon_exit(VirtIODevice *vdev)
+ {
+     VirtIOBalloon *s = DO_UPCAST(VirtIOBalloon, vdev, vdev);
+ 
++    balloon_stats_destroy_timer(s);
+     qemu_remove_balloon_handler(s);
+     unregister_savevm(s->qdev, "virtio-balloon", s);
+     virtio_cleanup(vdev);
+-- 
+1.8.0
+
+
+
+

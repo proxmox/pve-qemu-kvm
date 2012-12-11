@@ -1,0 +1,108 @@
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Subject: [Qemu-devel] [PATCH 3/3] docs: document virtio-balloon stats
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ docs/virtio-balloon-stats.txt | 87 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 87 insertions(+)
+ create mode 100644 docs/virtio-balloon-stats.txt
+
+diff --git a/docs/virtio-balloon-stats.txt b/docs/virtio-balloon-stats.txt
+new file mode 100644
+index 0000000..139e74d
+--- /dev/null
++++ b/docs/virtio-balloon-stats.txt
+@@ -0,0 +1,87 @@
++virtio balloon memory statistics
++================================
++
++The virtio balloon driver supports guest memory statistics reporting. These
++statistics are available to QEMU users as QOM (QEMU Object Model) device
++properties via a polling mechanism.
++
++Basically, clients first have to enable polling, then they can query the
++available statistics.
++
++There are two control properties and six memory statistics properties.
++
++The control properties are:
++
++ o stats-polling-interval: polling time interval in seconds, it can be:
++
++   > 0  enables polling in the specified interval. If polling is already
++        enabled, the polling time interval will be changed to the new value
++
++   0    disables polling. Previous polled statistics are still valid and
++        can be queried.
++
++ o stats-last-update: last stats update timestamp, in seconds
++
++The following statistics are available, all values are in bytes:
++
++ o stat-swap-in
++ o stat-swap-out
++ o stat-major-faults
++ o stat-minor-faults
++ o stat-free-memory
++ o stat-total-memory
++
++Also, please note the following:
++
++ - If a statistic is queried before the timer is enabled or if the guest
++   doesn't support a particular statistic, an error will be returned
++
++ - Previously polled statistics remain available even if the timer is
++   later disabled
++
++ - The polling timer is only re-armed when the guest answers to the
++   statistics request. This means that if the guest takes too long to
++   respond (say, a few seconds) this delay will end up being added to the
++   poll interval. Also, if a (buggy) guest doesn't ever respond, the
++   statistics won't get updated and the timer disarmed
++
++Here are a few examples. The virtio-balloon device is assumed to be in the
++'/machine/peripheral-anon/device[1]' QOM path.
++
++Enable polling with 2 seconds interval:
++
++{ "execute": "qom-set",
++             "arguments": { "path": "/machine/peripheral-anon/device[1]",
++			 "property": "stats-polling-interval", "value": 2 } }
++
++{ "return": {} }
++
++Change polling to 10 seconds:
++
++{ "execute": "qom-set",
++             "arguments": { "path": "/machine/peripheral-anon/device[1]",
++			 "property": "stats-polling-interval", "value": 10 } }
++
++{ "return": {} }
++
++Get last update timestamp and free memory stat:
++
++{ "execute": "qom-get",
++  "arguments": { "path": "/machine/peripheral-anon/device[1]",
++  "property": "stats-last-update" } }
++
++{ "return": 1354629634 }
++
++{ "execute": "qom-get",
++  "arguments": { "path": "/machine/peripheral-anon/device[1]",
++  "property": "stat-free-memory" } }
++
++{ "return": 845115392 }
++
++Disable polling:
++
++{ "execute": "qom-set",
++             "arguments": { "path": "/machine/peripheral-anon/device[1]",
++			 "property": "stats-polling-interval", "value": 0 } }
++
++{ "return": {} }
+-- 
+1.8.0
+
+
+
+

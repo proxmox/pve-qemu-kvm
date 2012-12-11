@@ -1,0 +1,50 @@
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Subject: [Qemu-devel] [PATCH 1/3] virtio-balloon: drop old stats code
+
+Next commit will re-enable balloon stats with a different interface, but
+this old code conflicts with it. Drop it.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-balloon.c | 22 ----------------------
+ 1 file changed, 22 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index dd1a650..4398025 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -164,28 +164,6 @@ static uint32_t virtio_balloon_get_features(VirtIODevice *vdev, uint32_t f)
+ static void virtio_balloon_stat(void *opaque, BalloonInfo *info)
+ {
+     VirtIOBalloon *dev = opaque;
+-
+-#if 0
+-    /* Disable guest-provided stats for now. For more details please check:
+-     * https://bugzilla.redhat.com/show_bug.cgi?id=623903
+-     *
+-     * If you do enable it (which is probably not going to happen as we
+-     * need a new command for it), remember that you also need to fill the
+-     * appropriate members of the BalloonInfo structure so that the stats
+-     * are returned to the client.
+-     */
+-    if (dev->vdev.guest_features & (1 << VIRTIO_BALLOON_F_STATS_VQ)) {
+-        virtqueue_push(dev->svq, &dev->stats_vq_elem, dev->stats_vq_offset);
+-        virtio_notify(&dev->vdev, dev->svq);
+-        return;
+-    }
+-#endif
+-
+-    /* Stats are not supported.  Clear out any stale values that might
+-     * have been set by a more featureful guest kernel.
+-     */
+-    reset_stats(dev);
+-
+     info->actual = ram_size - ((uint64_t) dev->actual <<
+                                VIRTIO_BALLOON_PFN_SHIFT);
+ }
+-- 
+1.8.0
+
+
+
+

@@ -1,0 +1,27 @@
+Index: new/hw/virtio-balloon.c
+===================================================================
+--- new.orig/hw/virtio-balloon.c	2012-12-12 14:05:56.000000000 +0100
++++ new/hw/virtio-balloon.c	2012-12-12 14:07:43.000000000 +0100
+@@ -111,6 +111,10 @@
+ {
+     VirtIOBalloon *s = opaque;
+ 
++    if (!balloon_stats_supported(s) || !runstate_is_running()) {
++        return;
++    }
++
+     virtqueue_push(s->svq, &s->stats_vq_elem, s->stats_vq_offset);
+     virtio_notify(&s->vdev, s->svq);
+ }
+@@ -164,11 +168,6 @@
+     VirtIOBalloon *s = opaque;
+     int64_t value;
+ 
+-    if (!balloon_stats_supported(s)) {
+-        error_setg(errp, "guest doesn\'t support balloon stats");
+-        return;
+-    }
+-
+     visit_type_int(v, &value, name, errp);
+     if (error_is_set(errp)) {
+         return;
