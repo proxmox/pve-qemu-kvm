@@ -1,4 +1,4 @@
-From 8b0a6a7bedcbfc846138c57c090ea3ada1e32505 Mon Sep 17 00:00:00 2001
+From bc2cfdba56c1a5071a1436384280d9b7f7501f12 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Wed, 14 Nov 2012 09:57:04 +0100
 Subject: [PATCH v3 5/6] add regression tests for backup
@@ -52,7 +52,7 @@ index b60f0fb..cffbd22 100644
  -include $(wildcard tests/*.d)
 diff --git a/tests/backup-test.c b/tests/backup-test.c
 new file mode 100644
-index 0000000..c434c5f
+index 0000000..b14e9a0
 --- /dev/null
 +++ b/tests/backup-test.c
 @@ -0,0 +1,511 @@
@@ -317,7 +317,7 @@ index 0000000..c434c5f
 +        g_error("%s", error_get_pretty(errp));
 +    }
 +
-+    if (vma_reader_restore(vmar, -1, &errp) < 0) {
++    if (vma_reader_restore(vmar, -1, false, &errp) < 0) {
 +        g_error("restore failed - %s", error_get_pretty(errp));
 +    }
 +

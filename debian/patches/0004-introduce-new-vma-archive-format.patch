@@ -1,4 +1,4 @@
-From e156b88f194c269e708bf604982db3927f0dbc21 Mon Sep 17 00:00:00 2001
+From a259716ad384f2d23992b89f714497e2dc8b7336 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -11,11 +11,11 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  Makefile.objs           |    2 +-
  blockdev.c              |    6 +-
  docs/specs/vma_spec.txt |   24 ++
- vma-reader.c            |  776 +++++++++++++++++++++++++++++++++++++++
+ vma-reader.c            |  801 +++++++++++++++++++++++++++++++++++++++++
  vma-writer.c            |  920 +++++++++++++++++++++++++++++++++++++++++++++++
- vma.c                   |  556 ++++++++++++++++++++++++++++
- vma.h                   |  145 ++++++++
- 8 files changed, 2428 insertions(+), 4 deletions(-)
+ vma.c                   |  558 ++++++++++++++++++++++++++++
+ vma.h                   |  146 ++++++++
+ 8 files changed, 2456 insertions(+), 4 deletions(-)
  create mode 100644 docs/specs/vma_spec.txt
  create mode 100644 vma-reader.c
  create mode 100644 vma-writer.c
@@ -114,10 +114,10 @@ index 0000000..052c629
 +
 diff --git a/vma-reader.c b/vma-reader.c
 new file mode 100644
-index 0000000..b05d7da
+index 0000000..b6a550b
 --- /dev/null
 +++ b/vma-reader.c
-@@ -0,0 +1,776 @@
+@@ -0,0 +1,801 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -171,6 +171,11 @@ index 0000000..b05d7da
 +    GList *cdata_list;
 +    guint8 vmstate_stream;
 +    uint32_t vmstate_clusters;
++    /* to show restore percentage if run with -v */
++    time_t start_time;
++    int64_t cluster_count;
++    int64_t clusters_read;
++    int clusters_read_per;
 +};
 +
 +static guint
@@ -576,6 +581,8 @@ index 0000000..b05d7da
 +    vmar->rstate[dev_id].bitmap_size = bitmap_size;
 +    vmar->rstate[dev_id].bitmap = g_new0(unsigned long, bitmap_size);
 +
++    vmar->cluster_count += size/VMA_CLUSTER_SIZE;
++
 +    return 0;
 +}
 +
@@ -642,7 +649,8 @@ index 0000000..b05d7da
 +    return 0;
 +}
 +static int restore_extent(VmaReader *vmar, unsigned char *buf,
-+                          int extent_size, int vmstate_fd, Error **errp)
++                          int extent_size, int vmstate_fd, 
++                          bool verbose, Error **errp)
 +{
 +    assert(vmar);
 +    assert(buf);
@@ -653,8 +661,8 @@ index 0000000..b05d7da
 +
 +    for (i = 0; i < VMA_BLOCKS_PER_EXTENT; i++) {
 +        uint64_t block_info = GUINT64_FROM_BE(ehead->blockinfo[i]);
-+        uint32_t cluster_num = block_info &  0xffffffff;
-+        uint8_t dev_id = (block_info >> 32) &  0xff;
++        uint64_t cluster_num = block_info & 0xffffffff;
++        uint8_t dev_id = (block_info >> 32) & 0xff;
 +        uint16_t mask = block_info >> (32+16);
 +        int64_t max_sector;
 +
@@ -673,7 +681,7 @@ index 0000000..b05d7da
 +            }
 +
 +            if (vma_reader_get_bitmap(rstate, cluster_num)) {
-+                error_setg(errp, "found duplicated cluster %d for stream %s",
++                error_setg(errp, "found duplicated cluster %zd for stream %s",
 +                          cluster_num, vmar->devinfo[dev_id].devname);
 +                return -1;
 +            }
@@ -687,6 +695,20 @@ index 0000000..b05d7da
 +                return -1;
 +            }
 +            vmar->vmstate_clusters++;
++        }
++
++        vmar->clusters_read++;
++
++        if (verbose) {
++            time_t duration = time(NULL) - vmar->start_time;
++            int percent = (vmar->clusters_read*100)/vmar->cluster_count;
++            if (percent != vmar->clusters_read_per) {
++                printf("progress %d%% (read %zd bytes, duration %zd sec)\n", 
++                       percent, vmar->clusters_read*VMA_CLUSTER_SIZE,
++                       duration);
++                fflush(stdout);
++                vmar->clusters_read_per = percent;
++            }
 +        }
 +
 +        /* try to write whole clusters to speedup restore */
@@ -753,7 +775,7 @@ index 0000000..b05d7da
 +
 +                } else {
 +
-+                    if (rstate->write_zeroes & (end_sector > sector_num)) {
++                    if (rstate->write_zeroes && (end_sector > sector_num)) {
 +                        /* Todo: use bdrv_co_write_zeroes (but that need to
 +                         * be run inside coroutine?)
 +                         */
@@ -779,7 +801,8 @@ index 0000000..b05d7da
 +    return 0;
 +}
 +
-+int vma_reader_restore(VmaReader *vmar, int vmstate_fd, Error **errp)
++int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,
++		       Error **errp)
 +{
 +    assert(vmar);
 +    assert(vmar->head_data);
@@ -790,6 +813,7 @@ index 0000000..b05d7da
 +    unsigned char md5sum[16];
 +    VmaHeader *h = (VmaHeader *)vmar->head_data;
 +
++    vmar->start_time = time(NULL);
 +
 +    while (1) {
 +        int bytes = full_read(vmar->fd, buf + buf_pos, sizeof(buf) - buf_pos);
@@ -844,7 +868,8 @@ index 0000000..b05d7da
 +            return -1;
 +        }
 +
-+        if (restore_extent(vmar, buf, extent_size, vmstate_fd, errp) < 0) {
++        if (restore_extent(vmar, buf, extent_size, vmstate_fd, verbose, 
++                           errp) < 0) {
 +            return -1;
 +        }
 +
@@ -1822,10 +1847,10 @@ index 0000000..c1e1afe
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..64dde97
+index 0000000..8d6f32d
 --- /dev/null
 +++ b/vma.c
-@@ -0,0 +1,556 @@
+@@ -0,0 +1,558 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -1972,12 +1997,13 @@ index 0000000..64dde97
 +static int extract_content(int argc, char **argv)
 +{
 +    int c, ret = 0;
++    int verbose = 0;
 +    const char *filename;
 +    const char *dirname;
 +    const char *readmap = NULL;
 +
 +    for (;;) {
-+        c = getopt(argc, argv, "hr:");
++        c = getopt(argc, argv, "hvr:");
 +        if (c == -1) {
 +            break;
 +        }
@@ -1988,6 +2014,9 @@ index 0000000..64dde97
 +            break;
 +        case 'r':
 +            readmap = optarg;
++            break;
++       case 'v':
++            verbose = 1;
 +            break;
 +        default:
 +            help();
@@ -2068,8 +2097,6 @@ index 0000000..64dde97
 +                        inbuf);
 +            }
 +
-+            printf("TEST %s %s\n", path, devname);
-+
 +            RestoreMap *map = g_new0(RestoreMap, 1);
 +            map->devname = g_strdup(devname);
 +            map->path = g_strdup(path);
@@ -2138,7 +2165,7 @@ index 0000000..64dde97
 +        }
 +    }
 +
-+    if (vma_reader_restore(vmar, vmstate_fd, &errp) < 0) {
++    if (vma_reader_restore(vmar, vmstate_fd, verbose, &errp) < 0) {
 +        g_error("restore failed - %s", error_get_pretty(errp));
 +    }
 +
@@ -2384,10 +2411,10 @@ index 0000000..64dde97
 +}
 diff --git a/vma.h b/vma.h
 new file mode 100644
-index 0000000..10800a1
+index 0000000..f30a2bc
 --- /dev/null
 +++ b/vma.h
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,146 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -2530,7 +2557,8 @@ index 0000000..10800a1
 +int vma_reader_register_bs(VmaReader *vmar, guint8 dev_id,
 +                           BlockDriverState *bs, bool write_zeroes,
 +                           Error **errp);
-+int vma_reader_restore(VmaReader *vmar, int vmstate_fd, Error **errp);
++int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose, 
++		       Error **errp);
 +
 +#endif /* BACKUP_VMA_H */
 -- 

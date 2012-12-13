@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.3-9) unstable; urgency=low
+
+  * fixes for vma-reader
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 13 Dec 2012 12:08:12 +0100
+
 pve-qemu-kvm (1.3-8) unstable; urgency=low
 
   * re-enable balloon stats

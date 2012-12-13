@@ -1,9 +1,9 @@
-From 42ef2313a00a615414c6728a32febe650715769a Mon Sep 17 00:00:00 2001
+From 205f75f449050565262aff7e4fe245e70a659483 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
 Subject: [PATCH v3 3/6] add backup related monitor commands
 
-We use a generic BackupDriver struct to encaplulated all archive format
+We use a generic BackupDriver struct to encapsulate all archive format
 related function.
 
 Another option would be to simply dump <devid,cluster_num,cluster_data> to
@@ -608,7 +608,7 @@ index c0e32d6..85cf47e 100644
          .args_type  = "",
          .params     = "",
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 5dfa052..71e0ed9 100644
+index 5dfa052..bcc70b1 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
 @@ -358,6 +358,39 @@
@@ -620,7 +620,7 @@ index 5dfa052..71e0ed9 100644
 +# Detailed backup status.
 +#
 +# @status: #optional string describing the current backup status.
-+#          Tthis can be 'active', 'done', 'error'. If this field is not
++#          This can be 'active', 'done', 'error'. If this field is not
 +#          returned, no backup process has been initiated
 +#
 +# @errmsg: #optional error message (only returned if status is 'error')

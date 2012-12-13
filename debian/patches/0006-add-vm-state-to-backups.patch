@@ -1,4 +1,4 @@
-From c07e6b278f0cdc3d386fb7878d5048195f565806 Mon Sep 17 00:00:00 2001
+From 936c3272e09bc60de51ef985f7ec651051f924a8 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Thu, 29 Nov 2012 10:46:49 +0100
 Subject: [PATCH v3 6/6] add vm state to backups
@@ -271,7 +271,7 @@ index 600792f..e92bba9 100644
      if (error_is_set(&errp)) {
          monitor_printf(mon, "%s\n", error_get_pretty(errp));
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 71e0ed9..2d7ecaa 100644
+index bcc70b1..2af4359 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
 @@ -1812,13 +1812,15 @@
