@@ -1,0 +1,110 @@
+Index: new/hw/virtio-balloon.c
+===================================================================
+--- new.orig/hw/virtio-balloon.c	2012-12-17 07:55:34.000000000 +0100
++++ new/hw/virtio-balloon.c	2012-12-17 09:20:32.000000000 +0100
+@@ -59,7 +59,7 @@
+ }
+ 
+ static const char *balloon_stat_names[] = {
+-   [VIRTIO_BALLOON_S_SWAP_IN] = "stat-swap-in", 
++   [VIRTIO_BALLOON_S_SWAP_IN] = "stat-swap-in",
+    [VIRTIO_BALLOON_S_SWAP_OUT] = "stat-swap-out",
+    [VIRTIO_BALLOON_S_MAJFLT] = "stat-major-faults",
+    [VIRTIO_BALLOON_S_MINFLT] = "stat-minor-faults",
+@@ -314,6 +314,30 @@
+     VirtIOBalloon *dev = opaque;
+     info->actual = ram_size - ((uint64_t) dev->actual <<
+                                VIRTIO_BALLOON_PFN_SHIFT);
++
++    info->total_mem = ram_size;
++
++    if (!(balloon_stats_enabled(dev) && dev->stats_last_update)) {
++        return;
++    }
++
++    info->last_update = dev->stats_last_update;
++    info->has_last_update = true;
++
++    info->mem_swapped_in = dev->stats[VIRTIO_BALLOON_S_SWAP_IN];
++    info->has_mem_swapped_in = info->mem_swapped_in >= 0 ? true : false;
++
++    info->mem_swapped_out = dev->stats[VIRTIO_BALLOON_S_SWAP_OUT];
++    info->has_mem_swapped_out = info->mem_swapped_out >= 0 ? true : false;
++
++    info->major_page_faults = dev->stats[VIRTIO_BALLOON_S_MAJFLT];
++    info->has_major_page_faults = info->major_page_faults >= 0 ? true : false;
++
++    info->minor_page_faults = dev->stats[VIRTIO_BALLOON_S_MINFLT];
++    info->has_minor_page_faults = info->minor_page_faults >= 0 ? true : false;
++
++    info->free_mem = dev->stats[VIRTIO_BALLOON_S_MEMFREE];
++    info->has_free_mem = info->free_mem >= 0 ? true : false;
+ }
+ 
+ static void virtio_balloon_to_target(void *opaque, ram_addr_t target)
+Index: new/qapi-schema.json
+===================================================================
+--- new.orig/qapi-schema.json	2012-12-17 08:19:30.000000000 +0100
++++ new/qapi-schema.json	2012-12-17 08:35:55.000000000 +0100
+@@ -1044,6 +1044,8 @@
+ #
+ # @actual: the number of bytes the balloon currently contains
+ #
++# @last_update: #optional time when stats got updated from guest
++#
+ # @mem_swapped_in: #optional number of pages swapped in within the guest
+ #
+ # @mem_swapped_out: #optional number of pages swapped out within the guest
+@@ -1054,18 +1056,15 @@
+ #
+ # @free_mem: #optional amount of memory (in bytes) free in the guest
+ #
+-# @total_mem: #optional amount of memory (in bytes) visible to the guest
++# @total_mem: amount of memory (in bytes) visible to the guest
+ #
+ # Since: 0.14.0
+-#
+-# Notes: all current versions of QEMU do not fill out optional information in
+-#        this structure.
+ ##
+ { 'type': 'BalloonInfo',
+-  'data': {'actual': 'int', '*mem_swapped_in': 'int',
++  'data': {'actual': 'int', '*last_update': 'int', '*mem_swapped_in': 'int',
+            '*mem_swapped_out': 'int', '*major_page_faults': 'int',
+            '*minor_page_faults': 'int', '*free_mem': 'int',
+-           '*total_mem': 'int'} }
++           'total_mem': 'int'} }
+ 
+ ##
+ # @query-balloon:
+Index: new/hmp.c
+===================================================================
+--- new.orig/hmp.c	2012-12-17 08:36:51.000000000 +0100
++++ new/hmp.c	2012-12-17 09:06:15.000000000 +0100
+@@ -497,6 +497,11 @@
+     }
+ 
+     monitor_printf(mon, "balloon: actual=%" PRId64, info->actual >> 20);
++    monitor_printf(mon, " total_mem=%" PRId64, info->total_mem >> 20);
++    if (info->has_free_mem) {
++        monitor_printf(mon, " free_mem=%" PRId64, info->free_mem >> 20);
++    }
++
+     if (info->has_mem_swapped_in) {
+         monitor_printf(mon, " mem_swapped_in=%" PRId64, info->mem_swapped_in);
+     }
+@@ -511,11 +516,9 @@
+         monitor_printf(mon, " minor_page_faults=%" PRId64,
+                        info->minor_page_faults);
+     }
+-    if (info->has_free_mem) {
+-        monitor_printf(mon, " free_mem=%" PRId64, info->free_mem);
+-    }
+-    if (info->has_total_mem) {
+-        monitor_printf(mon, " total_mem=%" PRId64, info->total_mem);
++    if (info->has_last_update) {
++        monitor_printf(mon, " last_update=%" PRId64,
++                       info->last_update);
+     }
+ 
+     monitor_printf(mon, "\n");

@@ -22,3 +22,4 @@ virtio-balloon-drop-old-stats-code.patch
 virtio-balloon-re-enable-balloon-stats.patch
 virtio-balloon-document-stats.patch
 virtio-balloon-pvefixes.patch
+virtio-balloon-fix-query.patch
