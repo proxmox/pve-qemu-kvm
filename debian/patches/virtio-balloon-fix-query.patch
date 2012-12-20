@@ -1,7 +1,7 @@
 Index: new/hw/virtio-balloon.c
 ===================================================================
---- new.orig/hw/virtio-balloon.c	2012-12-18 11:40:34.000000000 +0100
-+++ new/hw/virtio-balloon.c	2012-12-18 11:50:57.000000000 +0100
+--- new.orig/hw/virtio-balloon.c	2012-12-20 08:41:19.000000000 +0100
++++ new/hw/virtio-balloon.c	2012-12-20 08:42:08.000000000 +0100
 @@ -59,7 +59,7 @@
  }
  
@@ -20,7 +20,7 @@ Index: new/hw/virtio-balloon.c
   * statistics.
   */
  static inline void reset_stats(VirtIOBalloon *dev)
-@@ -314,6 +314,34 @@
+@@ -315,6 +315,34 @@
      VirtIOBalloon *dev = opaque;
      info->actual = ram_size - ((uint64_t) dev->actual <<
                                 VIRTIO_BALLOON_PFN_SHIFT);
@@ -57,8 +57,8 @@ Index: new/hw/virtio-balloon.c
  static void virtio_balloon_to_target(void *opaque, ram_addr_t target)
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2012-12-18 11:40:34.000000000 +0100
-+++ new/qapi-schema.json	2012-12-18 11:42:06.000000000 +0100
+--- new.orig/qapi-schema.json	2012-12-20 08:40:30.000000000 +0100
++++ new/qapi-schema.json	2012-12-20 08:41:40.000000000 +0100
 @@ -1044,6 +1044,8 @@
  #
  # @actual: the number of bytes the balloon currently contains
@@ -91,8 +91,8 @@ Index: new/qapi-schema.json
  # @query-balloon:
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2012-12-18 11:40:34.000000000 +0100
-+++ new/hmp.c	2012-12-18 11:50:32.000000000 +0100
+--- new.orig/hmp.c	2012-12-20 08:40:31.000000000 +0100
++++ new/hmp.c	2012-12-20 08:41:40.000000000 +0100
 @@ -497,6 +497,14 @@
      }
  

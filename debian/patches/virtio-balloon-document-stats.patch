@@ -1,18 +1,66 @@
+From lcapitulino@redhat.com Fri Dec 14 16:49:59 2012
+Received: from rt.proxmox.com (192.168.2.18) by lisa.maurer-it.com
+ (192.168.2.121) with Microsoft SMTP Server id 14.2.328.9; Fri, 14 Dec 2012
+ 16:49:59 +0100
+Received: from proxmox.maurer-it.com (proxmox.maurer-it.com
+ [192.168.2.110]) by rt.proxmox.com (Postfix) with ESMTP id 25351206E234	for
+ <dietmar@proxmox.com>; Fri, 14 Dec 2012 16:49:59 +0100 (CET)
+Received: from proxmox.maurer-it.com (localhost.localdomain [127.0.0.1])	by
+ proxmox.maurer-it.com (Proxmox) with ESMTP id 1AAA626A090F	for
+ <dietmar@proxmox.com>; Fri, 14 Dec 2012 16:49:59 +0100 (CET)
+Received-SPF: pass (redhat.com: Sender is authorized to use
+ 'lcapitulino@redhat.com' in 'mfrom' identity (mechanism
+ 'include:spf-1.redhat.com' matched)) receiver=proxmox.maurer-it.com;
+ identity=mailfrom; envelope-from="lcapitulino@redhat.com";
+ helo=mx1.redhat.com; client-ip=209.132.183.28
+Received: from mx1.redhat.com (mx1.redhat.com [209.132.183.28])	by
+ proxmox.maurer-it.com (Proxmox) with ESMTP id EAC8B26A0914	for
+ <dietmar@proxmox.com>; Fri, 14 Dec 2012 16:49:57 +0100 (CET)
+Received: from int-mx09.intmail.prod.int.phx2.redhat.com
+ (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])	by mx1.redhat.com
+ (8.14.4/8.14.4) with ESMTP id qBEFnnhC005826	(version=TLSv1/SSLv3
+ cipher=DHE-RSA-AES256-SHA bits=256 verify=OK);	Fri, 14 Dec 2012 10:49:49
+ -0500
+Received: from localhost (ovpn-113-80.phx2.redhat.com [10.3.113.80])	by
+ int-mx09.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id
+ qBEFnlph004684;	Fri, 14 Dec 2012 10:49:48 -0500
 From: Luiz Capitulino <lcapitulino@redhat.com>
-Subject: [Qemu-devel] [PATCH 3/3] docs: document virtio-balloon stats
+To: <qemu-devel@nongnu.org>
+CC: <eblake@redhat.com>, <aliguori@us.ibm.com>, <agl@us.ibm.com>,
+ <mdroth@linux.vnet.ibm.com>, <dietmar@proxmox.com>
+Subject: [PATCH 3/3] docs: document virtio-balloon stats
+Date: Fri, 14 Dec 2012 13:49:42 -0200
+Message-ID: <1355500182-12743-4-git-send-email-lcapitulino@redhat.com>
+In-Reply-To: <1355500182-12743-1-git-send-email-lcapitulino@redhat.com>
+References: <1355500182-12743-1-git-send-email-lcapitulino@redhat.com>
+X-Scanned-By: MIMEDefang 2.68 on 10.5.11.22
+X-Proxmox-CTCH-Refid:
+ str=0001.0A0C0203.50CB4AA6.0198:SCFSTAT2484459,ss=1,re=-4.000,recu=0.000,reip=0.000,cl=1,cld=1,fgs=0
+x-proxmoxspam-level: Spam detection results:  0 AWL                   
+ -0.199 From: address is in the auto white-list RCVD_IN_DNSWL_HI          
+ -5 Sender listed at http://www.dnswl.org/, high trust SPF_HELO_PASS        
+  -0.001 SPF: HELO matches SPF record SPF_PASS               -0.001 SPF:
+ sender matches SPF record T_RP_MATCHES_RCVD       -0.01 Envelope sender
+ domain matches handover relay domain
+Content-Type: text/plain
+Return-Path: lcapitulino@redhat.com
+X-MS-Exchange-Organization-AuthSource: lisa.maurer-it.com
+X-MS-Exchange-Organization-AuthAs: Anonymous
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
 Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
 ---
- docs/virtio-balloon-stats.txt | 87 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 87 insertions(+)
+ docs/virtio-balloon-stats.txt | 91 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
  create mode 100644 docs/virtio-balloon-stats.txt
 
 diff --git a/docs/virtio-balloon-stats.txt b/docs/virtio-balloon-stats.txt
 new file mode 100644
-index 0000000..139e74d
+index 0000000..990e746
 --- /dev/null
 +++ b/docs/virtio-balloon-stats.txt
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,91 @@
 +virtio balloon memory statistics
 +================================
 +
@@ -54,11 +102,15 @@ index 0000000..139e74d
 + - Previously polled statistics remain available even if the timer is
 +   later disabled
 +
-+ - The polling timer is only re-armed when the guest answers to the
-+   statistics request. This means that if the guest takes too long to
-+   respond (say, a few seconds) this delay will end up being added to the
-+   poll interval. Also, if a (buggy) guest doesn't ever respond, the
-+   statistics won't get updated and the timer disarmed
++ - Polling can be enabled even if the guest doesn't support memory
++   statistics or its balloon driver hasn't been loaded. Applications
++   can check this condition by checking that stats-last-update doesn't
++   change
++
++ - The polling timer is only re-armed when the guest responds to the
++   statistics request. This means that if a (buggy) guest doesn't
++   ever respond to the request the timer will never be re-armed,
++   which has the same effect as disabling polling
 +
 +Here are a few examples. The virtio-balloon device is assumed to be in the
 +'/machine/peripheral-anon/device[1]' QOM path.
@@ -102,7 +154,6 @@ index 0000000..139e74d
 +{ "return": {} }
 -- 
 1.8.0
-
 
 
 

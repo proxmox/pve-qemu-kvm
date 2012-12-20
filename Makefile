@@ -20,6 +20,7 @@ download:
 	git clone git://git.qemu-project.org/qemu.git -b master ${KVMDIR} 
 	cd ${KVMDIR}; git checkout -b local v1.3.0
 	cd ${KVMDIR}; git am ../seabios-update.patch
+	cd ${KVMDIR}; git am ../seabios-update2.patch
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
 ${KVM_DEB} kvm: ${KVMSRC}

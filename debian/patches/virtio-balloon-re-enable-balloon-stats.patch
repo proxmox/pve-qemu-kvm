@@ -1,5 +1,53 @@
+From lcapitulino@redhat.com Fri Dec 14 16:49:58 2012
+Received: from rt.proxmox.com (192.168.2.18) by lisa.maurer-it.com
+ (192.168.2.121) with Microsoft SMTP Server id 14.2.328.9; Fri, 14 Dec 2012
+ 16:49:58 +0100
+Received: from proxmox.maurer-it.com (proxmox.maurer-it.com
+ [192.168.2.110]) by rt.proxmox.com (Postfix) with ESMTP id 9D849206E234	for
+ <dietmar@proxmox.com>; Fri, 14 Dec 2012 16:49:58 +0100 (CET)
+Received: from proxmox.maurer-it.com (localhost.localdomain [127.0.0.1])	by
+ proxmox.maurer-it.com (Proxmox) with ESMTP id 6DC3526A0912	for
+ <dietmar@proxmox.com>; Fri, 14 Dec 2012 16:49:58 +0100 (CET)
+Received-SPF: pass (redhat.com: Sender is authorized to use
+ 'lcapitulino@redhat.com' in 'mfrom' identity (mechanism
+ 'include:spf-1.redhat.com' matched)) receiver=proxmox.maurer-it.com;
+ identity=mailfrom; envelope-from="lcapitulino@redhat.com";
+ helo=mx1.redhat.com; client-ip=209.132.183.28
+Received: from mx1.redhat.com (mx1.redhat.com [209.132.183.28])	by
+ proxmox.maurer-it.com (Proxmox) with ESMTP id 7B90426A090F	for
+ <dietmar@proxmox.com>; Fri, 14 Dec 2012 16:49:55 +0100 (CET)
+Received: from int-mx12.intmail.prod.int.phx2.redhat.com
+ (int-mx12.intmail.prod.int.phx2.redhat.com [10.5.11.25])	by mx1.redhat.com
+ (8.14.4/8.14.4) with ESMTP id qBEFnl3Y014706	(version=TLSv1/SSLv3
+ cipher=DHE-RSA-AES256-SHA bits=256 verify=OK);	Fri, 14 Dec 2012 10:49:47
+ -0500
+Received: from localhost (ovpn-113-80.phx2.redhat.com [10.3.113.80])	by
+ int-mx12.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id
+ qBEFnkfm012128;	Fri, 14 Dec 2012 10:49:46 -0500
 From: Luiz Capitulino <lcapitulino@redhat.com>
-Subject: [Qemu-devel] [PATCH 2/3] virtio-balloon: re-enable balloon stats
+To: <qemu-devel@nongnu.org>
+CC: <eblake@redhat.com>, <aliguori@us.ibm.com>, <agl@us.ibm.com>,
+ <mdroth@linux.vnet.ibm.com>, <dietmar@proxmox.com>
+Subject: [PATCH 2/3] balloon: re-enable balloon stats
+Date: Fri, 14 Dec 2012 13:49:41 -0200
+Message-ID: <1355500182-12743-3-git-send-email-lcapitulino@redhat.com>
+In-Reply-To: <1355500182-12743-1-git-send-email-lcapitulino@redhat.com>
+References: <1355500182-12743-1-git-send-email-lcapitulino@redhat.com>
+X-Scanned-By: MIMEDefang 2.68 on 10.5.11.25
+X-Proxmox-CTCH-Refid:
+ str=0001.0A0C0203.50CB4AA5.008C:SCFSTAT2484459,ss=1,re=-4.000,recu=0.000,reip=0.000,cl=1,cld=1,fgs=0
+x-proxmoxspam-level: Spam detection results:  0 AWL                   
+ -0.200 From: address is in the auto white-list RCVD_IN_DNSWL_HI          
+ -5 Sender listed at http://www.dnswl.org/, high trust SPF_HELO_PASS        
+  -0.001 SPF: HELO matches SPF record SPF_PASS               -0.001 SPF:
+ sender matches SPF record T_RP_MATCHES_RCVD       -0.01 Envelope sender
+ domain matches handover relay domain
+Content-Type: text/plain
+Return-Path: lcapitulino@redhat.com
+X-MS-Exchange-Organization-AuthSource: lisa.maurer-it.com
+X-MS-Exchange-Organization-AuthAs: Anonymous
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
 The statistics are now available through device properties via a
 polling mechanism. First a client has to enable polling, then it
@@ -28,11 +76,11 @@ more information and examples.
 
 Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
 ---
- hw/virtio-balloon.c | 167 +++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 165 insertions(+), 2 deletions(-)
+ hw/virtio-balloon.c | 178 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 176 insertions(+), 2 deletions(-)
 
 diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
-index 4398025..4bab2ae 100644
+index 4398025..47e35b1 100644
 --- a/hw/virtio-balloon.c
 +++ b/hw/virtio-balloon.c
 @@ -22,6 +22,8 @@
@@ -71,7 +119,7 @@ index 4398025..4bab2ae 100644
  /*
   * reset_stats - Mark all items in the stats array as unset
   *
-@@ -67,6 +82,127 @@ static inline void reset_stats(VirtIOBalloon *dev)
+@@ -67,6 +82,138 @@ static inline void reset_stats(VirtIOBalloon *dev)
      for (i = 0; i < VIRTIO_BALLOON_S_NR; dev->stats[i++] = -1);
  }
  
@@ -104,6 +152,12 @@ index 4398025..4bab2ae 100644
 +{
 +    VirtIOBalloon *s = opaque;
 +
++    if (!balloon_stats_supported(s)) {
++        /* re-schedule */
++        balloon_stats_change_timer(s, s->stats_poll_interval);
++        return;
++    }
++
 +    virtqueue_push(s->svq, &s->stats_vq_elem, s->stats_vq_offset);
 +    virtio_notify(&s->vdev, s->svq);
 +}
@@ -134,8 +188,18 @@ index 4398025..4bab2ae 100644
 +    }
 +
 +    if (s->stats[i] == -1) {
++        /*
++         * Possible reasons for this error:
++         *
++         * - The timer hasn't been enabled
++         * - The guest hasn't loaded its balloon driver
++         * - The guest's balloon driver doesn't support memory stats
++         * - The guest's balloon driver doesn't support this stat
++         * - The guest's balloon driver didn't send this stat for
++         *   whatever reason
++         */
 +        error_setg(errp,
-+            "timer hasn't been enabled or guest doesn't support '%s'", name);
++            "guest didn't update '%s' (does the guest support it?)", name);
 +        return;
 +    }
 +
@@ -156,11 +220,6 @@ index 4398025..4bab2ae 100644
 +{
 +    VirtIOBalloon *s = opaque;
 +    int64_t value;
-+
-+    if (!balloon_stats_supported(s)) {
-+        error_setg(errp, "guest doesn\'t support balloon stats");
-+        return;
-+    }
 +
 +    visit_type_int(v, &value, name, errp);
 +    if (error_is_set(errp)) {
@@ -199,7 +258,7 @@ index 4398025..4bab2ae 100644
  static void virtio_balloon_handle_output(VirtIODevice *vdev, VirtQueue *vq)
  {
      VirtIOBalloon *s = to_virtio_balloon(vdev);
-@@ -107,9 +243,10 @@ static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
+@@ -107,9 +254,10 @@ static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
      VirtQueueElement *elem = &s->stats_vq_elem;
      VirtIOBalloonStat stat;
      size_t offset = 0;
@@ -211,7 +270,7 @@ index 4398025..4bab2ae 100644
      }
  
      /* Initialize the stats to get rid of any stale values.  This is only
-@@ -128,6 +265,18 @@ static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
+@@ -128,6 +276,18 @@ static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
              s->stats[tag] = val;
      }
      s->stats_vq_offset = offset;
@@ -230,7 +289,7 @@ index 4398025..4bab2ae 100644
  }
  
  static void virtio_balloon_get_config(VirtIODevice *vdev, uint8_t *config_data)
-@@ -212,7 +361,7 @@ static int virtio_balloon_load(QEMUFile *f, void *opaque, int version_id)
+@@ -212,7 +372,7 @@ static int virtio_balloon_load(QEMUFile *f, void *opaque, int version_id)
  VirtIODevice *virtio_balloon_init(DeviceState *dev)
  {
      VirtIOBalloon *s;
@@ -239,7 +298,7 @@ index 4398025..4bab2ae 100644
  
      s = (VirtIOBalloon *)virtio_common_init("virtio-balloon",
                                              VIRTIO_ID_BALLOON,
-@@ -239,6 +388,19 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+@@ -239,6 +399,19 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
      register_savevm(dev, "virtio-balloon", -1, 1,
                      virtio_balloon_save, virtio_balloon_load, s);
  
@@ -259,7 +318,7 @@ index 4398025..4bab2ae 100644
      return &s->vdev;
  }
  
-@@ -246,6 +408,7 @@ void virtio_balloon_exit(VirtIODevice *vdev)
+@@ -246,6 +419,7 @@ void virtio_balloon_exit(VirtIODevice *vdev)
  {
      VirtIOBalloon *s = DO_UPCAST(VirtIOBalloon, vdev, vdev);
  
@@ -269,7 +328,6 @@ index 4398025..4bab2ae 100644
      virtio_cleanup(vdev);
 -- 
 1.8.0
-
 
 
 

@@ -1,6 +1,8 @@
 pve-qemu-kvm (1.3-10) unstable; urgency=low
 
   * include fixes for query-balloon
+  
+  * Update seabios to a810e4e72a0d42c7bc04eda57382f8e019add901
 
  -- Proxmox Support Team <support@proxmox.com>  Tue, 18 Dec 2012 12:38:36 +0100
 
