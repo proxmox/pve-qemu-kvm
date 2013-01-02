@@ -1,4 +1,4 @@
-From e85ba881045bcd48a285d17234ebe32d10735492 Mon Sep 17 00:00:00 2001
+From 9fb6fd584178db5b5a9f0b59f78c30b3c3066f73 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -1847,7 +1847,7 @@ index 0000000..c1e1afe
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..8d6f32d
+index 0000000..d50a312
 --- /dev/null
 +++ b/vma.c
 @@ -0,0 +1,558 @@
@@ -2151,8 +2151,8 @@ index 0000000..8d6f32d
 +                write_zero = false;
 +            }
 +
-+            BlockDriverState *bs = NULL;
-+            if (bdrv_file_open(&bs, devfn, flags)) {
++            BlockDriverState *bs = bdrv_new(di->devname);
++            if (bdrv_open(bs, devfn, flags, NULL)) {
 +                g_error("can't open file %s", devfn);
 +            }
 +            if (vma_reader_register_bs(vmar, i, bs, write_zero, &errp) < 0) {
