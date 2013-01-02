@@ -1,4 +1,4 @@
-From 262dc0d9c9f729dd5f74fc8772738207a4c1359d Mon Sep 17 00:00:00 2001
+From d97630338d62186229192d0724fae489fc500acc Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
 Subject: [PATCH v3 3/6] add backup related monitor commands
@@ -13,14 +13,14 @@ could move the whole archive format related code out of qemu.
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  backup.h         |   13 ++
- blockdev.c       |  376 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ blockdev.c       |  375 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
  hmp-commands.hx  |   31 +++++
  hmp.c            |   63 +++++++++
  hmp.h            |    3 +
  monitor.c        |    7 +
- qapi-schema.json |   81 ++++++++++++
+ qapi-schema.json |   91 +++++++++++++
  qmp-commands.hx  |   27 ++++
- 8 files changed, 601 insertions(+), 0 deletions(-)
+ 8 files changed, 610 insertions(+), 0 deletions(-)
 
 diff --git a/backup.h b/backup.h
 index e1f0290..ae4aa8c 100644
@@ -45,7 +45,7 @@ index e1f0290..ae4aa8c 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index e73fd6e..e89aa14 100644
+index e73fd6e..08ac7ad 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
@@ -56,7 +56,7 @@ index e73fd6e..e89aa14 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1321,6 +1322,381 @@ void qmp_drive_mirror(const char *device, const char *target,
+@@ -1321,6 +1322,380 @@ void qmp_drive_mirror(const char *device, const char *target,
      drive_get_ref(drive_get_by_blockdev(bs));
  }
  
@@ -206,7 +206,7 @@ index e73fd6e..e89aa14 100644
 +    }
 +}
 +
-+char *qmp_backup(const char *backupfile, bool has_format, const char *format,
++char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
 +                 bool has_config_filename, const char *config_filename,
 +                 bool has_devlist, const char *devlist,
 +                 bool has_speed, int64_t speed, Error **errp)
@@ -219,14 +219,13 @@ index e73fd6e..e89aa14 100644
 +    GList *bcblist = NULL;
 +
 +    /* Todo: try to auto-detect format based on file name */
-+    format = has_format ? format : "vma";
++    format = has_format ? format : BACKUP_FORMAT_VMA;
 +
 +    /* fixme: find driver for specifued format */
 +    const BackupDriver *driver = NULL;
 +
 +    if (!driver) {
-+        error_set(errp, ERROR_CLASS_GENERIC_ERROR,
-+                  "no backup driver for format '%s'", format);
++        error_set(errp, ERROR_CLASS_GENERIC_ERROR, "unknown backup format");
 +        return NULL;
 +    }
 +
@@ -488,7 +487,7 @@ index 010b8c9..57be357 100644
  show current migration capabilities
  @item info migrate_cache_size
 diff --git a/hmp.c b/hmp.c
-index 180ba2b..600792f 100644
+index 180ba2b..77076fa 100644
 --- a/hmp.c
 +++ b/hmp.c
 @@ -130,6 +130,38 @@ void hmp_info_mice(Monitor *mon)
@@ -555,8 +554,8 @@ index 180ba2b..600792f 100644
 +
 +    Error *errp = NULL;
 +
-+    qmp_backup(backupfile, false, NULL, false, NULL, !!devlist, devlist,
-+               qdict_haskey(qdict, "speed"), speed, &errp);
++    qmp_backup(backupfile, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist, 
++	       devlist, qdict_haskey(qdict, "speed"), speed, &errp);
 +
 +    if (error_is_set(&errp)) {
 +        monitor_printf(mon, "%s\n", error_get_pretty(errp));
@@ -608,7 +607,7 @@ index c0e32d6..85cf47e 100644
          .args_type  = "",
          .params     = "",
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 5dfa052..bcc70b1 100644
+index 5dfa052..2d3699b 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
 @@ -358,6 +358,39 @@
@@ -651,10 +650,20 @@ index 5dfa052..bcc70b1 100644
  # @query-events:
  #
  # Return a list of supported QMP events by this server
-@@ -1764,6 +1797,54 @@
+@@ -1764,6 +1797,64 @@
    'data': { 'path': 'str' },
    'returns': [ 'ObjectPropertyInfo' ] }
  
++
++##
++# @BackupFormat
++#
++# An enumeration of supported backup formats.
++#
++# @vma: Proxmox vma backup format
++##
++{ 'enum': 'BackupFormat',
++  'data': [ 'vma' ] }
 +
 +##
 +# @backup:
@@ -674,7 +683,7 @@ index 5dfa052..bcc70b1 100644
 +#
 +# Since: 1.4.0
 +##
-+{ 'command': 'backup', 'data': { 'backupfile': 'str', '*format': 'str',
++{ 'command': 'backup', 'data': { 'backupfile': 'str', '*format': 'BackupFormat',
 +                                 '*config-filename': 'str',
 +                                 '*devlist': 'str', '*speed': 'int' },
 +  'returns': 'str' }

@@ -1,4 +1,4 @@
-From 9fb6fd584178db5b5a9f0b59f78c30b3c3066f73 Mon Sep 17 00:00:00 2001
+From 5fbe9dc9bb921a1ee4814028d42c4fc46b04e172 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -57,7 +57,7 @@ index cb46be5..b5732e2 100644
  block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/blockdev.c b/blockdev.c
-index e89aa14..6764e73 100644
+index 08ac7ad..e16091f 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -21,6 +21,7 @@
@@ -68,20 +68,20 @@ index e89aa14..6764e73 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1483,10 +1484,11 @@ char *qmp_backup(const char *backupfile, bool has_format, const char *format,
+@@ -1483,10 +1484,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      /* Todo: try to auto-detect format based on file name */
-     format = has_format ? format : "vma";
+     format = has_format ? format : BACKUP_FORMAT_VMA;
  
 -    /* fixme: find driver for specifued format */
      const BackupDriver *driver = NULL;
  
 -    if (!driver) {
-+    if (strcmp(format, "vma") == 0) {
++    if (format == BACKUP_FORMAT_VMA) {
 +        driver = &backup_vma_driver;
 +    } else {
-         error_set(errp, ERROR_CLASS_GENERIC_ERROR,
-                   "no backup driver for format '%s'", format);
+         error_set(errp, ERROR_CLASS_GENERIC_ERROR, "unknown backup format");
          return NULL;
+     }
 diff --git a/docs/specs/vma_spec.txt b/docs/specs/vma_spec.txt
 new file mode 100644
 index 0000000..052c629
