@@ -18,6 +18,7 @@ enable-kvm-by-default.patch
 0004-introduce-new-vma-archive-format.patch
 0005-add-regression-tests-for-backup.patch
 0006-add-vm-state-to-backups.patch
+0007-use-extra-thread-for-vma-writer.patch
 virtio-balloon-drop-old-stats-code.patch
 virtio-balloon-re-enable-balloon-stats.patch
 virtio-balloon-document-stats.patch

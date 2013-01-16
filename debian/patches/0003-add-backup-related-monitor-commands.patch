@@ -1,7 +1,7 @@
-From d97630338d62186229192d0724fae489fc500acc Mon Sep 17 00:00:00 2001
+From 7bab4498b955ced91ad838fb711e013d9b7ed81f Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
-Subject: [PATCH v3 3/6] add backup related monitor commands
+Subject: [PATCH v3 3/7] add backup related monitor commands
 
 We use a generic BackupDriver struct to encapsulate all archive format
 related function.
@@ -13,22 +13,22 @@ could move the whole archive format related code out of qemu.
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  backup.h         |   13 ++
- blockdev.c       |  375 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ blockdev.c       |  396 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
  hmp-commands.hx  |   31 +++++
  hmp.c            |   63 +++++++++
  hmp.h            |    3 +
  monitor.c        |    7 +
  qapi-schema.json |   91 +++++++++++++
  qmp-commands.hx  |   27 ++++
- 8 files changed, 610 insertions(+), 0 deletions(-)
+ 8 files changed, 631 insertions(+), 0 deletions(-)
 
 diff --git a/backup.h b/backup.h
-index e1f0290..ae4aa8c 100644
+index 87b9942..c6e5d3c 100644
 --- a/backup.h
 +++ b/backup.h
-@@ -27,4 +27,17 @@ int backup_job_start(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
-                      BlockDriverCompletionFunc *backup_complete_cb,
-                      void *opaque);
+@@ -29,4 +29,17 @@ int backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
+ 		      BlockDriverCompletionFunc *backup_complete_cb,
+ 		      void *opaque);
  
 +typedef struct BackupDriver {
 +    const char *format;
@@ -45,7 +45,7 @@ index e1f0290..ae4aa8c 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index e73fd6e..08ac7ad 100644
+index e73fd6e..68a8c55 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
@@ -56,11 +56,13 @@ index e73fd6e..08ac7ad 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1321,6 +1322,380 @@ void qmp_drive_mirror(const char *device, const char *target,
+@@ -1321,6 +1322,401 @@ void qmp_drive_mirror(const char *device, const char *target,
      drive_get_ref(drive_get_by_blockdev(bs));
  }
  
 +/* Backup related function */
++
++static void backup_run_next_job(void);
 +
 +static struct GenericBackupState {
 +    Error *error;
@@ -79,7 +81,6 @@ index e73fd6e..08ac7ad 100644
 +
 +typedef struct BackupCB {
 +    BlockDriverState *bs;
-+    bool job_started;
 +    uint8_t dev_id;
 +    size_t size;
 +    size_t transferred;
@@ -121,14 +122,17 @@ index e73fd6e..08ac7ad 100644
 +        error_propagate(&backup_state.error, local_err);
 +        backup_state.writer = NULL;
 +
-+        GList *l = backup_state.bcb_list;
-+        while (l) {
-+            g_free(l->data);
-+            l = g_list_next(l);
-+        }
-+        g_list_free(backup_state.bcb_list);
-+        backup_state.bcb_list = NULL;
 +    }
++
++    GList *l = backup_state.bcb_list;
++    while (l) {
++        BackupCB *bcb = l->data;
++        drive_put_ref_bh_schedule(drive_get_by_blockdev(bcb->bs));
++        g_free(l->data);
++        l = g_list_next(l);
++    }
++    g_list_free(backup_state.bcb_list);
++    backup_state.bcb_list = NULL;
 +}
 +
 +static void backup_complete_cb(void *opaque, int ret)
@@ -148,6 +152,8 @@ index e73fd6e..08ac7ad 100644
 +
 +    if (g_list_length(backup_state.bcb_list) == 0) {
 +        backup_cleanup();
++    } else {
++        backup_run_next_job();
 +    }
 +
 +    g_free(bcb);
@@ -161,7 +167,7 @@ index e73fd6e..08ac7ad 100644
 +    while (l) {
 +        BackupCB *bcb = l->data;
 +        l = g_list_next(l);
-+        if (bcb->bs->job && bcb->job_started) {
++        if (bcb->bs->job) {
 +            block_job_cancel(bcb->bs->job);
 +            job_count++;
 +        }
@@ -181,6 +187,15 @@ index e73fd6e..08ac7ad 100644
 +    backup_cancel();
 +}
 +
++static void backup_run_next_job(void) 
++{
++    GList *l = backup_state.bcb_list;
++    if (l) {
++        BackupCB *bcb = l->data;
++        backup_job_start(bcb->bs);
++    }
++}
++
 +static void backup_start_jobs(void)
 +{
 +    /* start all jobs (one for each device) */
@@ -189,20 +204,15 @@ index e73fd6e..08ac7ad 100644
 +        BackupCB *bcb = l->data;
 +        l = g_list_next(l);
 +
-+        if (backup_job_start(bcb->bs, backup_dump_cb, backup_complete_cb,
-+                             bcb) == 0) {
-+            bcb->job_started = true;
-+            /* Grab a reference so hotplug does not delete the
-+             * BlockDriverState from underneath us.
-+             */
-+            drive_get_ref(drive_get_by_blockdev(bcb->bs));
-+        } else {
-+            if (!backup_state.error) {
-+                error_setg(&backup_state.error, "backup_job_start failed");
-+            }
++        if (backup_job_create(bcb->bs, backup_dump_cb, backup_complete_cb,
++                              bcb) != 0) {
 +            backup_cancel();
-+            return;
-+         }
++            break;
++        }
++    }
++
++    if (!l) { /* no errors */
++        backup_run_next_job();
 +    }
 +}
 +
@@ -286,7 +296,8 @@ index e73fd6e..08ac7ad 100644
 +
 +    uuid_generate(uuid);
 +
-+    writer = driver->open_cb(backupfile, uuid, speed, &local_err);
++    writer = driver->open_cb(backupfile, uuid, has_speed ? speed : 0,
++                             &local_err);
 +    if (!writer) {
 +        if (error_is_set(&local_err)) {
 +            error_propagate(errp, local_err);
@@ -360,6 +371,16 @@ index e73fd6e..08ac7ad 100644
 +    backup_state.total = total;
 +    backup_state.transferred = 0;
 +    backup_state.zero_bytes = 0;
++
++    /* Grab a reference so hotplug does not delete the
++     * BlockDriverState from underneath us.
++     */
++    l = bcblist;
++    while (l) {
++        BackupCB *bcb = l->data;
++        l = g_list_next(l);
++        drive_get_ref(drive_get_by_blockdev(bcb->bs));
++    }
 +
 +    backup_start_jobs();
 +
@@ -487,7 +508,7 @@ index 010b8c9..57be357 100644
  show current migration capabilities
  @item info migrate_cache_size
 diff --git a/hmp.c b/hmp.c
-index 180ba2b..77076fa 100644
+index 180ba2b..27fd421 100644
 --- a/hmp.c
 +++ b/hmp.c
 @@ -130,6 +130,38 @@ void hmp_info_mice(Monitor *mon)
@@ -554,8 +575,8 @@ index 180ba2b..77076fa 100644
 +
 +    Error *errp = NULL;
 +
-+    qmp_backup(backupfile, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist, 
-+	       devlist, qdict_haskey(qdict, "speed"), speed, &errp);
++    qmp_backup(backupfile, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist,
++               devlist, qdict_haskey(qdict, "speed"), speed, &errp);
 +
 +    if (error_is_set(&errp)) {
 +        monitor_printf(mon, "%s\n", error_get_pretty(errp));

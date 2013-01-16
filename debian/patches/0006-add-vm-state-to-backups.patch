@@ -1,18 +1,18 @@
-From ea2827e070e10b515be9b05628e372d281fcf868 Mon Sep 17 00:00:00 2001
+From 9c8e193692a2f96116793ddbe3fa89650985f272 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Thu, 29 Nov 2012 10:46:49 +0100
-Subject: [PATCH v3 6/6] add vm state to backups
+Subject: [PATCH v3 6/7] add vm state to backups
 
 
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  blockdev.c       |  196 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
- hmp.c            |    5 +-
+ hmp.c            |    3 +-
  qapi-schema.json |    6 +-
- 3 files changed, 201 insertions(+), 6 deletions(-)
+ 3 files changed, 200 insertions(+), 5 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index e16091f..a5e2058 100644
+index 80cb04d..96d7a3b 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -22,6 +22,8 @@
@@ -24,7 +24,7 @@ index e16091f..a5e2058 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1338,6 +1340,10 @@ static struct GenericBackupState {
+@@ -1340,6 +1342,10 @@ static struct GenericBackupState {
      size_t total;
      size_t transferred;
      size_t zero_bytes;
@@ -35,7 +35,7 @@ index e16091f..a5e2058 100644
  } backup_state;
  
  typedef struct BackupCB {
-@@ -1469,10 +1475,170 @@ static void backup_start_jobs(void)
+@@ -1479,10 +1485,170 @@ static void backup_start_jobs(void)
      }
  }
  
@@ -167,7 +167,7 @@ index e16091f..a5e2058 100644
 +                    err = g_strdup("backup_start_savevm: complete_cb failed");
 +                    goto abort;
 +                }
-+                backup_start_jobs();
++                backup_run_next_job();
 +                goto out;
 +            }
 +        }
@@ -207,7 +207,7 @@ index e16091f..a5e2058 100644
  {
      BlockDriverState *bs;
      Error *local_err = NULL;
-@@ -1481,6 +1647,8 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1491,6 +1657,8 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      gchar **devs = NULL;
      GList *bcblist = NULL;
  
@@ -216,7 +216,7 @@ index e16091f..a5e2058 100644
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
-@@ -1561,6 +1729,22 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1572,6 +1740,22 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      size_t total = 0;
  
      /* register all devices for vma writer */
@@ -239,7 +239,7 @@ index e16091f..a5e2058 100644
      l = bcblist;
      while (l) {
          BackupCB *bcb = l->data;
-@@ -1624,8 +1808,16 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1635,6 +1819,9 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      backup_state.total = total;
      backup_state.transferred = 0;
      backup_state.zero_bytes = 0;
@@ -247,32 +247,36 @@ index e16091f..a5e2058 100644
 +    backup_state.buf_cluster_num = 0;
 +    backup_state.vmstate_dev_id = vmstate_dev_id;
  
+     /* Grab a reference so hotplug does not delete the
+      * BlockDriverState from underneath us.
+@@ -1646,7 +1833,12 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+         drive_get_ref(drive_get_by_blockdev(bcb->bs));
+     }
+ 
 -    backup_start_jobs();
 +    if (save_state) {
 +        Coroutine *co = qemu_coroutine_create(backup_start_savevm);
 +        qemu_coroutine_enter(co, NULL);
 +    } else {
-+        backup_start_jobs();
++	backup_start_jobs();
 +    }
  
      return g_strdup(backup_state.uuid_str);
  
 diff --git a/hmp.c b/hmp.c
-index 77076fa..61ba5c3 100644
+index 27fd421..56e1cdc 100644
 --- a/hmp.c
 +++ b/hmp.c
-@@ -1031,8 +1031,9 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
+@@ -1031,7 +1031,8 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
      Error *errp = NULL;
  
-     qmp_backup(backupfile, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist, 
--	       devlist, qdict_haskey(qdict, "speed"), speed, &errp);
--
-+               devlist, qdict_haskey(qdict, "speed"), speed, false, false, 
+     qmp_backup(backupfile, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist,
+-               devlist, qdict_haskey(qdict, "speed"), speed, &errp);
++               devlist, qdict_haskey(qdict, "speed"), speed, false, false,
 +               &errp);
-+    
+ 
      if (error_is_set(&errp)) {
          monitor_printf(mon, "%s\n", error_get_pretty(errp));
-         error_free(errp);
 diff --git a/qapi-schema.json b/qapi-schema.json
 index 2d3699b..3f4889e 100644
 --- a/qapi-schema.json

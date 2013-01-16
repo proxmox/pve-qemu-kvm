@@ -1,9 +1,10 @@
-From 11bf5a3156abfd98d13cc5f03cd5f57e6dac06f3 Mon Sep 17 00:00:00 2001
+From 577b000e947d817cf4e0189615c0d0257cb20259 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 10:03:52 +0100
-Subject: [PATCH v3 2/6] add basic backup support to block driver
+Subject: [PATCH v3 2/7] add basic backup support to block driver
 
-Function backup_job_start() creates a block job to backup a block device.
+Function backup_job_create() creates a block job to backup a block device.
+The coroutine is started with backup_job_start().
 
 We call backup_do_cow() for each write during backup. That function
 reads the original data and pass it to backup_dump_cb().
@@ -15,12 +16,12 @@ Currently backup cluster size is hardcoded to 65536 bytes.
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  Makefile.objs |    1 +
- backup.c      |  302 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- backup.h      |   30 ++++++
+ backup.c      |  308 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ backup.h      |   32 ++++++
  block.c       |   71 ++++++++++++-
  block.h       |    2 +
  blockjob.h    |   10 ++
- 6 files changed, 410 insertions(+), 6 deletions(-)
+ 6 files changed, 418 insertions(+), 6 deletions(-)
  create mode 100644 backup.c
  create mode 100644 backup.h
 
@@ -38,10 +39,10 @@ index 3c7abca..cb46be5 100644
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/backup.c b/backup.c
 new file mode 100644
-index 0000000..6a44974
+index 0000000..2c13e21
 --- /dev/null
 +++ b/backup.c
-@@ -0,0 +1,302 @@
+@@ -0,0 +1,308 @@
 +/*
 + * QEMU backup
 + *
@@ -82,10 +83,8 @@ index 0000000..6a44974
 +    void *opaque;
 +} BackupBlockJob;
 +
-+static int backup_get_bitmap(BlockDriverState *bs, int64_t cluster_num)
++static int backup_get_bitmap(BackupBlockJob *job, int64_t cluster_num)
 +{
-+    assert(bs);
-+    BackupBlockJob *job = (BackupBlockJob *)bs->job;
 +    assert(job);
 +    assert(job->bitmap);
 +
@@ -101,11 +100,9 @@ index 0000000..6a44974
 +    return !!(val & (1UL << bit));
 +}
 +
-+static void backup_set_bitmap(BlockDriverState *bs, int64_t cluster_num,
++static void backup_set_bitmap(BackupBlockJob *job, int64_t cluster_num,
 +                              int dirty)
 +{
-+    assert(bs);
-+    BackupBlockJob *job = (BackupBlockJob *)bs->job;
 +    assert(job);
 +    assert(job->bitmap);
 +
@@ -156,13 +153,13 @@ index 0000000..6a44974
 +            bdrv_get_device_name(bs), start, sector_num, nb_sectors);
 +
 +    for (; start < end; start++) {
-+        if (backup_get_bitmap(bs, start)) {
++        if (backup_get_bitmap(job, start)) {
 +            DPRINTF("brdv_co_backup_cow skip C%zd\n", start);
 +            continue; /* already copied */
 +        }
 +
 +        /* immediately set bitmap (avoid coroutine race) */
-+        backup_set_bitmap(bs, start, 1);
++        backup_set_bitmap(job, start, 1);
 +
 +        DPRINTF("brdv_co_backup_cow C%zd\n", start);
 +
@@ -244,15 +241,16 @@ index 0000000..6a44974
 +            break;
 +        }
 +
-+        if (backup_get_bitmap(bs, start)) {
++        if (backup_get_bitmap(job, start)) {
 +            continue; /* already copied */
 +        }
 +
 +        /* we need to yield so that qemu_aio_flush() returns.
 +         * (without, VM does not reboot)
 +         * todo: can we avoid that?
++        * Note: use 1000 instead of 0 (0 priorize this task too much)
 +         */
-+        co_sleep_ns(rt_clock, 0);
++        block_job_sleep_ns(&job->common, rt_clock, 1000);
 +        if (block_job_is_cancelled(&job->common)) {
 +            ret = -1;
 +            break;
@@ -298,10 +296,21 @@ index 0000000..6a44974
 +    g_free(job->bitmap);
 +}
 +
++void
++backup_job_start(BlockDriverState *bs)
++{
++    assert(bs);
++    assert(bs->job);
++    assert(bs->job->co == NULL);
++
++    bs->job->co = qemu_coroutine_create(backup_run);
++    qemu_coroutine_enter(bs->job->co, bs->job);
++}
++
 +int
-+backup_job_start(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
-+                 BlockDriverCompletionFunc *backup_complete_cb,
-+                 void *opaque)
++backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
++                  BlockDriverCompletionFunc *backup_complete_cb,
++                  void *opaque)
 +{
 +    assert(bs);
 +    assert(backup_dump_cb);
@@ -339,17 +348,15 @@ index 0000000..6a44974
 +    job->bitmap = g_new0(unsigned long, bitmap_size);
 +
 +    job->common.len = bs->total_sectors*BDRV_SECTOR_SIZE;
-+    job->common.co = qemu_coroutine_create(backup_run);
-+    qemu_coroutine_enter(job->common.co, job);
-+
++    
 +    return 0;
 +}
 diff --git a/backup.h b/backup.h
 new file mode 100644
-index 0000000..e1f0290
+index 0000000..87b9942
 --- /dev/null
 +++ b/backup.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,32 @@
 +/*
 + * QEMU backup related definitions
 + *
@@ -375,13 +382,15 @@ index 0000000..e1f0290
 +typedef int BackupDumpFunc(void *opaque, BlockDriverState *bs,
 +                           int64_t cluster_num, unsigned char *buf);
 +
-+int backup_job_start(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
-+                     BlockDriverCompletionFunc *backup_complete_cb,
-+                     void *opaque);
++void backup_job_start(BlockDriverState *bs);
++
++int backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
++		      BlockDriverCompletionFunc *backup_complete_cb,
++		      void *opaque);
 +
 +#endif /* QEMU_BACKUP_H */
 diff --git a/block.c b/block.c
-index c05875f..2f7c2eb 100644
+index c05875f..4de7fbd 100644
 --- a/block.c
 +++ b/block.c
 @@ -54,6 +54,7 @@
@@ -465,7 +474,7 @@ index c05875f..2f7c2eb 100644
  
 +    if (bs->job && bs->job->job_type->before_read) {
 +        ret = bs->job->job_type->before_read(bs, sector_num, nb_sectors, qiov);
-+        if (flags & BDRV_REQ_BACKUP_ONLY) {
++        if ((ret < 0) || (flags & BDRV_REQ_BACKUP_ONLY)) {
 +            /* Note: We do not return any data to the caller */
 +            goto out;
 +        }

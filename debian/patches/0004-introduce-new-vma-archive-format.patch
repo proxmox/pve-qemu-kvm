@@ -1,7 +1,7 @@
-From 5fbe9dc9bb921a1ee4814028d42c4fc46b04e172 Mon Sep 17 00:00:00 2001
+From 77a6564c9985c37990c3e90f558f2ef48d6d5f15 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
-Subject: [PATCH v3 4/6] introduce new vma archive format
+Subject: [PATCH v3 4/7] introduce new vma archive format
 
 This is a very simple archive format, see docs/specs/vma_spec.txt
 
@@ -11,11 +11,11 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  Makefile.objs           |    2 +-
  blockdev.c              |    6 +-
  docs/specs/vma_spec.txt |   24 ++
- vma-reader.c            |  801 +++++++++++++++++++++++++++++++++++++++++
- vma-writer.c            |  920 +++++++++++++++++++++++++++++++++++++++++++++++
- vma.c                   |  558 ++++++++++++++++++++++++++++
+ vma-reader.c            |  801 ++++++++++++++++++++++++++++++++++++++++
+ vma-writer.c            |  931 +++++++++++++++++++++++++++++++++++++++++++++++
+ vma.c                   |  561 ++++++++++++++++++++++++++++
  vma.h                   |  146 ++++++++
- 8 files changed, 2456 insertions(+), 4 deletions(-)
+ 8 files changed, 2470 insertions(+), 4 deletions(-)
  create mode 100644 docs/specs/vma_spec.txt
  create mode 100644 vma-reader.c
  create mode 100644 vma-writer.c
@@ -57,7 +57,7 @@ index cb46be5..b5732e2 100644
  block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/blockdev.c b/blockdev.c
-index 08ac7ad..e16091f 100644
+index 68a8c55..80cb04d 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -21,6 +21,7 @@
@@ -68,7 +68,7 @@ index 08ac7ad..e16091f 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1483,10 +1484,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1493,10 +1494,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -114,7 +114,7 @@ index 0000000..052c629
 +
 diff --git a/vma-reader.c b/vma-reader.c
 new file mode 100644
-index 0000000..b6a550b
+index 0000000..2217a94
 --- /dev/null
 +++ b/vma-reader.c
 @@ -0,0 +1,801 @@
@@ -649,7 +649,7 @@ index 0000000..b6a550b
 +    return 0;
 +}
 +static int restore_extent(VmaReader *vmar, unsigned char *buf,
-+                          int extent_size, int vmstate_fd, 
++                          int extent_size, int vmstate_fd,
 +                          bool verbose, Error **errp)
 +{
 +    assert(vmar);
@@ -703,7 +703,7 @@ index 0000000..b6a550b
 +            time_t duration = time(NULL) - vmar->start_time;
 +            int percent = (vmar->clusters_read*100)/vmar->cluster_count;
 +            if (percent != vmar->clusters_read_per) {
-+                printf("progress %d%% (read %zd bytes, duration %zd sec)\n", 
++                printf("progress %d%% (read %zd bytes, duration %zd sec)\n",
 +                       percent, vmar->clusters_read*VMA_CLUSTER_SIZE,
 +                       duration);
 +                fflush(stdout);
@@ -802,7 +802,7 @@ index 0000000..b6a550b
 +}
 +
 +int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,
-+		       Error **errp)
++                       Error **errp)
 +{
 +    assert(vmar);
 +    assert(vmar->head_data);
@@ -868,7 +868,7 @@ index 0000000..b6a550b
 +            return -1;
 +        }
 +
-+        if (restore_extent(vmar, buf, extent_size, vmstate_fd, verbose, 
++        if (restore_extent(vmar, buf, extent_size, vmstate_fd, verbose,
 +                           errp) < 0) {
 +            return -1;
 +        }
@@ -921,10 +921,10 @@ index 0000000..b6a550b
 +
 diff --git a/vma-writer.c b/vma-writer.c
 new file mode 100644
-index 0000000..c1e1afe
+index 0000000..688af4b
 --- /dev/null
 +++ b/vma-writer.c
-@@ -0,0 +1,920 @@
+@@ -0,0 +1,931 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -996,7 +996,6 @@ index 0000000..c1e1afe
 +    CoMutex flush_lock;
 +    Coroutine *co_writer;
 +    RateLimit limit;
-+    uint64_t delay_ns;
 +
 +    /* drive informations */
 +    VmaStreamInfo stream_info[256];
@@ -1314,22 +1313,22 @@ index 0000000..c1e1afe
 +    } else {
 +        struct stat st;
 +        int oflags;
-+	const char *tmp_id_str;
++        const char *tmp_id_str;
 +
 +        if ((stat(filename, &st) == 0) && S_ISFIFO(st.st_mode)) {
 +            oflags = O_NONBLOCK|O_WRONLY;
-+	    vmaw->fd = qemu_open(filename, oflags, 0644);
++            vmaw->fd = qemu_open(filename, oflags, 0644);
 +        } else if (strstart(filename, "/dev/fdset/", &tmp_id_str)) {
 +            oflags = O_NONBLOCK|O_WRONLY;
 +            vmaw->fd = qemu_open(filename, oflags, 0644);
-+	} else if (strstart(filename, "/dev/fdname/", &tmp_id_str)) {
++        } else if (strstart(filename, "/dev/fdname/", &tmp_id_str)) {
 +            vmaw->fd = monitor_get_fd(cur_mon, tmp_id_str, errp);
 +            if (vmaw->fd < 0) {
 +                goto err;
 +            }
-+	} else  {
++        } else  {
 +            oflags = O_NONBLOCK|O_WRONLY|O_CREAT|O_EXCL;
-+	    vmaw->fd = qemu_open(filename, oflags, 0644);
++            vmaw->fd = qemu_open(filename, oflags, 0644);
 +        }
 +
 +        if (vmaw->fd < 0) {
@@ -1579,24 +1578,31 @@ index 0000000..c1e1afe
 +    return vmaw->status;
 +}
 +
-+static int vma_writer_get_buffer(VmaWriter *vmaw)
++static int vma_writer_get_buffer(VmaWriter *vmaw, size_t bytes)
 +{
++    int ret = 0;
++
++    qemu_co_mutex_lock(&vmaw->flush_lock);
++
++    /* rate limit */
++    uint64_t delay_ns = ratelimit_calculate_delay(&vmaw->limit, bytes);
++    if (delay_ns) {
++        DPRINTF("DELAY %zd\n", delay_ns);
++        co_sleep_ns(rt_clock, delay_ns);
++    }
 +
 +    /* wait until buffer is available */
 +    while (vmaw->outbuf_count >= (VMA_BLOCKS_PER_EXTENT - 1)) {
-+        int res = 0;
-+
-+        qemu_co_mutex_lock(&vmaw->flush_lock);
-+        res = vma_writer_flush(vmaw);
-+        qemu_co_mutex_unlock(&vmaw->flush_lock);
-+
-+        if (res < 0) {
++        ret = vma_writer_flush(vmaw);
++        if (ret < 0) {
 +            vma_writer_set_error(vmaw, "vma_writer_get_buffer: flush failed");
-+            return -1;
++            break;
 +        }
 +    }
 +
-+    return 0;
++    qemu_co_mutex_unlock(&vmaw->flush_lock);
++
++    return ret;
 +}
 +
 +
@@ -1643,34 +1649,39 @@ index 0000000..c1e1afe
 +        return -1;
 +    }
 +
++    /* detect block containing zeroes */
++    int i;
++    int bit = 1;
++    uint16_t mask = 0;
++    size_t real_size = 0;
++    for (i = 0; i < 16; i++) {
++        unsigned char *vmablock = buf + (i*VMA_BLOCK_SIZE);
++        if (!buffer_is_zero(vmablock, VMA_BLOCK_SIZE)) {
++            mask |= bit;
++            real_size += VMA_BLOCK_SIZE;
++        }
++        bit = bit << 1;
++    }
++
 +    /* wait until buffer is available */
-+    if (vma_writer_get_buffer(vmaw) < 0) {
++    if (vma_writer_get_buffer(vmaw, real_size) < 0) {
 +        vma_writer_set_error(vmaw, "vma_writer_write: "
 +                             "vma_writer_get_buffer failed");
 +        return -1;
 +    }
 +
-+    DPRINTF("VMA WRITE %zd\n", cluster_num);
++    DPRINTF("VMA WRITE %d %zd\n", dev_id, cluster_num);
 +
-+    int i;
-+    int bit = 1;
-+    uint16_t mask = 0;
++    bit = 1;
 +    for (i = 0; i < 16; i++) {
 +        unsigned char *vmablock = buf + (i*VMA_BLOCK_SIZE);
-+        if (buffer_is_zero(vmablock, VMA_BLOCK_SIZE)) {
++        if (mask & bit) {
++            memcpy(vmaw->outbuf + vmaw->outbuf_pos, vmablock, VMA_BLOCK_SIZE);
++            vmaw->outbuf_pos += VMA_BLOCK_SIZE;
++        } else {
 +            DPRINTF("VMA WRITE %zd ZERO BLOCK %d\n", cluster_num, i);
 +            vmaw->stream_info[dev_id].zero_bytes += VMA_BLOCK_SIZE;
 +            *zero_bytes += VMA_BLOCK_SIZE;
-+        } else {
-+            mask |= bit;
-+            memcpy(vmaw->outbuf + vmaw->outbuf_pos, vmablock, VMA_BLOCK_SIZE);
-+            vmaw->outbuf_pos += VMA_BLOCK_SIZE;
-+
-+            vmaw->delay_ns = ratelimit_calculate_delay(&vmaw->limit,
-+                                                       VMA_BLOCK_SIZE);
-+            if (vmaw->delay_ns) {
-+                co_sleep_ns(rt_clock, vmaw->delay_ns);
-+            }
 +        }
 +
 +        bit = bit << 1;
@@ -1679,7 +1690,7 @@ index 0000000..c1e1afe
 +    uint64_t block_info = ((uint64_t)mask) << (32+16);
 +    block_info |= ((uint64_t)dev_id) << 32;
 +    block_info |= (cluster_num & 0xffffffff);
-+    vmaw->outbuf_block_info[vmaw->outbuf_count] =  block_info;
++    vmaw->outbuf_block_info[vmaw->outbuf_count] = block_info;
 +
 +    DPRINTF("VMA WRITE MASK %zd %zx\n", cluster_num, block_info);
 +
@@ -1847,10 +1858,10 @@ index 0000000..c1e1afe
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..d50a312
+index 0000000..9b47b92
 --- /dev/null
 +++ b/vma.c
-@@ -0,0 +1,558 @@
+@@ -0,0 +1,561 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -2015,7 +2026,7 @@ index 0000000..d50a312
 +        case 'r':
 +            readmap = optarg;
 +            break;
-+       case 'v':
++        case 'v':
 +            verbose = 1;
 +            break;
 +        default:
@@ -2316,9 +2327,12 @@ index 0000000..d50a312
 +        bcb->vmaw = vmaw;
 +        bcb->dev_id = dev_id;
 +
-+        if (backup_job_start(bs, backup_dump_cb, backup_complete_cb, bcb) < 0) {
++        if (backup_job_create(bs, backup_dump_cb, backup_complete_cb, 
++			      bcb) < 0) {
 +            unlink(archivename);
 +            g_error("backup_job_start failed");
++        } else {
++            backup_job_start(bs);
 +        }
 +    }
 +
@@ -2411,7 +2425,7 @@ index 0000000..d50a312
 +}
 diff --git a/vma.h b/vma.h
 new file mode 100644
-index 0000000..f30a2bc
+index 0000000..689e639
 --- /dev/null
 +++ b/vma.h
 @@ -0,0 +1,146 @@
@@ -2557,8 +2571,8 @@ index 0000000..f30a2bc
 +int vma_reader_register_bs(VmaReader *vmar, guint8 dev_id,
 +                           BlockDriverState *bs, bool write_zeroes,
 +                           Error **errp);
-+int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose, 
-+		       Error **errp);
++int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,
++                       Error **errp);
 +
 +#endif /* BACKUP_VMA_H */
 -- 
