@@ -1,4 +1,4 @@
-From 77a6564c9985c37990c3e90f558f2ef48d6d5f15 Mon Sep 17 00:00:00 2001
+From 69a3f26bdbe445ce01f096b9d5e1aaf45ad98b81 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/7] introduce new vma archive format
@@ -57,7 +57,7 @@ index cb46be5..b5732e2 100644
  block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/blockdev.c b/blockdev.c
-index 68a8c55..80cb04d 100644
+index 37edb75..0632c57 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -21,6 +21,7 @@
@@ -68,7 +68,7 @@ index 68a8c55..80cb04d 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1493,10 +1494,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1507,10 +1508,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  

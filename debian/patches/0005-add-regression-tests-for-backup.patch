@@ -1,4 +1,4 @@
-From 37ec0e0badcbf3cc6d3959f1867b8a1d6db3be13 Mon Sep 17 00:00:00 2001
+From 6df0d37601a8dd765bb30ae456e194155a85d0a4 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Wed, 14 Nov 2012 09:57:04 +0100
 Subject: [PATCH v3 5/7] add regression tests for backup

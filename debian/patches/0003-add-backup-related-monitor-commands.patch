@@ -1,4 +1,4 @@
-From 7bab4498b955ced91ad838fb711e013d9b7ed81f Mon Sep 17 00:00:00 2001
+From 7d2906f7da677d2f2533d1455453dc328cb65590 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
 Subject: [PATCH v3 3/7] add backup related monitor commands
@@ -13,14 +13,14 @@ could move the whole archive format related code out of qemu.
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  backup.h         |   13 ++
- blockdev.c       |  396 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- hmp-commands.hx  |   31 +++++
+ blockdev.c       |  410 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hmp-commands.hx  |   31 ++++
  hmp.c            |   63 +++++++++
  hmp.h            |    3 +
  monitor.c        |    7 +
- qapi-schema.json |   91 +++++++++++++
+ qapi-schema.json |   91 ++++++++++++
  qmp-commands.hx  |   27 ++++
- 8 files changed, 631 insertions(+), 0 deletions(-)
+ 8 files changed, 645 insertions(+), 0 deletions(-)
 
 diff --git a/backup.h b/backup.h
 index 87b9942..c6e5d3c 100644
@@ -45,7 +45,7 @@ index 87b9942..c6e5d3c 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index e73fd6e..68a8c55 100644
+index e73fd6e..37edb75 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
@@ -56,7 +56,7 @@ index e73fd6e..68a8c55 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1321,6 +1322,401 @@ void qmp_drive_mirror(const char *device, const char *target,
+@@ -1321,6 +1322,415 @@ void qmp_drive_mirror(const char *device, const char *target,
      drive_get_ref(drive_get_by_blockdev(bs));
  }
  
@@ -82,6 +82,8 @@ index e73fd6e..68a8c55 100644
 +typedef struct BackupCB {
 +    BlockDriverState *bs;
 +    uint8_t dev_id;
++    bool started;
++    bool completed;
 +    size_t size;
 +    size_t transferred;
 +    size_t zero_bytes;
@@ -121,18 +123,19 @@ index e73fd6e..68a8c55 100644
 +        backup_state.driver->close_cb(backup_state.writer, &local_err);
 +        error_propagate(&backup_state.error, local_err);
 +        backup_state.writer = NULL;
-+
 +    }
 +
-+    GList *l = backup_state.bcb_list;
-+    while (l) {
-+        BackupCB *bcb = l->data;
-+        drive_put_ref_bh_schedule(drive_get_by_blockdev(bcb->bs));
-+        g_free(l->data);
-+        l = g_list_next(l);
++    if (backup_state.bcb_list) {
++        GList *l = backup_state.bcb_list;
++        while (l) {
++            BackupCB *bcb = l->data;
++            l = g_list_next(l);
++            drive_put_ref_bh_schedule(drive_get_by_blockdev(bcb->bs));
++            g_free(bcb);
++        }
++        g_list_free(backup_state.bcb_list);
++        backup_state.bcb_list = NULL;
 +    }
-+    g_list_free(backup_state.bcb_list);
-+    backup_state.bcb_list = NULL;
 +}
 +
 +static void backup_complete_cb(void *opaque, int ret)
@@ -144,61 +147,73 @@ index e73fd6e..68a8c55 100644
 +    assert(backup_state.driver->complete_cb);
 +    assert(backup_state.driver->close_cb);
 +
-+    drive_put_ref_bh_schedule(drive_get_by_blockdev(bcb->bs));
-+
-+    backup_state.bcb_list = g_list_remove(backup_state.bcb_list, bcb);
++    bcb->completed = true;
 +
 +    backup_state.driver->complete_cb(backup_state.writer, bcb->dev_id, ret);
 +
-+    if (g_list_length(backup_state.bcb_list) == 0) {
-+        backup_cleanup();
-+    } else {
-+        backup_run_next_job();
-+    }
-+
-+    g_free(bcb);
++    backup_run_next_job();
 +}
 +
 +static void backup_cancel(void)
 +{
-+    GList *l = backup_state.bcb_list;
-+    int job_count = 0;
++    if (!backup_state.error) {
++        error_setg(&backup_state.error, "backup cancelled");
++    }
 +
++    /* we only need to cancel the running job - backup_run_next_job() cancels
++     * the other jobs */
++
++    GList *l = backup_state.bcb_list;
 +    while (l) {
 +        BackupCB *bcb = l->data;
 +        l = g_list_next(l);
-+        if (bcb->bs->job) {
-+            block_job_cancel(bcb->bs->job);
-+            job_count++;
-+        }
++	BlockJob *job = bcb->bs->job;
++        if (!bcb->completed && job) {
++            block_job_cancel(job);
++            /* make sure we call the complete callback */
++            if (!job->co) {
++                block_job_completed(job, -1);
++            }
++            break;
++       }
 +    }
 +
-+    if (!job_count) {
++    if (!l) { /* all jobs completed */
 +        backup_cleanup();
 +    }
 +}
 +
 +void qmp_backup_cancel(Error **errp)
 +{
-+    if (!backup_state.error) {
-+        error_setg(&backup_state.error, "backup cancelled");
-+    }
-+
 +    backup_cancel();
 +}
 +
 +static void backup_run_next_job(void) 
 +{
 +    GList *l = backup_state.bcb_list;
-+    if (l) {
++    while(l) {
 +        BackupCB *bcb = l->data;
-+        backup_job_start(bcb->bs);
++        l = g_list_next(l);
++
++        if (bcb->bs && bcb->bs->job && !bcb->completed) {
++            if (!bcb->started) {
++                bcb->started = true;
++                if (!backup_state.error) {
++                    backup_job_start(bcb->bs);
++                } else {
++                    block_job_completed(bcb->bs->job, -1);
++                }
++            }
++            return;
++        }
 +    }
++
++    backup_cleanup();
 +}
 +
 +static void backup_start_jobs(void)
 +{
-+    /* start all jobs (one for each device) */
++    /* create all jobs (one for each device), start first one */
 +    GList *l = backup_state.bcb_list;
 +    while (l) {
 +        BackupCB *bcb = l->data;
@@ -206,14 +221,13 @@ index e73fd6e..68a8c55 100644
 +
 +        if (backup_job_create(bcb->bs, backup_dump_cb, backup_complete_cb,
 +                              bcb) != 0) {
++            error_setg(&backup_state.error, "backup_job_create failed");
 +            backup_cancel();
-+            break;
++            return;
 +        }
 +    }
 +
-+    if (!l) { /* no errors */
-+        backup_run_next_job();
-+    }
++    backup_run_next_job();
 +}
 +
 +char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,

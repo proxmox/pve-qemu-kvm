@@ -1,4 +1,4 @@
-From 9cf799746fb3b21362fd62574cd76bfa14a24070 Mon Sep 17 00:00:00 2001
+From a6f324d47b810809de2a6106849527c6a9590175 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Mon, 14 Jan 2013 08:05:40 +0100
 Subject: [PATCH v3 7/7] use extra thread for vma writer
