@@ -25,4 +25,5 @@ virtio-balloon-document-stats.patch
 virtio-balloon-fix-query.patch
 always-update-expected-downtime.patch
 e1000-discard-oversized-packets.patch
+fix-aio-poll.patch
 

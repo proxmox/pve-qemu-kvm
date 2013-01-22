@@ -1,0 +1,67 @@
+aio_poll() must return true if any work is still pending, even if it didn't make progress, so that qemu_aio_wait() doesn't return too early.
+The possibility of returning early occasionally lead to a failed assertion in bdrv_drain_all(), when some in-flight request was missed and the function didn't really drain all requests.
+
+In order to make that change, the return value as specified in the function comment must change for blocking = false; fortunately, the return value of blocking = false callers is only used in test cases, so this change shouldn't cause any trouble.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ aio-posix.c         |    3 ++-
+ include/block/aio.h |    6 ++----
+ tests/test-aio.c    |    4 ++--
+ 3 files changed, 6 insertions(+), 7 deletions(-)
+
+Index: new/aio-posix.c
+===================================================================
+--- new.orig/aio-posix.c	2013-01-22 07:10:17.000000000 +0100
++++ new/aio-posix.c	2013-01-22 07:10:43.000000000 +0100
+@@ -264,5 +264,6 @@
+         }
+     }
+ 
+-    return progress;
++    assert(progress || busy);
++    return true;
+ }
+Index: new/qemu-aio.h
+===================================================================
+--- new.orig/qemu-aio.h	2013-01-22 07:10:17.000000000 +0100
++++ new/qemu-aio.h	2013-01-22 07:10:43.000000000 +0100
+@@ -177,16 +177,14 @@
+  * aio as a result of executing I/O completion or bh callbacks.
+  *
+  * If there is no pending AIO operation or completion (bottom half),
+- * return false.  If there are pending bottom halves, return true.
++ * return false.  If there are pending AIO operations of bottom halves,
++ * return true.
+  *
+  * If there are no pending bottom halves, but there are pending AIO
+  * operations, it may not be possible to make any progress without
+  * blocking.  If @blocking is true, this function will wait until one
+  * or more AIO events have completed, to ensure something has moved
+  * before returning.
+- *
+- * If @blocking is false, this function will also return false if the
+- * function cannot make any progress without blocking.
+  */
+ bool aio_poll(AioContext *ctx, bool blocking);
+ 
+Index: new/tests/test-aio.c
+===================================================================
+--- new.orig/tests/test-aio.c	2013-01-22 07:10:17.000000000 +0100
++++ new/tests/test-aio.c	2013-01-22 07:10:43.000000000 +0100
+@@ -315,13 +315,13 @@
+     event_notifier_set(&data.e);
+     g_assert(aio_poll(ctx, false));
+     g_assert_cmpint(data.n, ==, 1);
+-    g_assert(!aio_poll(ctx, false));
++    g_assert(aio_poll(ctx, false));
+     g_assert_cmpint(data.n, ==, 1);
+ 
+     event_notifier_set(&data.e);
+     g_assert(aio_poll(ctx, false));
+     g_assert_cmpint(data.n, ==, 2);
+-    g_assert(!aio_poll(ctx, false));
++    g_assert(aio_poll(ctx, false));
+     g_assert_cmpint(data.n, ==, 2);
+ 
+     event_notifier_set(&dummy.e);
