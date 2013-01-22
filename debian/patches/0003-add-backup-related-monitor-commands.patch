@@ -1,7 +1,7 @@
-From 7d2906f7da677d2f2533d1455453dc328cb65590 Mon Sep 17 00:00:00 2001
+From b9c06929cb9e9583b002fa6de76ad3c318c89f35 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
-Subject: [PATCH v3 3/7] add backup related monitor commands
+Subject: [PATCH v3 3/6] add backup related monitor commands
 
 We use a generic BackupDriver struct to encapsulate all archive format
 related function.
@@ -12,28 +12,27 @@ could move the whole archive format related code out of qemu.
 
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
- backup.h         |   13 ++
- blockdev.c       |  410 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ backup.h         |   12 ++
+ blockdev.c       |  412 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
  hmp-commands.hx  |   31 ++++
- hmp.c            |   63 +++++++++
+ hmp.c            |   63 ++++++++
  hmp.h            |    3 +
  monitor.c        |    7 +
  qapi-schema.json |   91 ++++++++++++
  qmp-commands.hx  |   27 ++++
- 8 files changed, 645 insertions(+), 0 deletions(-)
+ 8 files changed, 646 insertions(+), 0 deletions(-)
 
 diff --git a/backup.h b/backup.h
-index 87b9942..c6e5d3c 100644
+index a5f85e6..c9c20c9 100644
 --- a/backup.h
 +++ b/backup.h
-@@ -29,4 +29,17 @@ int backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
+@@ -29,4 +29,16 @@ int backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
  		      BlockDriverCompletionFunc *backup_complete_cb,
- 		      void *opaque);
+ 		      void *opaque, int64_t speed);
  
 +typedef struct BackupDriver {
 +    const char *format;
-+    void *(*open_cb)(const char *filename, uuid_t uuid, int64_t speed,
-+                     Error **errp);
++    void *(*open_cb)(const char *filename, uuid_t uuid, Error **errp);
 +    int (*close_cb)(void *opaque, Error **errp);
 +    int (*register_config_cb)(void *opaque, const char *name, gpointer data,
 +                              size_t data_len);
@@ -45,7 +44,7 @@ index 87b9942..c6e5d3c 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index e73fd6e..37edb75 100644
+index e73fd6e..bd2198e 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
@@ -56,7 +55,7 @@ index e73fd6e..37edb75 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1321,6 +1322,415 @@ void qmp_drive_mirror(const char *device, const char *target,
+@@ -1321,6 +1322,417 @@ void qmp_drive_mirror(const char *device, const char *target,
      drive_get_ref(drive_get_by_blockdev(bs));
  }
  
@@ -68,6 +67,7 @@ index e73fd6e..37edb75 100644
 +    Error *error;
 +    uuid_t uuid;
 +    char uuid_str[37];
++    int64_t speed;
 +    time_t start_time;
 +    time_t end_time;
 +    char *backupfile;
@@ -220,7 +220,7 @@ index e73fd6e..37edb75 100644
 +        l = g_list_next(l);
 +
 +        if (backup_job_create(bcb->bs, backup_dump_cb, backup_complete_cb,
-+                              bcb) != 0) {
++                              bcb, backup_state.speed) != 0) {
 +            error_setg(&backup_state.error, "backup_job_create failed");
 +            backup_cancel();
 +            return;
@@ -310,8 +310,7 @@ index e73fd6e..37edb75 100644
 +
 +    uuid_generate(uuid);
 +
-+    writer = driver->open_cb(backupfile, uuid, has_speed ? speed : 0,
-+                             &local_err);
++    writer = driver->open_cb(backupfile, uuid, &local_err);
 +    if (!writer) {
 +        if (error_is_set(&local_err)) {
 +            error_propagate(errp, local_err);
@@ -366,6 +365,8 @@ index e73fd6e..37edb75 100644
 +    }
 +
 +    backup_state.driver = driver;
++
++    backup_state.speed = (has_speed && speed > 0) ? speed : 0;
 +
 +    backup_state.start_time = time(NULL);
 +    backup_state.end_time = 0;
