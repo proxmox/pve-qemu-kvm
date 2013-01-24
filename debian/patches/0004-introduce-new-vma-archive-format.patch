@@ -1,4 +1,4 @@
-From 2b6ca0c6087ed51bc8318731713bb3aa83f606db Mon Sep 17 00:00:00 2001
+From 7592ded4c7222255085ac7cad534a9e592931f30 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -12,10 +12,10 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  blockdev.c              |    6 +-
  docs/specs/vma_spec.txt |   24 ++
  vma-reader.c            |  801 ++++++++++++++++++++++++++++++++++++++++
- vma-writer.c            |  933 +++++++++++++++++++++++++++++++++++++++++++++++
+ vma-writer.c            |  935 +++++++++++++++++++++++++++++++++++++++++++++++
  vma.c                   |  561 ++++++++++++++++++++++++++++
  vma.h                   |  145 ++++++++
- 8 files changed, 2471 insertions(+), 4 deletions(-)
+ 8 files changed, 2473 insertions(+), 4 deletions(-)
  create mode 100644 docs/specs/vma_spec.txt
  create mode 100644 vma-reader.c
  create mode 100644 vma-writer.c
@@ -57,7 +57,7 @@ index cb46be5..b5732e2 100644
  block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/blockdev.c b/blockdev.c
-index ba28654..a030a13 100644
+index 30f63bd..5ffd246 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -21,6 +21,7 @@
@@ -921,10 +921,10 @@ index 0000000..2217a94
 +
 diff --git a/vma-writer.c b/vma-writer.c
 new file mode 100644
-index 0000000..08c4ee3
+index 0000000..6ecbaf4
 --- /dev/null
 +++ b/vma-writer.c
-@@ -0,0 +1,933 @@
+@@ -0,0 +1,935 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -1144,8 +1144,6 @@ index 0000000..08c4ee3
 +{
 +    VmaWriter *vmaw = opaque;
 +
-+    qemu_aio_set_fd_handler(vmaw->fd, NULL, NULL, NULL, NULL);
-+
 +    DPRINTF("vma_co_continue_write\n");
 +    qemu_coroutine_enter(vmaw->co_writer, NULL);
 +}
@@ -1170,21 +1168,23 @@ index 0000000..08c4ee3
 +
 +    assert(vmaw->co_writer == NULL);
 +
++    vmaw->co_writer = qemu_coroutine_self();
++
++    qemu_aio_set_fd_handler(vmaw->fd, NULL, vma_co_continue_write,
++			    vma_co_write_finished, vmaw);
++
++    DPRINTF("vma_co_write wait until writable\n");
++    qemu_coroutine_yield();
++    DPRINTF("vma_co_write starting %zd\n", bytes);
++ 
 +    while (done < bytes) {
-+        /* Note: we limit maximal write size - else VM gets slow */ 
-+        ret = write(vmaw->fd, buf + done, 
-+                    (bytes - done) > 4096 ? 4096 : bytes - done);
++        ret = write(vmaw->fd, buf + done, bytes - done);
 +        if (ret > 0) {
 +            done += ret;
 +            DPRINTF("vma_co_write written %zd %zd\n", done, ret);
 +        } else if (ret < 0) {
 +            if (errno == EAGAIN || errno == EWOULDBLOCK) {
 +                DPRINTF("vma_co_write yield %zd\n", done);
-+
-+                vmaw->co_writer = qemu_coroutine_self();
-+                qemu_aio_set_fd_handler(vmaw->fd, NULL, vma_co_continue_write,
-+                                        vma_co_write_finished, vmaw);
-+
 +                qemu_coroutine_yield();
 +                DPRINTF("vma_co_write restart %zd\n", done);
 +            } else {
@@ -1197,6 +1197,8 @@ index 0000000..08c4ee3
 +            /* should not happen - simply try again */
 +        }
 +    }
++
++    qemu_aio_set_fd_handler(vmaw->fd, NULL, NULL, NULL, NULL);
 +
 +    vmaw->co_writer = NULL;
 +

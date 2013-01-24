@@ -1,4 +1,4 @@
-From 6f87d124089c383af873d9774d3b47597dc7d5e9 Mon Sep 17 00:00:00 2001
+From 66ecb72361ea3e2e1243ee87527919621c85f4ff Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Thu, 29 Nov 2012 10:46:49 +0100
 Subject: [PATCH v3 6/6] add vm state to backups
@@ -12,7 +12,7 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  3 files changed, 200 insertions(+), 5 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index a030a13..d5878c5 100644
+index 5ffd246..6bddbd3 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -22,6 +22,8 @@

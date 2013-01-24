@@ -1,4 +1,4 @@
-From cd593564217e6ae808cc8555845b14eabac95bd0 Mon Sep 17 00:00:00 2001
+From 2c23d119338c45005ebe37b55e54e75a71e5bafd Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
 Subject: [PATCH v3 3/6] add backup related monitor commands
@@ -44,7 +44,7 @@ index a5f85e6..c9c20c9 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index e73fd6e..ba28654 100644
+index e73fd6e..30f63bd 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
@@ -175,7 +175,7 @@ index e73fd6e..ba28654 100644
 +	if (job) {
 +            job_count++;
 +            if (!bcb->completed) {
-+                block_job_cancel(job);
++                block_job_cancel_sync(job);
 +                /* make sure we call the complete callback */
 +                if (!job->co) {
 +                    block_job_completed(job, -1);
