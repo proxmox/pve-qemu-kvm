@@ -1,4 +1,4 @@
-From f4a34368cdc254ea7602c5913c50506f61e7652e Mon Sep 17 00:00:00 2001
+From 5a37c10eb0991e86cba666b82ac756dc2ff1cd8c Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 09:24:50 +0100
 Subject: [PATCH v3 1/6] RFC: Efficient VM backup for qemu
@@ -26,8 +26,8 @@ Changes since v2:
 * BackupDriver: remove cancel_cb
 * use enum for BackupFormat
 * vma: use bdrv_open instead of bdrv_file_open
-* vma: use extra writer thread
-* backup on drive after another (try to avoid high load)
+* vma: fix aio, use O_DIRECT
+* backup one drive after another (try to avoid high load)
 
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---

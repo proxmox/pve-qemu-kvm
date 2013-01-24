@@ -1,4 +1,4 @@
-From b9c06929cb9e9583b002fa6de76ad3c318c89f35 Mon Sep 17 00:00:00 2001
+From cd593564217e6ae808cc8555845b14eabac95bd0 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
 Subject: [PATCH v3 3/6] add backup related monitor commands
@@ -13,14 +13,14 @@ could move the whole archive format related code out of qemu.
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  backup.h         |   12 ++
- blockdev.c       |  412 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ blockdev.c       |  419 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
  hmp-commands.hx  |   31 ++++
  hmp.c            |   63 ++++++++
  hmp.h            |    3 +
  monitor.c        |    7 +
  qapi-schema.json |   91 ++++++++++++
  qmp-commands.hx  |   27 ++++
- 8 files changed, 646 insertions(+), 0 deletions(-)
+ 8 files changed, 653 insertions(+), 0 deletions(-)
 
 diff --git a/backup.h b/backup.h
 index a5f85e6..c9c20c9 100644
@@ -44,7 +44,7 @@ index a5f85e6..c9c20c9 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index e73fd6e..bd2198e 100644
+index e73fd6e..ba28654 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
@@ -55,7 +55,7 @@ index e73fd6e..bd2198e 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1321,6 +1322,417 @@ void qmp_drive_mirror(const char *device, const char *target,
+@@ -1321,6 +1322,424 @@ void qmp_drive_mirror(const char *device, const char *target,
      drive_get_ref(drive_get_by_blockdev(bs));
  }
  
@@ -160,25 +160,32 @@ index e73fd6e..bd2198e 100644
 +        error_setg(&backup_state.error, "backup cancelled");
 +    }
 +
++    /* drain all i/o (awake jobs waiting for aio) */
++    bdrv_drain_all();
++
 +    /* we only need to cancel the running job - backup_run_next_job() cancels
 +     * the other jobs */
 +
++    int job_count = 0;
 +    GList *l = backup_state.bcb_list;
 +    while (l) {
 +        BackupCB *bcb = l->data;
 +        l = g_list_next(l);
 +	BlockJob *job = bcb->bs->job;
-+        if (!bcb->completed && job) {
-+            block_job_cancel(job);
-+            /* make sure we call the complete callback */
-+            if (!job->co) {
-+                block_job_completed(job, -1);
++	if (job) {
++            job_count++;
++            if (!bcb->completed) {
++                block_job_cancel(job);
++                /* make sure we call the complete callback */
++                if (!job->co) {
++                    block_job_completed(job, -1);
++                }
++                break;
 +            }
-+            break;
-+       }
++        }
 +    }
 +
-+    if (!l) { /* all jobs completed */
++    if (job_count == 0) { /* can happen when backup_start_jobs() fails */
 +        backup_cleanup();
 +    }
 +}

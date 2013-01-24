@@ -1,4 +1,4 @@
-From 9901e8c82fb25ce5ce82c9e18276d8190bb4aca7 Mon Sep 17 00:00:00 2001
+From 6f87d124089c383af873d9774d3b47597dc7d5e9 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Thu, 29 Nov 2012 10:46:49 +0100
 Subject: [PATCH v3 6/6] add vm state to backups
@@ -12,7 +12,7 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  3 files changed, 200 insertions(+), 5 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 99f3e02..cb9293b 100644
+index a030a13..d5878c5 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -22,6 +22,8 @@
@@ -35,7 +35,7 @@ index 99f3e02..cb9293b 100644
  } backup_state;
  
  typedef struct BackupCB {
-@@ -1494,10 +1500,170 @@ static void backup_start_jobs(void)
+@@ -1501,10 +1507,170 @@ static void backup_start_jobs(void)
      backup_run_next_job();
  }
  
@@ -207,7 +207,7 @@ index 99f3e02..cb9293b 100644
  {
      BlockDriverState *bs;
      Error *local_err = NULL;
-@@ -1506,6 +1672,8 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1513,6 +1679,8 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      gchar **devs = NULL;
      GList *bcblist = NULL;
  
@@ -216,7 +216,7 @@ index 99f3e02..cb9293b 100644
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
-@@ -1586,6 +1754,22 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1593,6 +1761,22 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      size_t total = 0;
  
      /* register all devices for vma writer */
@@ -239,7 +239,7 @@ index 99f3e02..cb9293b 100644
      l = bcblist;
      while (l) {
          BackupCB *bcb = l->data;
-@@ -1651,6 +1835,9 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1658,6 +1842,9 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      backup_state.total = total;
      backup_state.transferred = 0;
      backup_state.zero_bytes = 0;
@@ -249,7 +249,7 @@ index 99f3e02..cb9293b 100644
  
      /* Grab a reference so hotplug does not delete the
       * BlockDriverState from underneath us.
-@@ -1662,7 +1849,12 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1669,7 +1856,12 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
          drive_get_ref(drive_get_by_blockdev(bcb->bs));
      }
  

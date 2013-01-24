@@ -1,4 +1,4 @@
-From bb18514bdcb93d9b2906bfb2a8aa9fd6c2265710 Mon Sep 17 00:00:00 2001
+From 2b6ca0c6087ed51bc8318731713bb3aa83f606db Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -11,11 +11,11 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  Makefile.objs           |    2 +-
  blockdev.c              |    6 +-
  docs/specs/vma_spec.txt |   24 ++
- vma-reader.c            |  801 +++++++++++++++++++++++++++++++++++++++++
- vma-writer.c            |  914 +++++++++++++++++++++++++++++++++++++++++++++++
- vma.c                   |  561 +++++++++++++++++++++++++++++
+ vma-reader.c            |  801 ++++++++++++++++++++++++++++++++++++++++
+ vma-writer.c            |  933 +++++++++++++++++++++++++++++++++++++++++++++++
+ vma.c                   |  561 ++++++++++++++++++++++++++++
  vma.h                   |  145 ++++++++
- 8 files changed, 2452 insertions(+), 4 deletions(-)
+ 8 files changed, 2471 insertions(+), 4 deletions(-)
  create mode 100644 docs/specs/vma_spec.txt
  create mode 100644 vma-reader.c
  create mode 100644 vma-writer.c
@@ -57,7 +57,7 @@ index cb46be5..b5732e2 100644
  block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/blockdev.c b/blockdev.c
-index bd2198e..99f3e02 100644
+index ba28654..a030a13 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -21,6 +21,7 @@
@@ -68,7 +68,7 @@ index bd2198e..99f3e02 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1508,10 +1509,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1515,10 +1516,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -921,10 +921,10 @@ index 0000000..2217a94
 +
 diff --git a/vma-writer.c b/vma-writer.c
 new file mode 100644
-index 0000000..3f5bbd5
+index 0000000..08c4ee3
 --- /dev/null
 +++ b/vma-writer.c
-@@ -0,0 +1,914 @@
+@@ -0,0 +1,933 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -966,8 +966,8 @@ index 0000000..3f5bbd5
 +
 +typedef struct VmaAIOCB VmaAIOCB;
 +struct VmaAIOCB {
-+    VmaWriter *vmaw;
 +    unsigned char buffer[VMA_MAX_EXTENT_SIZE];
++    VmaWriter *vmaw;
 +    size_t bytes;
 +    Coroutine *co;
 +};
@@ -987,7 +987,7 @@ index 0000000..3f5bbd5
 +    int outbuf_count; /* in VMA_BLOCKS */
 +    uint64_t outbuf_block_info[VMA_BLOCKS_PER_EXTENT];
 +
-+    VmaAIOCB aiocbs[WRITE_BUFFERS];
++    VmaAIOCB *aiocbs[WRITE_BUFFERS];
 +    CoQueue wqueue;
 +
 +    GChecksum *md5csum;
@@ -1150,6 +1150,13 @@ index 0000000..3f5bbd5
 +    qemu_coroutine_enter(vmaw->co_writer, NULL);
 +}
 +
++static int vma_co_write_finished(void *opaque)
++{
++    VmaWriter *vmaw = opaque;
++    
++    return (vmaw->co_writer != 0);
++}
++
 +static ssize_t coroutine_fn
 +vma_co_write(VmaWriter *vmaw, const void *buf, size_t bytes)
 +{
@@ -1161,8 +1168,12 @@ index 0000000..3f5bbd5
 +
 +    DPRINTF("vma_co_write enter %zd\n", bytes);
 +
++    assert(vmaw->co_writer == NULL);
++
 +    while (done < bytes) {
-+        ret = write(vmaw->fd, buf + done, bytes - done);
++        /* Note: we limit maximal write size - else VM gets slow */ 
++        ret = write(vmaw->fd, buf + done, 
++                    (bytes - done) > 4096 ? 4096 : bytes - done);
 +        if (ret > 0) {
 +            done += ret;
 +            DPRINTF("vma_co_write written %zd %zd\n", done, ret);
@@ -1172,7 +1183,7 @@ index 0000000..3f5bbd5
 +
 +                vmaw->co_writer = qemu_coroutine_self();
 +                qemu_aio_set_fd_handler(vmaw->fd, NULL, vma_co_continue_write,
-+                                        NULL, vmaw);
++                                        vma_co_write_finished, vmaw);
 +
 +                qemu_coroutine_yield();
 +                DPRINTF("vma_co_write restart %zd\n", done);
@@ -1186,6 +1197,8 @@ index 0000000..3f5bbd5
 +            /* should not happen - simply try again */
 +        }
 +    }
++
++    vmaw->co_writer = NULL;
 +
 +    qemu_co_mutex_unlock(&vmaw->writer_lock);
 +
@@ -1225,10 +1238,10 @@ index 0000000..3f5bbd5
 +        int i;
 +        VmaAIOCB *cb = NULL;
 +        for (i = 0; i < WRITE_BUFFERS; i++) {
-+            if (vmaw->aiocbs[i].bytes) {
-+                cb = &vmaw->aiocbs[i];
++            if (vmaw->aiocbs[i]->bytes) {
++                cb = vmaw->aiocbs[i];
 +                DPRINTF("FOUND USED AIO BUFFER %d %zd\n", i,
-+                        vmaw->aiocbs[i].bytes);
++                        vmaw->aiocbs[i]->bytes);
 +                break;
 +            }
 +        }
@@ -1258,8 +1271,8 @@ index 0000000..3f5bbd5
 +    while (!cb) {
 +        int i;
 +        for (i = 0; i < WRITE_BUFFERS; i++) {
-+            if (!vmaw->aiocbs[i].bytes) {
-+                cb = &vmaw->aiocbs[i];
++            if (!vmaw->aiocbs[i]->bytes) {
++                cb = vmaw->aiocbs[i];
 +                break;
 +            }
 +        }
@@ -1305,7 +1318,10 @@ index 0000000..3f5bbd5
 +            goto err;
 +        }
 +        vmaw->fd = fileno(vmaw->cmd);
-+        socket_set_nonblock(vmaw->fd);
++
++        /* try to use O_NONBLOCK and O_DIRECT */
++        fcntl(vmaw->fd, F_SETFL, fcntl(vmaw->fd, F_GETFL)|O_NONBLOCK);
++        fcntl(vmaw->fd, F_SETFL, fcntl(vmaw->fd, F_GETFL)|O_DIRECT);
 +
 +    } else {
 +        struct stat st;
@@ -1313,18 +1329,21 @@ index 0000000..3f5bbd5
 +        const char *tmp_id_str;
 +
 +        if ((stat(filename, &st) == 0) && S_ISFIFO(st.st_mode)) {
-+            oflags = O_NONBLOCK|O_WRONLY;
++            oflags = O_NONBLOCK|O_DIRECT|O_WRONLY;
 +            vmaw->fd = qemu_open(filename, oflags, 0644);
 +        } else if (strstart(filename, "/dev/fdset/", &tmp_id_str)) {
-+            oflags = O_NONBLOCK|O_WRONLY;
++            oflags = O_NONBLOCK|O_DIRECT|O_WRONLY;
 +            vmaw->fd = qemu_open(filename, oflags, 0644);
 +        } else if (strstart(filename, "/dev/fdname/", &tmp_id_str)) {
 +            vmaw->fd = monitor_get_fd(cur_mon, tmp_id_str, errp);
 +            if (vmaw->fd < 0) {
 +                goto err;
 +            }
++            /* try to use O_NONBLOCK and O_DIRECT */
++            fcntl(vmaw->fd, F_SETFL, fcntl(vmaw->fd, F_GETFL)|O_NONBLOCK);
++            fcntl(vmaw->fd, F_SETFL, fcntl(vmaw->fd, F_GETFL)|O_DIRECT);
 +        } else  {
-+            oflags = O_NONBLOCK|O_WRONLY|O_CREAT|O_EXCL;
++            oflags = O_NONBLOCK|O_DIRECT|O_WRONLY|O_CREAT|O_EXCL;
 +            vmaw->fd = qemu_open(filename, oflags, 0644);
 +        }
 +
@@ -1333,6 +1352,13 @@ index 0000000..3f5bbd5
 +                       strerror(errno));
 +            goto err;
 +        }
++    }
++
++    /* we use O_DIRECT, so we need to align IO buffers */
++    int i;
++    for (i = 0; i < WRITE_BUFFERS; i++) {
++        vmaw->aiocbs[i] = qemu_memalign(512, sizeof(VmaAIOCB));
++        memset(vmaw->aiocbs[i], 0, sizeof(VmaAIOCB));
 +    }
 +
 +    vmaw->outbuf_count = 0;
@@ -1569,7 +1595,7 @@ index 0000000..3f5bbd5
 +    return vmaw->status;
 +}
 +
-+static int vma_writer_get_buffer(VmaWriter *vmaw, size_t bytes)
++static int vma_writer_get_buffer(VmaWriter *vmaw)
 +{
 +    int ret = 0;
 +
@@ -1633,22 +1659,8 @@ index 0000000..3f5bbd5
 +        return -1;
 +    }
 +
-+    /* detect block containing zeroes */
-+    int i;
-+    int bit = 1;
-+    uint16_t mask = 0;
-+    size_t real_size = 0;
-+    for (i = 0; i < 16; i++) {
-+        unsigned char *vmablock = buf + (i*VMA_BLOCK_SIZE);
-+        if (!buffer_is_zero(vmablock, VMA_BLOCK_SIZE)) {
-+            mask |= bit;
-+            real_size += VMA_BLOCK_SIZE;
-+        }
-+        bit = bit << 1;
-+    }
-+
 +    /* wait until buffer is available */
-+    if (vma_writer_get_buffer(vmaw, real_size) < 0) {
++    if (vma_writer_get_buffer(vmaw) < 0) {
 +        vma_writer_set_error(vmaw, "vma_writer_write: "
 +                             "vma_writer_get_buffer failed");
 +        return -1;
@@ -1656,10 +1668,13 @@ index 0000000..3f5bbd5
 +
 +    DPRINTF("VMA WRITE %d %zd\n", dev_id, cluster_num);
 +
-+    bit = 1;
++    int i;
++    int bit = 1;
++    uint16_t mask = 0;
 +    for (i = 0; i < 16; i++) {
 +        unsigned char *vmablock = buf + (i*VMA_BLOCK_SIZE);
-+        if (mask & bit) {
++        if (!buffer_is_zero(vmablock, VMA_BLOCK_SIZE)) {
++            mask |= bit;
 +            memcpy(vmaw->outbuf + vmaw->outbuf_pos, vmablock, VMA_BLOCK_SIZE);
 +            vmaw->outbuf_pos += VMA_BLOCK_SIZE;
 +        } else {
@@ -1772,6 +1787,10 @@ index 0000000..3f5bbd5
 +
 +    if (vmaw->md5csum) {
 +        g_checksum_free(vmaw->md5csum);
++    }
++
++    for (i = 0; i < WRITE_BUFFERS; i++) {
++        free(vmaw->aiocbs[i]);
 +    }
 +
 +    g_free(vmaw);

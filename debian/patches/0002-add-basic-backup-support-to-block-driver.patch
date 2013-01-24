@@ -1,4 +1,4 @@
-From 4374768a3a4d92f0ac0a77688cb7f65ff108ef83 Mon Sep 17 00:00:00 2001
+From 26891c19f68a14927e8c52417112d80668be1b3a Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 10:03:52 +0100
 Subject: [PATCH v3 2/6] add basic backup support to block driver
@@ -16,12 +16,12 @@ Currently backup cluster size is hardcoded to 65536 bytes.
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  Makefile.objs |    1 +
- backup.c      |  334 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ backup.c      |  335 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  backup.h      |   32 ++++++
  block.c       |   71 +++++++++++-
  block.h       |    2 +
  blockjob.h    |   10 ++
- 6 files changed, 444 insertions(+), 6 deletions(-)
+ 6 files changed, 445 insertions(+), 6 deletions(-)
  create mode 100644 backup.c
  create mode 100644 backup.h
 
@@ -39,10 +39,10 @@ index 3c7abca..cb46be5 100644
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/backup.c b/backup.c
 new file mode 100644
-index 0000000..af511c7
+index 0000000..3ccb74c
 --- /dev/null
 +++ b/backup.c
-@@ -0,0 +1,334 @@
+@@ -0,0 +1,335 @@
 +/*
 + * QEMU backup
 + *
@@ -299,7 +299,8 @@ index 0000000..af511c7
 +    while (backup_in_progress_count > 0) {
 +        DPRINTF("backup_run backup_in_progress_count != 0 (%d)",
 +                backup_in_progress_count);
-+        co_sleep_ns(rt_clock, 10000);
++        block_job_sleep_ns(&job->common, rt_clock, 10000);
++
 +    }
 +
 +    DPRINTF("backup_run complete %d\n", ret);
