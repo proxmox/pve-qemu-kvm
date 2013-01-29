@@ -1,4 +1,4 @@
-From 26891c19f68a14927e8c52417112d80668be1b3a Mon Sep 17 00:00:00 2001
+From c51e1c591401926d7a5c3a41011736c329c6ef82 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 10:03:52 +0100
 Subject: [PATCH v3 2/6] add basic backup support to block driver
@@ -16,12 +16,12 @@ Currently backup cluster size is hardcoded to 65536 bytes.
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  Makefile.objs |    1 +
- backup.c      |  335 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ backup.c      |  339 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  backup.h      |   32 ++++++
  block.c       |   71 +++++++++++-
  block.h       |    2 +
  blockjob.h    |   10 ++
- 6 files changed, 445 insertions(+), 6 deletions(-)
+ 6 files changed, 449 insertions(+), 6 deletions(-)
  create mode 100644 backup.c
  create mode 100644 backup.h
 
@@ -39,10 +39,10 @@ index 3c7abca..cb46be5 100644
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/backup.c b/backup.c
 new file mode 100644
-index 0000000..3ccb74c
+index 0000000..5dcbd11
 --- /dev/null
 +++ b/backup.c
-@@ -0,0 +1,335 @@
+@@ -0,0 +1,339 @@
 +/*
 + * QEMU backup
 + *
@@ -324,11 +324,15 @@ index 0000000..3ccb74c
 +}
 +
 +void
-+backup_job_start(BlockDriverState *bs)
++backup_job_start(BlockDriverState *bs, bool cancel)
 +{
 +    assert(bs);
 +    assert(bs->job);
 +    assert(bs->job->co == NULL);
++
++    if (cancel) {
++        block_job_cancel(bs->job); /* set cancel flag */
++    }
 +
 +    bs->job->co = qemu_coroutine_create(backup_run);
 +    qemu_coroutine_enter(bs->job->co, bs->job);
@@ -380,7 +384,7 @@ index 0000000..3ccb74c
 +}
 diff --git a/backup.h b/backup.h
 new file mode 100644
-index 0000000..a5f85e6
+index 0000000..20a9016
 --- /dev/null
 +++ b/backup.h
 @@ -0,0 +1,32 @@
@@ -409,7 +413,7 @@ index 0000000..a5f85e6
 +typedef int BackupDumpFunc(void *opaque, BlockDriverState *bs,
 +                           int64_t cluster_num, unsigned char *buf);
 +
-+void backup_job_start(BlockDriverState *bs);
++void backup_job_start(BlockDriverState *bs, bool cancel);
 +
 +int backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
 +		      BlockDriverCompletionFunc *backup_complete_cb,

@@ -1,4 +1,4 @@
-From 2c23d119338c45005ebe37b55e54e75a71e5bafd Mon Sep 17 00:00:00 2001
+From 4c0880f2561de8dec379eb6f02b3df88c023270c Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
 Subject: [PATCH v3 3/6] add backup related monitor commands
@@ -13,17 +13,17 @@ could move the whole archive format related code out of qemu.
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  backup.h         |   12 ++
- blockdev.c       |  419 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ blockdev.c       |  423 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
  hmp-commands.hx  |   31 ++++
  hmp.c            |   63 ++++++++
  hmp.h            |    3 +
  monitor.c        |    7 +
  qapi-schema.json |   91 ++++++++++++
  qmp-commands.hx  |   27 ++++
- 8 files changed, 653 insertions(+), 0 deletions(-)
+ 8 files changed, 657 insertions(+), 0 deletions(-)
 
 diff --git a/backup.h b/backup.h
-index a5f85e6..c9c20c9 100644
+index 20a9016..be52ea4 100644
 --- a/backup.h
 +++ b/backup.h
 @@ -29,4 +29,16 @@ int backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
@@ -44,7 +44,7 @@ index a5f85e6..c9c20c9 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index e73fd6e..30f63bd 100644
+index e73fd6e..c559903 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
@@ -55,7 +55,7 @@ index e73fd6e..30f63bd 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1321,6 +1322,424 @@ void qmp_drive_mirror(const char *device, const char *target,
+@@ -1321,6 +1322,428 @@ void qmp_drive_mirror(const char *device, const char *target,
      drive_get_ref(drive_get_by_blockdev(bs));
  }
  
@@ -65,6 +65,7 @@ index e73fd6e..30f63bd 100644
 +
 +static struct GenericBackupState {
 +    Error *error;
++    bool cancel;
 +    uuid_t uuid;
 +    char uuid_str[37];
 +    int64_t speed;
@@ -151,20 +152,21 @@ index e73fd6e..30f63bd 100644
 +
 +    backup_state.driver->complete_cb(backup_state.writer, bcb->dev_id, ret);
 +
-+    backup_run_next_job();
++    if (!backup_state.cancel) {
++        backup_run_next_job();
++    }
 +}
 +
 +static void backup_cancel(void)
 +{
++    backup_state.cancel = true;
++
 +    if (!backup_state.error) {
 +        error_setg(&backup_state.error, "backup cancelled");
 +    }
 +
 +    /* drain all i/o (awake jobs waiting for aio) */
 +    bdrv_drain_all();
-+
-+    /* we only need to cancel the running job - backup_run_next_job() cancels
-+     * the other jobs */
 +
 +    int job_count = 0;
 +    GList *l = backup_state.bcb_list;
@@ -174,20 +176,17 @@ index e73fd6e..30f63bd 100644
 +	BlockJob *job = bcb->bs->job;
 +	if (job) {
 +            job_count++;
++            if (!bcb->started) {
++               bcb->started = true;
++               backup_job_start(bcb->bs, true);
++            }
 +            if (!bcb->completed) {
 +                block_job_cancel_sync(job);
-+                /* make sure we call the complete callback */
-+                if (!job->co) {
-+                    block_job_completed(job, -1);
-+                }
-+                break;
 +            }
 +        }
 +    }
 +
-+    if (job_count == 0) { /* can happen when backup_start_jobs() fails */
-+        backup_cleanup();
-+    }
++    backup_cleanup();
 +}
 +
 +void qmp_backup_cancel(Error **errp)
@@ -195,7 +194,7 @@ index e73fd6e..30f63bd 100644
 +    backup_cancel();
 +}
 +
-+static void backup_run_next_job(void) 
++static void backup_run_next_job(void)
 +{
 +    GList *l = backup_state.bcb_list;
 +    while(l) {
@@ -205,11 +204,8 @@ index e73fd6e..30f63bd 100644
 +        if (bcb->bs && bcb->bs->job && !bcb->completed) {
 +            if (!bcb->started) {
 +                bcb->started = true;
-+                if (!backup_state.error) {
-+                    backup_job_start(bcb->bs);
-+                } else {
-+                    block_job_completed(bcb->bs->job, -1);
-+                }
++                bool cancel = backup_state.error || backup_state.cancel;
++                backup_job_start(bcb->bs,cancel);
 +            }
 +            return;
 +        }
@@ -248,6 +244,12 @@ index e73fd6e..30f63bd 100644
 +    void *writer = NULL;
 +    gchar **devs = NULL;
 +    GList *bcblist = NULL;
++
++    if (backup_state.bcb_list) {
++        error_set(errp, ERROR_CLASS_GENERIC_ERROR,
++                  "previous backup not finished");
++        return NULL;
++    }
 +
 +    /* Todo: try to auto-detect format based on file name */
 +    format = has_format ? format : BACKUP_FORMAT_VMA;
@@ -365,6 +367,8 @@ index e73fd6e..30f63bd 100644
 +    }
 +
 +    /* initialize global backup_state now */
++
++    backup_state.cancel = false;
 +
 +    if (backup_state.error) {
 +        error_free(backup_state.error);

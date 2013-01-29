@@ -1,4 +1,4 @@
-From 7592ded4c7222255085ac7cad534a9e592931f30 Mon Sep 17 00:00:00 2001
+From 86ddce6dbd1cc88a0fad43b36300b8ffa573bd04 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -57,7 +57,7 @@ index cb46be5..b5732e2 100644
  block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
  block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
 diff --git a/blockdev.c b/blockdev.c
-index 30f63bd..5ffd246 100644
+index c559903..467667e 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -21,6 +21,7 @@
@@ -68,7 +68,7 @@ index 30f63bd..5ffd246 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1515,10 +1516,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1517,10 +1518,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -1862,7 +1862,7 @@ index 0000000..6ecbaf4
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..5d13906
+index 0000000..66de9bb
 --- /dev/null
 +++ b/vma.c
 @@ -0,0 +1,561 @@
@@ -2336,7 +2336,7 @@ index 0000000..5d13906
 +            unlink(archivename);
 +            g_error("backup_job_start failed");
 +        } else {
-+            backup_job_start(bs);
++		backup_job_start(bs, false);
 +        }
 +    }
 +
