@@ -1,4 +1,3 @@
-fix-off-by-1-error-in-RAM-migration-code.patch
 fr-ca-keymap-corrections.diff
 adjust-path.diff
 fairsched.diff
@@ -23,5 +22,3 @@ virtio-balloon-re-enable-balloon-stats.patch
 virtio-balloon-document-stats.patch
 virtio-balloon-fix-query.patch
 always-update-expected-downtime.patch
-e1000-discard-oversized-packets.patch
-fix-aio-poll.patch
