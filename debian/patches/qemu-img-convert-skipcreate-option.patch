@@ -11,9 +11,9 @@ Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
 
 Index: new/qemu-img.c
 ===================================================================
---- new.orig/qemu-img.c	2012-11-21 11:51:19.000000000 +0100
-+++ new/qemu-img.c	2012-11-21 12:45:10.000000000 +0100
-@@ -660,7 +660,7 @@
+--- new.orig/qemu-img.c	2013-02-11 12:01:06.000000000 +0100
++++ new/qemu-img.c	2013-02-11 12:12:34.000000000 +0100
+@@ -665,7 +665,7 @@
  
  static int img_convert(int argc, char **argv)
  {
@@ -22,7 +22,7 @@ Index: new/qemu-img.c
      int progress = 0, flags;
      const char *fmt, *out_fmt, *cache, *out_baseimg, *out_filename;
      BlockDriver *drv, *proto_drv;
-@@ -682,8 +682,9 @@
+@@ -687,8 +687,9 @@
      cache = "unsafe";
      out_baseimg = NULL;
      compress = 0;
@@ -33,7 +33,7 @@ Index: new/qemu-img.c
          if (c == -1) {
              break;
          }
-@@ -704,6 +705,9 @@
+@@ -709,6 +710,9 @@
          case 'c':
              compress = 1;
              break;
@@ -43,7 +43,7 @@ Index: new/qemu-img.c
          case 'e':
              error_report("option -e is deprecated, please use \'-o "
                    "encryption\' instead!");
-@@ -864,20 +868,22 @@
+@@ -869,20 +873,22 @@
          }
      }
  

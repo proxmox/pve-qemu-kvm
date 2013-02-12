@@ -4,7 +4,6 @@ fairsched.diff
 keymap.diff
 pve-auth.patch
 vencrypt-auth-plain.patch
-ahci-add_migration-support.patch
 fix-qemu-img-snapshot-removal.patch
 move-bdrv-snapshot-find.patch
 internal-snapshot-async.patch
@@ -16,9 +15,5 @@ enable-kvm-by-default.patch
 0003-add-backup-related-monitor-commands.patch
 0004-introduce-new-vma-archive-format.patch
 0005-add-regression-tests-for-backup.patch
-0006-add-vm-state-to-backups.patch
-virtio-balloon-drop-old-stats-code.patch
-virtio-balloon-re-enable-balloon-stats.patch
-virtio-balloon-document-stats.patch
-virtio-balloon-fix-query.patch
-always-update-expected-downtime.patch
+#0006-add-vm-state-to-backups.patch
+# always-update-expected-downtime.patch

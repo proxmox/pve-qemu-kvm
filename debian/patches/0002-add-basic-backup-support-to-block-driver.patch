@@ -1,4 +1,4 @@
-From c51e1c591401926d7a5c3a41011736c329c6ef82 Mon Sep 17 00:00:00 2001
+From eb29d6acb8d8e671e292c9f50655bc87d9742282 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 10:03:52 +0100
 Subject: [PATCH v3 2/6] add basic backup support to block driver
@@ -15,34 +15,34 @@ Currently backup cluster size is hardcoded to 65536 bytes.
 
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
- Makefile.objs |    1 +
- backup.c      |  339 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- backup.h      |   32 ++++++
- block.c       |   71 +++++++++++-
- block.h       |    2 +
- blockjob.h    |   10 ++
- 6 files changed, 449 insertions(+), 6 deletions(-)
+ Makefile.objs            |    1 +
+ backup.c                 |  338 ++++++++++++++++++++++++++++++++++++++++++++++
+ backup.h                 |   32 +++++
+ block.c                  |   71 +++++++++-
+ include/block/block.h    |    2 +
+ include/block/blockjob.h |   10 ++
+ 6 files changed, 448 insertions(+), 6 deletions(-)
  create mode 100644 backup.c
  create mode 100644 backup.h
 
 diff --git a/Makefile.objs b/Makefile.objs
-index 3c7abca..cb46be5 100644
+index 21e9c91..d72822b 100644
 --- a/Makefile.objs
 +++ b/Makefile.objs
-@@ -48,6 +48,7 @@ coroutine-obj-$(CONFIG_WIN32) += coroutine-win32.o
- block-obj-y = iov.o cache-utils.o qemu-option.o module.o async.o
- block-obj-y += nbd.o block.o blockjob.o aes.o qemu-config.o
- block-obj-y += thread-pool.o qemu-progress.o qemu-sockets.o uri.o notify.o
+@@ -13,6 +13,7 @@ block-obj-$(CONFIG_POSIX) += aio-posix.o
+ block-obj-$(CONFIG_WIN32) += aio-win32.o
+ block-obj-y += block/
+ block-obj-y += qapi-types.o qapi-visit.o
 +block-obj-y += backup.o
- block-obj-y += $(coroutine-obj-y) $(qobject-obj-y) $(version-obj-y)
- block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
- block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
+ 
+ block-obj-y += qemu-coroutine.o qemu-coroutine-lock.o qemu-coroutine-io.o
+ block-obj-y += qemu-coroutine-sleep.o
 diff --git a/backup.c b/backup.c
 new file mode 100644
-index 0000000..5dcbd11
+index 0000000..61ca668
 --- /dev/null
 +++ b/backup.c
-@@ -0,0 +1,339 @@
+@@ -0,0 +1,338 @@
 +/*
 + * QEMU backup
 + *
@@ -60,9 +60,9 @@ index 0000000..5dcbd11
 +#include <errno.h>
 +#include <unistd.h>
 +
-+#include "block.h"
-+#include "block_int.h"
-+#include "blockjob.h"
++#include "block/block.h"
++#include "block/block_int.h"
++#include "block/blockjob.h"
 +#include "qemu/ratelimit.h"
 +#include "backup.h"
 +
@@ -73,7 +73,6 @@ index 0000000..5dcbd11
 +    while (0)
 +
 +
-+#define BITS_PER_LONG  (sizeof(unsigned long) * 8)
 +#define SLICE_TIME 100000000ULL /* ns */
 +
 +typedef struct BackupBlockJob {
@@ -421,7 +420,7 @@ index 0000000..20a9016
 +
 +#endif /* QEMU_BACKUP_H */
 diff --git a/block.c b/block.c
-index c05875f..4de7fbd 100644
+index 50dab8e..6e6d08f 100644
 --- a/block.c
 +++ b/block.c
 @@ -54,6 +54,7 @@
@@ -432,7 +431,7 @@ index c05875f..4de7fbd 100644
  } BdrvRequestFlags;
  
  static void bdrv_dev_change_media_cb(BlockDriverState *bs, bool load);
-@@ -1542,7 +1543,7 @@ int bdrv_commit(BlockDriverState *bs)
+@@ -1554,7 +1555,7 @@ int bdrv_commit(BlockDriverState *bs)
  
      if (!drv)
          return -ENOMEDIUM;
@@ -441,7 +440,7 @@ index c05875f..4de7fbd 100644
      if (!bs->backing_hd) {
          return -ENOTSUP;
      }
-@@ -1679,6 +1680,22 @@ static void round_to_clusters(BlockDriverState *bs,
+@@ -1691,6 +1692,22 @@ void bdrv_round_to_clusters(BlockDriverState *bs,
      }
  }
  
@@ -464,7 +463,7 @@ index c05875f..4de7fbd 100644
  static bool tracked_request_overlaps(BdrvTrackedRequest *req,
                                       int64_t sector_num, int nb_sectors) {
      /*        aaaa   bbbb */
-@@ -1693,7 +1710,9 @@ static bool tracked_request_overlaps(BdrvTrackedRequest *req,
+@@ -1705,7 +1722,9 @@ static bool tracked_request_overlaps(BdrvTrackedRequest *req,
  }
  
  static void coroutine_fn wait_for_overlapping_requests(BlockDriverState *bs,
@@ -475,9 +474,9 @@ index c05875f..4de7fbd 100644
  {
      BdrvTrackedRequest *req;
      int64_t cluster_sector_num;
-@@ -1709,6 +1728,11 @@ static void coroutine_fn wait_for_overlapping_requests(BlockDriverState *bs,
-     round_to_clusters(bs, sector_num, nb_sectors,
-                       &cluster_sector_num, &cluster_nb_sectors);
+@@ -1721,6 +1740,11 @@ static void coroutine_fn wait_for_overlapping_requests(BlockDriverState *bs,
+     bdrv_round_to_clusters(bs, sector_num, nb_sectors,
+                            &cluster_sector_num, &cluster_nb_sectors);
  
 +    if (job_cluster_size) {
 +        round_to_job_clusters(bs, sector_num, nb_sectors, job_cluster_size,
@@ -487,7 +486,7 @@ index c05875f..4de7fbd 100644
      do {
          retry = false;
          QLIST_FOREACH(req, &bs->tracked_requests, list) {
-@@ -2278,12 +2302,24 @@ static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
+@@ -2260,12 +2284,24 @@ static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
          bs->copy_on_read_in_flight++;
      }
  
@@ -514,7 +513,7 @@ index c05875f..4de7fbd 100644
      if (flags & BDRV_REQ_COPY_ON_READ) {
          int pnum;
  
-@@ -2327,6 +2363,17 @@ int coroutine_fn bdrv_co_copy_on_readv(BlockDriverState *bs,
+@@ -2309,6 +2345,17 @@ int coroutine_fn bdrv_co_copy_on_readv(BlockDriverState *bs,
                              BDRV_REQ_COPY_ON_READ);
  }
  
@@ -532,7 +531,7 @@ index c05875f..4de7fbd 100644
  static int coroutine_fn bdrv_co_do_write_zeroes(BlockDriverState *bs,
      int64_t sector_num, int nb_sectors)
  {
-@@ -2384,12 +2431,23 @@ static int coroutine_fn bdrv_co_do_writev(BlockDriverState *bs,
+@@ -2366,12 +2413,23 @@ static int coroutine_fn bdrv_co_do_writev(BlockDriverState *bs,
          bdrv_io_limits_intercept(bs, true, nb_sectors);
      }
  
@@ -558,7 +557,7 @@ index c05875f..4de7fbd 100644
      if (flags & BDRV_REQ_ZERO_WRITE) {
          ret = bdrv_co_do_write_zeroes(bs, sector_num, nb_sectors);
      } else {
-@@ -2408,6 +2466,7 @@ static int coroutine_fn bdrv_co_do_writev(BlockDriverState *bs,
+@@ -2390,6 +2448,7 @@ static int coroutine_fn bdrv_co_do_writev(BlockDriverState *bs,
          bs->wr_highest_sector = sector_num + nb_sectors - 1;
      }
  
@@ -566,10 +565,10 @@ index c05875f..4de7fbd 100644
      tracked_request_end(&req);
  
      return ret;
-diff --git a/block.h b/block.h
-index 722c620..94e5903 100644
---- a/block.h
-+++ b/block.h
+diff --git a/include/block/block.h b/include/block/block.h
+index 5c3b911..b6144be 100644
+--- a/include/block/block.h
++++ b/include/block/block.h
 @@ -172,6 +172,8 @@ int coroutine_fn bdrv_co_readv(BlockDriverState *bs, int64_t sector_num,
      int nb_sectors, QEMUIOVector *qiov);
  int coroutine_fn bdrv_co_copy_on_readv(BlockDriverState *bs,
@@ -579,10 +578,10 @@ index 722c620..94e5903 100644
  int coroutine_fn bdrv_co_writev(BlockDriverState *bs, int64_t sector_num,
      int nb_sectors, QEMUIOVector *qiov);
  /*
-diff --git a/blockjob.h b/blockjob.h
-index 3792b73..6621173 100644
---- a/blockjob.h
-+++ b/blockjob.h
+diff --git a/include/block/blockjob.h b/include/block/blockjob.h
+index c290d07..6f42495 100644
+--- a/include/block/blockjob.h
++++ b/include/block/blockjob.h
 @@ -50,6 +50,13 @@ typedef struct BlockJobType {
       * manually.
       */

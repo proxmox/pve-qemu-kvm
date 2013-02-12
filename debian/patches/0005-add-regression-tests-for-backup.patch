@@ -1,4 +1,4 @@
-From 2f16d5e7a7fdcbb83f2643cbbbf872e1b4fbac2f Mon Sep 17 00:00:00 2001
+From 6b0aa521526e0cc35539ee327b3e6c976da6e361 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Wed, 14 Nov 2012 09:57:04 +0100
 Subject: [PATCH v3 5/6] add regression tests for backup
@@ -10,15 +10,15 @@ Note: the call to g_thread_init() solves problems with g_slice_alloc() - without
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  tests/Makefile      |   11 +-
- tests/backup-test.c |  516 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 525 insertions(+), 2 deletions(-)
+ tests/backup-test.c |  517 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 526 insertions(+), 2 deletions(-)
  create mode 100644 tests/backup-test.c
 
 diff --git a/tests/Makefile b/tests/Makefile
-index b60f0fb..cffbd22 100644
+index a2d62b8..c3d8b4a 100644
 --- a/tests/Makefile
 +++ b/tests/Makefile
-@@ -20,6 +20,8 @@ check-unit-y += tests/test-thread-pool$(EXESUF)
+@@ -57,6 +57,8 @@ gcov-files-test-cutils-y += util/cutils.c
  
  check-block-$(CONFIG_POSIX) += tests/qemu-iotests-quick.sh
  
@@ -27,15 +27,15 @@ index b60f0fb..cffbd22 100644
  # All QTests for now are POSIX-only, but the dependencies are
  # really in libqtest, not in the testcases themselves.
  check-qtest-i386-y = tests/fdc-test$(EXESUF)
-@@ -54,6 +56,7 @@ tests/test-coroutine$(EXESUF): tests/test-coroutine.o $(coroutine-obj-y) $(tools
- tests/test-aio$(EXESUF): tests/test-aio.o $(coroutine-obj-y) $(tools-obj-y) $(block-obj-y) libqemustub.a
- tests/test-thread-pool$(EXESUF): tests/test-thread-pool.o $(coroutine-obj-y) $(tools-obj-y) $(block-obj-y) libqemustub.a
- tests/test-iov$(EXESUF): tests/test-iov.o iov.o
-+tests/backup-test$(EXESUF): tests/backup-test.o vma-reader.o $(tools-obj-y) $(block-obj-y) libqemustub.a
- 
- tests/test-qapi-types.c tests/test-qapi-types.h :\
- $(SRC_PATH)/qapi-schema-test.json $(SRC_PATH)/scripts/qapi-types.py
-@@ -146,10 +149,14 @@ check-tests/qemu-iotests-quick.sh: tests/qemu-iotests-quick.sh qemu-img$(EXESUF)
+@@ -100,6 +102,7 @@ tests/test-coroutine$(EXESUF): tests/test-coroutine.o $(block-obj-y) libqemuutil
+ tests/test-aio$(EXESUF): tests/test-aio.o $(block-obj-y) libqemuutil.a libqemustub.a
+ tests/test-thread-pool$(EXESUF): tests/test-thread-pool.o $(block-obj-y) libqemuutil.a libqemustub.a
+ tests/test-iov$(EXESUF): tests/test-iov.o libqemuutil.a
++tests/backup-test$(EXESUF): tests/backup-test.o vma-reader.o $(block-obj-y) libqemuutil.a libqemustub.a
+ tests/test-hbitmap$(EXESUF): tests/test-hbitmap.o libqemuutil.a libqemustub.a
+ tests/test-x86-cpuid$(EXESUF): tests/test-x86-cpuid.o
+ tests/test-xbzrle$(EXESUF): tests/test-xbzrle.o xbzrle.o page_cache.o libqemuutil.a
+@@ -209,10 +212,14 @@ check-tests/qemu-iotests-quick.sh: tests/qemu-iotests-quick.sh qemu-img$(EXESUF)
  
  # Consolidated targets
  
@@ -54,10 +54,10 @@ index b60f0fb..cffbd22 100644
  -include $(wildcard tests/*.d)
 diff --git a/tests/backup-test.c b/tests/backup-test.c
 new file mode 100644
-index 0000000..36a6389
+index 0000000..5ee3b90
 --- /dev/null
 +++ b/tests/backup-test.c
-@@ -0,0 +1,516 @@
+@@ -0,0 +1,517 @@
 +/*
 + * QEMU backup test suit
 + *
@@ -82,8 +82,7 @@ index 0000000..36a6389
 +#include <libgen.h>
 +
 +#include "qemu-common.h"
-+#include "main-loop.h"
-+#include "block_int.h"
++#include "block/block.h"
 +
 +#include "vma.h"
 +
@@ -306,9 +305,11 @@ index 0000000..36a6389
 +
 +    int flags = BDRV_O_NATIVE_AIO|BDRV_O_RDWR|BDRV_O_CACHE_WB;
 +
-+    if (bdrv_img_create(TEST_IMG_RESTORE_NAME, "raw", NULL, NULL, NULL,
-+                        size, flags)) {
-+        g_error("can't create file %s", TEST_IMG_RESTORE_NAME);
++    bdrv_img_create(TEST_IMG_RESTORE_NAME, "raw", NULL, NULL, NULL,
++		    size, flags, &errp);
++    if (error_is_set(&errp)) {
++        g_error("can't create file %s: %s", TEST_IMG_RESTORE_NAME,
++                error_get_pretty(errp));
 +    }
 +
 +    BlockDriverState *bs = NULL;

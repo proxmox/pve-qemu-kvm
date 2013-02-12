@@ -1,7 +1,16 @@
 Index: new/ui/vnc-auth-vencrypt.c
 ===================================================================
---- new.orig/ui/vnc-auth-vencrypt.c	2012-09-24 07:15:24.000000000 +0200
-+++ new/ui/vnc-auth-vencrypt.c	2012-09-24 07:15:27.000000000 +0200
+--- new.orig/ui/vnc-auth-vencrypt.c	2013-02-11 11:18:48.000000000 +0100
++++ new/ui/vnc-auth-vencrypt.c	2013-02-11 11:54:47.000000000 +0100
+@@ -25,7 +25,7 @@
+  */
+ 
+ #include "vnc.h"
+-#include "qemu_socket.h"
++#include "qemu/sockets.h"
+ 
+ static int protocol_client_auth_plain(VncState *vs, uint8_t *data, size_t len)
+ {
 @@ -143,6 +143,11 @@
         vnc_read_when(vs, protocol_client_auth_plain_start, 8);
         break;

@@ -1,65 +1,73 @@
 Index: new/hw/pc_piix.c
 ===================================================================
---- new.orig/hw/pc_piix.c	2012-11-22 10:10:56.000000000 +0100
-+++ new/hw/pc_piix.c	2012-11-22 10:16:29.000000000 +0100
-@@ -352,6 +352,8 @@
+--- new.orig/hw/pc_piix.c	2013-02-11 11:06:09.000000000 +0100
++++ new/hw/pc_piix.c	2013-02-11 12:18:14.000000000 +0100
+@@ -294,6 +294,8 @@
  }
  #endif
  
 +#define KVM_MACHINE_OPTIONS "accel=kvm"
 +
- static QEMUMachine pc_machine_v1_3 = {
-     .name = "pc-1.3",
+ static QEMUMachine pc_i440fx_machine_v1_4 = {
+     .name = "pc-i440fx-1.4",
      .alias = "pc",
-@@ -359,6 +361,7 @@
-     .init = pc_init_pci_1_3,
+@@ -301,6 +303,7 @@
+     .init = pc_init_pci,
      .max_cpus = 255,
      .is_default = 1,
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     DEFAULT_MACHINE_OPTIONS,
  };
  
- #define PC_COMPAT_1_2 \
-@@ -393,6 +396,7 @@
+@@ -328,6 +331,7 @@
+         PC_COMPAT_1_3,
+         { /* end of list */ }
+     },
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     DEFAULT_MACHINE_OPTIONS,
+ };
+ 
+@@ -364,6 +368,7 @@
      .desc = "Standard PC",
-     .init = pc_init_pci,
+     .init = pc_init_pci_1_2,
      .max_cpus = 255,
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_1_2,
          { /* end of list */ }
-@@ -436,6 +440,7 @@
+@@ -408,6 +413,7 @@
      .desc = "Standard PC",
-     .init = pc_init_pci,
+     .init = pc_init_pci_1_2,
      .max_cpus = 255,
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_1_1,
          { /* end of list */ }
-@@ -471,6 +476,7 @@
+@@ -444,6 +450,7 @@
      .desc = "Standard PC",
-     .init = pc_init_pci,
+     .init = pc_init_pci_1_2,
      .max_cpus = 255,
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_1_0,
          { /* end of list */ }
-@@ -486,6 +492,7 @@
+@@ -460,6 +467,7 @@
      .desc = "Standard PC",
-     .init = pc_init_pci,
+     .init = pc_init_pci_1_2,
      .max_cpus = 255,
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_15,
          { /* end of list */ }
-@@ -518,6 +525,7 @@
+@@ -493,6 +501,7 @@
      .desc = "Standard PC",
-     .init = pc_init_pci,
+     .init = pc_init_pci_1_2,
      .max_cpus = 255,
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_14, 
          {
-@@ -551,6 +559,7 @@
+@@ -527,6 +536,7 @@
      .desc = "Standard PC",
      .init = pc_init_pci_no_kvmclock,
      .max_cpus = 255,
@@ -67,7 +75,7 @@ Index: new/hw/pc_piix.c
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_13,
          {
-@@ -588,6 +597,7 @@
+@@ -565,6 +575,7 @@
      .desc = "Standard PC",
      .init = pc_init_pci_no_kvmclock,
      .max_cpus = 255,
@@ -75,7 +83,7 @@ Index: new/hw/pc_piix.c
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_12,
          {
-@@ -621,6 +631,7 @@
+@@ -599,6 +610,7 @@
      .desc = "Standard PC, qemu 0.11",
      .init = pc_init_pci_no_kvmclock,
      .max_cpus = 255,
@@ -83,7 +91,7 @@ Index: new/hw/pc_piix.c
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_11,
          {
-@@ -642,6 +653,7 @@
+@@ -621,6 +633,7 @@
      .desc = "Standard PC, qemu 0.10",
      .init = pc_init_pci_no_kvmclock,
      .max_cpus = 255,
@@ -91,7 +99,7 @@ Index: new/hw/pc_piix.c
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_11,
          {
-@@ -675,6 +687,7 @@
+@@ -655,6 +668,7 @@
      .desc = "ISA-only PC",
      .init = pc_init_isa,
      .max_cpus = 1,

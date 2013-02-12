@@ -1,8 +1,8 @@
 Index: new/block.c
 ===================================================================
---- new.orig/block.c	2012-11-21 11:11:22.000000000 +0100
-+++ new/block.c	2012-11-21 11:51:35.000000000 +0100
-@@ -3137,6 +3137,28 @@
+--- new.orig/block.c	2013-02-12 12:05:14.000000000 +0100
++++ new/block.c	2013-02-12 12:06:52.000000000 +0100
+@@ -3162,6 +3162,28 @@
      return -ENOTSUP;
  }
  
@@ -31,11 +31,11 @@ Index: new/block.c
  int bdrv_snapshot_load_tmp(BlockDriverState *bs,
          const char *snapshot_name)
  {
-Index: new/block.h
+Index: new/include/block/block.h
 ===================================================================
---- new.orig/block.h	2012-11-21 11:11:22.000000000 +0100
-+++ new/block.h	2012-11-21 11:51:35.000000000 +0100
-@@ -327,6 +327,8 @@
+--- new.orig/include/block/block.h	2013-02-12 12:05:14.000000000 +0100
++++ new/include/block/block.h	2013-02-12 12:06:52.000000000 +0100
+@@ -331,6 +331,8 @@
  int bdrv_snapshot_delete(BlockDriverState *bs, const char *snapshot_id);
  int bdrv_snapshot_list(BlockDriverState *bs,
                         QEMUSnapshotInfo **psn_info);
@@ -46,9 +46,9 @@ Index: new/block.h
  char *bdrv_snapshot_dump(char *buf, int buf_size, QEMUSnapshotInfo *sn);
 Index: new/savevm.c
 ===================================================================
---- new.orig/savevm.c	2012-11-21 11:11:22.000000000 +0100
-+++ new/savevm.c	2012-11-21 11:51:35.000000000 +0100
-@@ -2061,28 +2061,6 @@
+--- new.orig/savevm.c	2013-02-12 12:05:14.000000000 +0100
++++ new/savevm.c	2013-02-12 12:06:52.000000000 +0100
+@@ -2055,28 +2055,6 @@
      return ret;
  }
  

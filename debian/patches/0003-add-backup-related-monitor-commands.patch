@@ -1,4 +1,4 @@
-From 4c0880f2561de8dec379eb6f02b3df88c023270c Mon Sep 17 00:00:00 2001
+From 02f8d395026b507cdcaaec00b324a67779298383 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
 Subject: [PATCH v3 3/6] add backup related monitor commands
@@ -44,18 +44,18 @@ index 20a9016..be52ea4 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index e73fd6e..c559903 100644
+index 63e6f1e..92a7ca3 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
- #include "arch_init.h"
+ #include "sysemu/arch_init.h"
 +#include "backup.h"
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1321,6 +1322,428 @@ void qmp_drive_mirror(const char *device, const char *target,
+@@ -1334,6 +1335,428 @@ void qmp_drive_mirror(const char *device, const char *target,
      drive_get_ref(drive_get_by_blockdev(bs));
  }
  
@@ -485,7 +485,7 @@ index e73fd6e..c559903 100644
  {
      BlockDriverState *bs;
 diff --git a/hmp-commands.hx b/hmp-commands.hx
-index 010b8c9..57be357 100644
+index 64008a9..0f178d8 100644
 --- a/hmp-commands.hx
 +++ b/hmp-commands.hx
 @@ -83,6 +83,35 @@ STEXI
@@ -524,7 +524,7 @@ index 010b8c9..57be357 100644
      {
          .name       = "block_job_set_speed",
          .args_type  = "device:B,speed:o",
-@@ -1558,6 +1587,8 @@ show CPU statistics
+@@ -1630,6 +1659,8 @@ show CPU statistics
  show user network stack connection states
  @item info migrate
  show migration status
@@ -534,14 +534,14 @@ index 010b8c9..57be357 100644
  show current migration capabilities
  @item info migrate_cache_size
 diff --git a/hmp.c b/hmp.c
-index 180ba2b..27fd421 100644
+index 2f47a8a..9ac34c5 100644
 --- a/hmp.c
 +++ b/hmp.c
-@@ -130,6 +130,38 @@ void hmp_info_mice(Monitor *mon)
+@@ -131,6 +131,38 @@ void hmp_info_mice(Monitor *mon, const QDict *qdict)
      qapi_free_MouseInfoList(mice_list);
  }
  
-+void hmp_info_backup(Monitor *mon)
++void hmp_info_backup(Monitor *mon, const QDict *qdict)
 +{
 +    BackupStatus *info;
 +
@@ -573,10 +573,10 @@ index 180ba2b..27fd421 100644
 +    qapi_free_BackupStatus(info);
 +}
 +
- void hmp_info_migrate(Monitor *mon)
+ void hmp_info_migrate(Monitor *mon, const QDict *qdict)
  {
      MigrationInfo *info;
-@@ -977,6 +1009,37 @@ void hmp_block_stream(Monitor *mon, const QDict *qdict)
+@@ -998,6 +1030,37 @@ void hmp_block_stream(Monitor *mon, const QDict *qdict)
      hmp_handle_error(mon, &error);
  }
  
@@ -615,18 +615,18 @@ index 180ba2b..27fd421 100644
  {
      Error *error = NULL;
 diff --git a/hmp.h b/hmp.h
-index 0ab03be..20c9a62 100644
+index 30b3c20..ad4cf80 100644
 --- a/hmp.h
 +++ b/hmp.h
-@@ -28,6 +28,7 @@ void hmp_info_mice(Monitor *mon);
- void hmp_info_migrate(Monitor *mon);
- void hmp_info_migrate_capabilities(Monitor *mon);
- void hmp_info_migrate_cache_size(Monitor *mon);
-+void hmp_info_backup(Monitor *mon);
- void hmp_info_cpus(Monitor *mon);
- void hmp_info_block(Monitor *mon);
- void hmp_info_blockstats(Monitor *mon);
-@@ -63,6 +64,8 @@ void hmp_eject(Monitor *mon, const QDict *qdict);
+@@ -28,6 +28,7 @@ void hmp_info_mice(Monitor *mon, const QDict *qdict);
+ void hmp_info_migrate(Monitor *mon, const QDict *qdict);
+ void hmp_info_migrate_capabilities(Monitor *mon, const QDict *qdict);
+ void hmp_info_migrate_cache_size(Monitor *mon, const QDict *qdict);
++void hmp_info_backup(Monitor *mon, const QDict *qdict);
+ void hmp_info_cpus(Monitor *mon, const QDict *qdict);
+ void hmp_info_block(Monitor *mon, const QDict *qdict);
+ void hmp_info_blockstats(Monitor *mon, const QDict *qdict);
+@@ -65,6 +66,8 @@ void hmp_eject(Monitor *mon, const QDict *qdict);
  void hmp_change(Monitor *mon, const QDict *qdict);
  void hmp_block_set_io_throttle(Monitor *mon, const QDict *qdict);
  void hmp_block_stream(Monitor *mon, const QDict *qdict);
@@ -636,10 +636,10 @@ index 0ab03be..20c9a62 100644
  void hmp_block_job_cancel(Monitor *mon, const QDict *qdict);
  void hmp_block_job_pause(Monitor *mon, const QDict *qdict);
 diff --git a/monitor.c b/monitor.c
-index c0e32d6..85cf47e 100644
+index 20bd19b..5f979ce 100644
 --- a/monitor.c
 +++ b/monitor.c
-@@ -2680,6 +2680,13 @@ static mon_cmd_t info_cmds[] = {
+@@ -2666,6 +2666,13 @@ static mon_cmd_t info_cmds[] = {
      },
  #endif
      {
@@ -647,17 +647,17 @@ index c0e32d6..85cf47e 100644
 +        .args_type  = "",
 +        .params     = "",
 +        .help       = "show backup status",
-+        .mhandler.info = hmp_info_backup,
++        .mhandler.cmd = hmp_info_backup,
 +    },
 +    {
          .name       = "migrate",
          .args_type  = "",
          .params     = "",
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 5dfa052..2d3699b 100644
+index bd289ae..c91df47 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
-@@ -358,6 +358,39 @@
+@@ -425,6 +425,39 @@
  { 'type': 'EventInfo', 'data': {'name': 'str'} }
  
  ##
@@ -697,7 +697,7 @@ index 5dfa052..2d3699b 100644
  # @query-events:
  #
  # Return a list of supported QMP events by this server
-@@ -1764,6 +1797,64 @@
+@@ -1824,6 +1857,64 @@
    'data': { 'path': 'str' },
    'returns': [ 'ObjectPropertyInfo' ] }
  
@@ -763,10 +763,10 @@ index 5dfa052..2d3699b 100644
  # @qom-get:
  #
 diff --git a/qmp-commands.hx b/qmp-commands.hx
-index 5c692d0..c46fdc4 100644
+index 799adea..ca601b3 100644
 --- a/qmp-commands.hx
 +++ b/qmp-commands.hx
-@@ -822,6 +822,18 @@ EQMP
+@@ -889,6 +889,18 @@ EQMP
      },
  
      {
@@ -785,7 +785,7 @@ index 5c692d0..c46fdc4 100644
          .name       = "block-job-set-speed",
          .args_type  = "device:B,speed:o",
          .mhandler.cmd_new = qmp_marshal_input_block_job_set_speed,
-@@ -2491,6 +2503,21 @@ EQMP
+@@ -2566,6 +2578,21 @@ EQMP
      },
  
  SQMP

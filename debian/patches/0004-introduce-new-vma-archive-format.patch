@@ -1,4 +1,4 @@
-From 86ddce6dbd1cc88a0fad43b36300b8ffa573bd04 Mon Sep 17 00:00:00 2001
+From c04d17631e00ff368e42dc5d24e94152b6526014 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v3 4/6] introduce new vma archive format
@@ -9,13 +9,14 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  Makefile                |    3 +-
  Makefile.objs           |    2 +-
+ backup.h                |    1 +
  blockdev.c              |    6 +-
  docs/specs/vma_spec.txt |   24 ++
- vma-reader.c            |  801 ++++++++++++++++++++++++++++++++++++++++
- vma-writer.c            |  935 +++++++++++++++++++++++++++++++++++++++++++++++
- vma.c                   |  561 ++++++++++++++++++++++++++++
+ vma-reader.c            |  799 ++++++++++++++++++++++++++++++++++++++++
+ vma-writer.c            |  932 +++++++++++++++++++++++++++++++++++++++++++++++
+ vma.c                   |  559 ++++++++++++++++++++++++++++
  vma.h                   |  145 ++++++++
- 8 files changed, 2473 insertions(+), 4 deletions(-)
+ 9 files changed, 2467 insertions(+), 4 deletions(-)
  create mode 100644 docs/specs/vma_spec.txt
  create mode 100644 vma-reader.c
  create mode 100644 vma-writer.c
@@ -23,52 +24,64 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  create mode 100644 vma.h
 
 diff --git a/Makefile b/Makefile
-index 9ecbcbb..30a9268 100644
+index 0d9099a..16f1c25 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -100,7 +100,7 @@ defconfig:
- 
- -include config-all-devices.mak
+@@ -115,7 +115,7 @@ ifeq ($(CONFIG_SMARTCARD_NSS),y)
+ include $(SRC_PATH)/libcacard/Makefile
+ endif
  
 -all: $(DOCS) $(TOOLS) $(HELPERS-y) recurse-all
 +all: $(DOCS) $(TOOLS) vma$(EXESUF) $(HELPERS-y) recurse-all
  
  config-host.h: config-host.h-timestamp
  config-host.h-timestamp: config-host.mak
-@@ -194,6 +194,7 @@ tools-obj-$(CONFIG_POSIX) += compatfd.o
- qemu-img$(EXESUF): qemu-img.o $(tools-obj-y) $(block-obj-y) libqemustub.a
- qemu-nbd$(EXESUF): qemu-nbd.o $(tools-obj-y) $(block-obj-y) libqemustub.a
- qemu-io$(EXESUF): qemu-io.o cmd.o $(tools-obj-y) $(block-obj-y) libqemustub.a
-+vma$(EXESUF): vma.o vma-writer.o vma-reader.o $(tools-obj-y) $(block-obj-y) libqemustub.a
+@@ -167,6 +167,7 @@ qemu-img.o: qemu-img-cmds.h
+ qemu-img$(EXESUF): qemu-img.o $(block-obj-y) libqemuutil.a libqemustub.a
+ qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) libqemuutil.a libqemustub.a
+ qemu-io$(EXESUF): qemu-io.o cmd.o $(block-obj-y) libqemuutil.a libqemustub.a
++vma$(EXESUF): vma.o vma-writer.o vma-reader.o $(block-obj-y)  libqemuutil.a libqemustub.a
  
  qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o
  
 diff --git a/Makefile.objs b/Makefile.objs
-index cb46be5..b5732e2 100644
+index d72822b..111b9f8 100644
 --- a/Makefile.objs
 +++ b/Makefile.objs
-@@ -48,7 +48,7 @@ coroutine-obj-$(CONFIG_WIN32) += coroutine-win32.o
- block-obj-y = iov.o cache-utils.o qemu-option.o module.o async.o
- block-obj-y += nbd.o block.o blockjob.o aes.o qemu-config.o
- block-obj-y += thread-pool.o qemu-progress.o qemu-sockets.o uri.o notify.o
+@@ -13,7 +13,7 @@ block-obj-$(CONFIG_POSIX) += aio-posix.o
+ block-obj-$(CONFIG_WIN32) += aio-win32.o
+ block-obj-y += block/
+ block-obj-y += qapi-types.o qapi-visit.o
 -block-obj-y += backup.o
 +block-obj-y += vma-writer.o backup.o
- block-obj-y += $(coroutine-obj-y) $(qobject-obj-y) $(version-obj-y)
- block-obj-$(CONFIG_POSIX) += event_notifier-posix.o aio-posix.o
- block-obj-$(CONFIG_WIN32) += event_notifier-win32.o aio-win32.o
+ 
+ block-obj-y += qemu-coroutine.o qemu-coroutine-lock.o qemu-coroutine-io.o
+ block-obj-y += qemu-coroutine-sleep.o
+diff --git a/backup.h b/backup.h
+index be52ea4..3a81e52 100644
+--- a/backup.h
++++ b/backup.h
+@@ -15,6 +15,7 @@
+ #define QEMU_BACKUP_H
+ 
+ #include <uuid/uuid.h>
++#include "block/block.h"
+ 
+ #define BACKUP_CLUSTER_BITS 16
+ #define BACKUP_CLUSTER_SIZE (1<<BACKUP_CLUSTER_BITS)
 diff --git a/blockdev.c b/blockdev.c
-index c559903..467667e 100644
+index 92a7ca3..aad6e0c 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -21,6 +21,7 @@
  #include "trace.h"
- #include "arch_init.h"
+ #include "sysemu/arch_init.h"
  #include "backup.h"
 +#include "vma.h"
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1517,10 +1518,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1530,10 +1531,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -114,10 +127,10 @@ index 0000000..052c629
 +
 diff --git a/vma-reader.c b/vma-reader.c
 new file mode 100644
-index 0000000..2217a94
+index 0000000..7e81847
 --- /dev/null
 +++ b/vma-reader.c
-@@ -0,0 +1,801 @@
+@@ -0,0 +1,799 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -143,12 +156,10 @@ index 0000000..2217a94
 +#include <uuid/uuid.h>
 +
 +#include "qemu-common.h"
-+#include "qemu_socket.h"
-+#include "qemu-coroutine.h"
-+#include "qemu-aio.h"
++#include "qemu/timer.h"
 +#include "qemu/ratelimit.h"
 +#include "vma.h"
-+#include "block.h"
++#include "block/block.h"
 +
 +#define BITS_PER_LONG  (sizeof(unsigned long) * 8)
 +
@@ -921,10 +932,10 @@ index 0000000..2217a94
 +
 diff --git a/vma-writer.c b/vma-writer.c
 new file mode 100644
-index 0000000..6ecbaf4
+index 0000000..04a346e
 --- /dev/null
 +++ b/vma-writer.c
-@@ -0,0 +1,935 @@
+@@ -0,0 +1,932 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -950,12 +961,9 @@ index 0000000..6ecbaf4
 +#include <uuid/uuid.h>
 +
 +#include "qemu-common.h"
-+#include "qemu_socket.h"
-+#include "qemu-coroutine.h"
-+#include "qemu-aio.h"
 +#include "vma.h"
-+#include "block.h"
-+#include "monitor.h"
++#include "block/block.h"
++#include "monitor/monitor.h"
 +
 +#define DEBUG_VMA 0
 +
@@ -1862,10 +1870,10 @@ index 0000000..6ecbaf4
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..66de9bb
+index 0000000..64da334
 --- /dev/null
 +++ b/vma.c
-@@ -0,0 +1,561 @@
+@@ -0,0 +1,559 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -1890,13 +1898,9 @@ index 0000000..66de9bb
 +#include <glib.h>
 +
 +#include "qemu-common.h"
-+#include "qemu-option.h"
-+#include "qemu-error.h"
-+#include "osdep.h"
-+#include "sysemu.h"
-+#include "block_int.h"
-+#include <stdio.h>
++#include "qemu/error-report.h"
 +#include "vma.h"
++#include "block/block.h"
 +
 +static void help(void)
 +{
@@ -2155,9 +2159,11 @@ index 0000000..66de9bb
 +                                        dirname, di->devname);
 +                printf("DEVINFO %s %zd\n", devfn, di->size);
 +
-+                if (bdrv_img_create(devfn, "raw", NULL, NULL, NULL,
-+                                    di->size, flags)) {
-+                    g_error("can't create file %s", devfn);
++                bdrv_img_create(devfn, "raw", NULL, NULL, NULL, di->size, 
++                                flags, &errp);
++                if (error_is_set(&errp)) {
++                    g_error("can't create file %s: %s", devfn, 
++                            error_get_pretty(errp));
 +                }
 +
 +                /* Note: we created an empty file above, so there is no

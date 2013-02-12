@@ -1,4 +1,4 @@
-From 1f4df212ac4408eaf685cd0febf2ae86ea96e6f3 Mon Sep 17 00:00:00 2001
+From 2b1f27dec5e3f38d00b7905870337025bed8f366 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Thu, 29 Nov 2012 10:46:49 +0100
 Subject: [PATCH v3 6/6] add vm state to backups
@@ -12,11 +12,11 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  3 files changed, 200 insertions(+), 5 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 467667e..b6d80a4 100644
+index aad6e0c..2805a1e 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -22,6 +22,8 @@
- #include "arch_init.h"
+ #include "sysemu/arch_init.h"
  #include "backup.h"
  #include "vma.h"
 +#include "qemu-file.h"
@@ -24,7 +24,7 @@ index 467667e..b6d80a4 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1342,6 +1344,10 @@ static struct GenericBackupState {
+@@ -1355,6 +1357,10 @@ static struct GenericBackupState {
      size_t total;
      size_t transferred;
      size_t zero_bytes;
@@ -35,7 +35,7 @@ index 467667e..b6d80a4 100644
  } backup_state;
  
  typedef struct BackupCB {
-@@ -1497,10 +1503,170 @@ static void backup_start_jobs(void)
+@@ -1510,10 +1516,170 @@ static void backup_start_jobs(void)
      backup_run_next_job();
  }
  
@@ -207,7 +207,7 @@ index 467667e..b6d80a4 100644
  {
      BlockDriverState *bs;
      Error *local_err = NULL;
-@@ -1515,6 +1681,8 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1528,6 +1694,8 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
          return NULL;
      }
  
@@ -216,7 +216,7 @@ index 467667e..b6d80a4 100644
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
-@@ -1595,6 +1763,22 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1608,6 +1776,22 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      size_t total = 0;
  
      /* register all devices for vma writer */
@@ -239,7 +239,7 @@ index 467667e..b6d80a4 100644
      l = bcblist;
      while (l) {
          BackupCB *bcb = l->data;
-@@ -1662,6 +1846,9 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1675,6 +1859,9 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
      backup_state.total = total;
      backup_state.transferred = 0;
      backup_state.zero_bytes = 0;
@@ -249,7 +249,7 @@ index 467667e..b6d80a4 100644
  
      /* Grab a reference so hotplug does not delete the
       * BlockDriverState from underneath us.
-@@ -1673,7 +1860,12 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1686,7 +1873,12 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
          drive_get_ref(drive_get_by_blockdev(bcb->bs));
      }
  
@@ -264,10 +264,10 @@ index 467667e..b6d80a4 100644
      return g_strdup(backup_state.uuid_str);
  
 diff --git a/hmp.c b/hmp.c
-index 27fd421..56e1cdc 100644
+index 9ac34c5..7b401cc 100644
 --- a/hmp.c
 +++ b/hmp.c
-@@ -1031,7 +1031,8 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
+@@ -1052,7 +1052,8 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
      Error *errp = NULL;
  
      qmp_backup(backupfile, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist,
@@ -278,10 +278,10 @@ index 27fd421..56e1cdc 100644
      if (error_is_set(&errp)) {
          monitor_printf(mon, "%s\n", error_get_pretty(errp));
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 2d3699b..3f4889e 100644
+index c91df47..53655e6 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
-@@ -1822,13 +1822,15 @@
+@@ -1882,13 +1882,15 @@
  #
  # @speed: #optional the maximum speed, in bytes per second
  #
