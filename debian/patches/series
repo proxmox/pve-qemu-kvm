@@ -17,3 +17,4 @@ enable-kvm-by-default.patch
 0005-add-regression-tests-for-backup.patch
 #0006-add-vm-state-to-backups.patch
 # always-update-expected-downtime.patch
+virtio-balloon-fix-query.patch

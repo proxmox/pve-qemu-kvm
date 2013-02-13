@@ -1,26 +1,49 @@
-Index: new/hw/virtio-balloon.c
-===================================================================
---- new.orig/hw/virtio-balloon.c	2012-12-20 08:41:19.000000000 +0100
-+++ new/hw/virtio-balloon.c	2012-12-20 08:42:08.000000000 +0100
-@@ -59,7 +59,7 @@
- }
+diff --git a/hmp.c b/hmp.c
+index c16af53..8847c8f 100644
+--- a/hmp.c
++++ b/hmp.c
+@@ -497,7 +497,35 @@ void hmp_info_balloon(Monitor *mon, const QDict *qdict)
+         return;
+     }
  
- static const char *balloon_stat_names[] = {
--   [VIRTIO_BALLOON_S_SWAP_IN] = "stat-swap-in", 
-+   [VIRTIO_BALLOON_S_SWAP_IN] = "stat-swap-in",
-    [VIRTIO_BALLOON_S_SWAP_OUT] = "stat-swap-out",
-    [VIRTIO_BALLOON_S_MAJFLT] = "stat-major-faults",
-    [VIRTIO_BALLOON_S_MINFLT] = "stat-minor-faults",
-@@ -73,7 +73,7 @@
-  *
-  * This function needs to be called at device intialization and before
-  * before updating to a set of newly-generated stats.  This will ensure that no
-- * stale values stick around in case the guest reports a subset of the supported
-+ * stale values stick around in case The guest reports a subset of the supported
-  * statistics.
-  */
- static inline void reset_stats(VirtIOBalloon *dev)
-@@ -315,6 +315,34 @@
+-    monitor_printf(mon, "balloon: actual=%" PRId64 "\n", info->actual >> 20);
++    monitor_printf(mon, "balloon: actual=%" PRId64, info->actual >> 20);
++    monitor_printf(mon, " max_mem=%" PRId64, info->max_mem >> 20);
++    if (info->has_total_mem) {
++        monitor_printf(mon, " total_mem=%" PRId64, info->total_mem >> 20);
++    }
++    if (info->has_free_mem) {
++        monitor_printf(mon, " free_mem=%" PRId64, info->free_mem >> 20);
++    }
++
++    if (info->has_mem_swapped_in) {
++        monitor_printf(mon, " mem_swapped_in=%" PRId64, info->mem_swapped_in);
++    }
++    if (info->has_mem_swapped_out) {
++        monitor_printf(mon, " mem_swapped_out=%" PRId64, info->mem_swapped_out);
++    }
++    if (info->has_major_page_faults) {
++        monitor_printf(mon, " major_page_faults=%" PRId64,
++                       info->major_page_faults);
++    }
++    if (info->has_minor_page_faults) {
++        monitor_printf(mon, " minor_page_faults=%" PRId64,
++                       info->minor_page_faults);
++    }
++    if (info->has_last_update) {
++        monitor_printf(mon, " last_update=%" PRId64,
++                       info->last_update);
++    }
++
++    monitor_printf(mon, "\n");
+ 
+     qapi_free_BalloonInfo(info);
+ }
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index c0a7902..ba89a27 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -306,6 +306,35 @@ static void virtio_balloon_stat(void *opaque, BalloonInfo *info)
      VirtIOBalloon *dev = opaque;
      info->actual = ram_size - ((uint64_t) dev->actual <<
                                 VIRTIO_BALLOON_PFN_SHIFT);
@@ -28,8 +51,8 @@ Index: new/hw/virtio-balloon.c
 +    info->max_mem = ram_size;
 +
 +    if (!(balloon_stats_enabled(dev) && balloon_stats_supported(dev) &&
-+          dev->stats_last_update)) {
-+        return;
++	    dev->stats_last_update)) {
++	return;
 +    }
 +
 +    info->last_update = dev->stats_last_update;
@@ -52,74 +75,80 @@ Index: new/hw/virtio-balloon.c
 +
 +    info->total_mem = dev->stats[VIRTIO_BALLOON_S_MEMTOT];
 +    info->has_total_mem = info->total_mem >= 0 ? true : false;
++
  }
  
  static void virtio_balloon_to_target(void *opaque, ram_addr_t target)
-Index: new/qapi-schema.json
-===================================================================
---- new.orig/qapi-schema.json	2012-12-20 08:40:30.000000000 +0100
-+++ new/qapi-schema.json	2012-12-20 08:41:40.000000000 +0100
-@@ -1044,6 +1044,8 @@
+diff --git a/qapi-schema.json b/qapi-schema.json
+index eb5704b..6f76e62 100644
+--- a/qapi-schema.json
++++ b/qapi-schema.json
+@@ -1108,15 +1108,34 @@
+ 
+ ##
+ # @BalloonInfo:
+-#
++# 
+ # Information about the guest balloon device.
  #
  # @actual: the number of bytes the balloon currently contains
  #
+-# Since: 0.14.0
 +# @last_update: #optional time when stats got updated from guest
 +#
- # @mem_swapped_in: #optional number of pages swapped in within the guest
++# @mem_swapped_in: #optional number of pages swapped in within the guest
++# 
++# @mem_swapped_out: #optional number of pages swapped out within the guest
++#
++# @major_page_faults: #optional number of major page faults within the guest
  #
- # @mem_swapped_out: #optional number of pages swapped out within the guest
-@@ -1056,16 +1058,15 @@
- #
- # @total_mem: #optional amount of memory (in bytes) visible to the guest
- #
--# Since: 0.14.0
++# @minor_page_faults: #optional number of minor page faults within the guest
++# 
++# @free_mem: #optional amount of memory (in bytes) free in the guest
++#
++# @total_mem: #optional amount of memory (in bytes) visible to the guest
++#
 +# @max_mem: amount of memory (in bytes) assigned to the guest
- #
--# Notes: all current versions of QEMU do not fill out optional information in
--#        this structure.
++# 
 +# Since: 0.14.0
  ##
- { 'type': 'BalloonInfo',
--  'data': {'actual': 'int', '*mem_swapped_in': 'int',
+-{ 'type': 'BalloonInfo', 'data': {'actual': 'int' } }
++{ 'type': 'BalloonInfo',
 +  'data': {'actual': 'int', '*last_update': 'int', '*mem_swapped_in': 'int',
-            '*mem_swapped_out': 'int', '*major_page_faults': 'int',
-            '*minor_page_faults': 'int', '*free_mem': 'int',
--           '*total_mem': 'int'} }
++           '*mem_swapped_out': 'int', '*major_page_faults': 'int',
++           '*minor_page_faults': 'int', '*free_mem': 'int',
 +           '*total_mem': 'int', 'max_mem': 'int', } }
  
  ##
  # @query-balloon:
-Index: new/hmp.c
-===================================================================
---- new.orig/hmp.c	2012-12-20 08:40:31.000000000 +0100
-+++ new/hmp.c	2012-12-20 08:41:40.000000000 +0100
-@@ -497,6 +497,14 @@
-     }
+diff --git a/qmp-commands.hx b/qmp-commands.hx
+index f937db7..71c9070 100644
+--- a/qmp-commands.hx
++++ b/qmp-commands.hx
+@@ -2649,6 +2649,13 @@ Make an asynchronous request for balloon info. When the request completes a
+ json-object will be returned containing the following data:
  
-     monitor_printf(mon, "balloon: actual=%" PRId64, info->actual >> 20);
-+    monitor_printf(mon, " max_mem=%" PRId64, info->max_mem >> 20);
-+    if (info->has_total_mem) {
-+        monitor_printf(mon, " total_mem=%" PRId64, info->total_mem >> 20);
-+    }
-+    if (info->has_free_mem) {
-+        monitor_printf(mon, " free_mem=%" PRId64, info->free_mem >> 20);
-+    }
-+
-     if (info->has_mem_swapped_in) {
-         monitor_printf(mon, " mem_swapped_in=%" PRId64, info->mem_swapped_in);
-     }
-@@ -511,11 +519,9 @@
-         monitor_printf(mon, " minor_page_faults=%" PRId64,
-                        info->minor_page_faults);
-     }
--    if (info->has_free_mem) {
--        monitor_printf(mon, " free_mem=%" PRId64, info->free_mem);
--    }
--    if (info->has_total_mem) {
--        monitor_printf(mon, " total_mem=%" PRId64, info->total_mem);
-+    if (info->has_last_update) {
-+        monitor_printf(mon, " last_update=%" PRId64,
-+                       info->last_update);
-     }
+ - "actual": current balloon value in bytes (json-int)
++- "mem_swapped_in": Amount of memory swapped in bytes (json-int, optional)
++- "mem_swapped_out": Amount of memory swapped out in bytes (json-int, optional)
++- "major_page_faults": Number of major faults (json-int, optional)
++- "minor_page_faults": Number of minor faults (json-int, optional)
++- "free_mem": Total amount of free and unused memory in
++              bytes (json-int, optional)
++- "total_mem": Total amount of available memory in bytes (json-int, optional)
  
-     monitor_printf(mon, "\n");
+ Example:
+ 
+@@ -2656,6 +2663,12 @@ Example:
+ <- {
+       "return":{
+          "actual":1073741824,
++         "mem_swapped_in":0,
++         "mem_swapped_out":0,
++         "major_page_faults":142,
++         "minor_page_faults":239245,
++         "free_mem":1014185984,
++         "total_mem":1044668416
+       }
+    }
+ 
