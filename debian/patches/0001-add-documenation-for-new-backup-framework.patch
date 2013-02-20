@@ -1,47 +1,22 @@
-From e9d7fc0567eb5bef368a950a4813d6eb5867572b Mon Sep 17 00:00:00 2001
+From 2f0dcd89a0de8b656d33ce6997c09879bd287af7 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 09:24:50 +0100
-Subject: [PATCH v3 1/6] RFC: Efficient VM backup for qemu
+Subject: [PATCH v4 1/6] add documenation for new backup framework
 
-This series provides a way to efficiently backup VMs.
-
-* Backup to a single archive file
-* Backup contain all data to restore VM (full backup)
-* Do not depend on storage type or image format
-* Avoid use of temporary storage
-* store sparse images efficiently
-
-The file docs/backup-rfc.txt contains more details.
-
-Changes since v1:
-
-* fix spelling errors
-* move BackupInfo from BDS to BackupBlockJob
-* introduce BackupDriver to allow more than one backup format
-* vma: add suport to store vmstate (size is not known in advance)
-* add ability to store VM state
-
-Changes since v2:
-
-* BackupDriver: remove cancel_cb
-* use enum for BackupFormat
-* vma: use bdrv_open instead of bdrv_file_open
-* vma: fix aio, use O_DIRECT
-* backup one drive after another (try to avoid high load)
 
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
- docs/backup-rfc.txt |  119 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 119 insertions(+), 0 deletions(-)
- create mode 100644 docs/backup-rfc.txt
+ docs/backup.txt |  116 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 116 insertions(+), 0 deletions(-)
+ create mode 100644 docs/backup.txt
 
-diff --git a/docs/backup-rfc.txt b/docs/backup-rfc.txt
+diff --git a/docs/backup.txt b/docs/backup.txt
 new file mode 100644
-index 0000000..5b4b3df
+index 0000000..927d787
 --- /dev/null
-+++ b/docs/backup-rfc.txt
-@@ -0,0 +1,119 @@
-+RFC: Efficient VM backup for qemu
++++ b/docs/backup.txt
+@@ -0,0 +1,116 @@
++Efficient VM backup for qemu
 +
 +=Requirements=
 +
@@ -88,9 +63,6 @@ index 0000000..5b4b3df
 +of reference counting (rados, sheepdog, dm-thin, qcow2). It would be possible
 +to use that for backups, but for now we want to be storage-independent.
 +
-+Note: It turned out that taking a qcow2 snapshot can take a very long
-+time on larger files.
-+
 +=Make it more efficient=
 +
 +The be more efficient, we simply need to avoid unnecessary steps. The
@@ -100,7 +72,7 @@ index 0000000..5b4b3df
 +2.) write that data into the backup archive
 +3.) write new data (VM write)
 +
-+As you can see, this involves only one read, an two writes.
++As you can see, this involves only one read, and two writes.
 +
 +To make that work, our backup archive need to be able to store image
 +data 'out of order'. It is important to notice that this will not work

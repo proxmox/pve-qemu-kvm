@@ -10,11 +10,11 @@ internal-snapshot-async.patch
 qemu-img-convert-skipcreate-option.patch
 enable-kvm-by-default.patch
 # include qemu backup series
-0001-RFC-Efficient-VM-backup-for-qemu.patch
+0001-add-documenation-for-new-backup-framework.patch
 0002-add-basic-backup-support-to-block-driver.patch
 0003-add-backup-related-monitor-commands.patch
 0004-introduce-new-vma-archive-format.patch
 0005-add-regression-tests-for-backup.patch
-#0006-add-vm-state-to-backups.patch
+0006-add-vm-state-to-backups.patch
 # always-update-expected-downtime.patch
 virtio-balloon-fix-query.patch

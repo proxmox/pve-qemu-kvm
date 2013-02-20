@@ -1,7 +1,7 @@
-From 6b0aa521526e0cc35539ee327b3e6c976da6e361 Mon Sep 17 00:00:00 2001
+From 4fb44b8d03b764db04e7751a14055cbb06a7791d Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Wed, 14 Nov 2012 09:57:04 +0100
-Subject: [PATCH v3 5/6] add regression tests for backup
+Subject: [PATCH v4 5/6] add regression tests for backup
 
 Simple regression tests using vma-reader and vma-writer.
 
@@ -15,10 +15,10 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  create mode 100644 tests/backup-test.c
 
 diff --git a/tests/Makefile b/tests/Makefile
-index a2d62b8..c3d8b4a 100644
+index 567e36e..136be84 100644
 --- a/tests/Makefile
 +++ b/tests/Makefile
-@@ -57,6 +57,8 @@ gcov-files-test-cutils-y += util/cutils.c
+@@ -59,6 +59,8 @@ gcov-files-test-mul64-y = util/host-utils.c
  
  check-block-$(CONFIG_POSIX) += tests/qemu-iotests-quick.sh
  
@@ -27,7 +27,7 @@ index a2d62b8..c3d8b4a 100644
  # All QTests for now are POSIX-only, but the dependencies are
  # really in libqtest, not in the testcases themselves.
  check-qtest-i386-y = tests/fdc-test$(EXESUF)
-@@ -100,6 +102,7 @@ tests/test-coroutine$(EXESUF): tests/test-coroutine.o $(block-obj-y) libqemuutil
+@@ -102,6 +104,7 @@ tests/test-coroutine$(EXESUF): tests/test-coroutine.o $(block-obj-y) libqemuutil
  tests/test-aio$(EXESUF): tests/test-aio.o $(block-obj-y) libqemuutil.a libqemustub.a
  tests/test-thread-pool$(EXESUF): tests/test-thread-pool.o $(block-obj-y) libqemuutil.a libqemustub.a
  tests/test-iov$(EXESUF): tests/test-iov.o libqemuutil.a
@@ -35,7 +35,7 @@ index a2d62b8..c3d8b4a 100644
  tests/test-hbitmap$(EXESUF): tests/test-hbitmap.o libqemuutil.a libqemustub.a
  tests/test-x86-cpuid$(EXESUF): tests/test-x86-cpuid.o
  tests/test-xbzrle$(EXESUF): tests/test-xbzrle.o xbzrle.o page_cache.o libqemuutil.a
-@@ -209,10 +212,14 @@ check-tests/qemu-iotests-quick.sh: tests/qemu-iotests-quick.sh qemu-img$(EXESUF)
+@@ -213,10 +216,14 @@ check-tests/qemu-iotests-quick.sh: tests/qemu-iotests-quick.sh qemu-img$(EXESUF)
  
  # Consolidated targets
  
@@ -54,7 +54,7 @@ index a2d62b8..c3d8b4a 100644
  -include $(wildcard tests/*.d)
 diff --git a/tests/backup-test.c b/tests/backup-test.c
 new file mode 100644
-index 0000000..5ee3b90
+index 0000000..5ff6f1d
 --- /dev/null
 +++ b/tests/backup-test.c
 @@ -0,0 +1,517 @@
@@ -306,7 +306,7 @@ index 0000000..5ee3b90
 +    int flags = BDRV_O_NATIVE_AIO|BDRV_O_RDWR|BDRV_O_CACHE_WB;
 +
 +    bdrv_img_create(TEST_IMG_RESTORE_NAME, "raw", NULL, NULL, NULL,
-+		    size, flags, &errp);
++                    size, flags, &errp);
 +    if (error_is_set(&errp)) {
 +        g_error("can't create file %s: %s", TEST_IMG_RESTORE_NAME,
 +                error_get_pretty(errp));
@@ -433,11 +433,11 @@ index 0000000..5ee3b90
 +    bcb.vmaw = vmaw;
 +    bcb.dev_id = vma_writer_register_stream(vmaw, bdrv_get_device_name(bs),
 +                                            bdrv_getlength(bs));
-+    if (backup_job_create(bs, backup_dump_cb, backup_complete_cb, &bcb, 
-+			  speed) < 0) {
++    if (backup_job_create(bs, backup_dump_cb, backup_complete_cb, &bcb,
++                          speed) < 0) {
 +        g_error("backup_job_create failed");
 +    } else {
-+	    backup_job_start(bs, false);
++        backup_job_start(bs, false);
 +    }
 +
 +    request_term = false;

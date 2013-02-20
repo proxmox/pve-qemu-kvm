@@ -1,0 +1,88 @@
+From de76a5c6306d782733217668f3f55c92aa2be36a Mon Sep 17 00:00:00 2001
+From: Dietmar Maurer <dietmar@proxmox.com>
+Date: Wed, 20 Feb 2013 10:26:23 +0100
+Subject: [PATCH v4 0/6] Efficient VM backup for qemu
+
+This series provides a way to efficiently backup VMs.
+
+* Backup to a single archive file
+* Backup contain all data to restore VM (full backup)
+* Do not depend on storage type or image format
+* Avoid use of temporary storage
+* store sparse images efficiently
+
+The file docs/backup.txt contains more details.
+
+Changes since v1:
+
+* fix spelling errors
+* move BackupInfo from BDS to BackupBlockJob
+* introduce BackupDriver to allow more than one backup format
+* vma: add suport to store vmstate (size is not known in advance)
+* add ability to store VM state
+
+Changes since v2:
+
+* BackupDriver: remove cancel_cb
+* use enum for BackupFormat
+* vma: use bdrv_open instead of bdrv_file_open
+* vma: fix aio, use O_DIRECT
+* backup one drive after another (try to avoid high load)
+
+Changes since v3:
+
+* move reviewer info from commit messages to cover-letter
+* remove 'RFC' from log headers and file names
+* removed comment about slow qcow2 snapshot bug
+* fix spelling errors
+* fixed copyright
+* change 'backupfile' parameter name to 'backup-file'
+* change 'config-filename' parameter name to 'config-file'
+* add documentation for 'devlist' parameter.
+* rename backup_cancel to backup-cancel
+
+
+Dietmar Maurer (6):
+  add documenation for new backup framework
+  add basic backup support to block driver
+  add backup related monitor commands
+  introduce new vma archive format
+  add regression tests for backup
+  add vm state to backups
+
+ Makefile                 |    3 +-
+ Makefile.objs            |    1 +
+ backup.c                 |  338 +++++++++++++++++
+ backup.h                 |   45 +++
+ block.c                  |   71 ++++-
+ blockdev.c               |  617 ++++++++++++++++++++++++++++++
+ docs/backup.txt          |  116 ++++++
+ docs/specs/vma_spec.txt  |   24 ++
+ hmp-commands.hx          |   31 ++
+ hmp.c                    |   64 ++++
+ hmp.h                    |    3 +
+ include/block/block.h    |    2 +
+ include/block/blockjob.h |   10 +
+ monitor.c                |    7 +
+ qapi-schema.json         |   98 +++++
+ qmp-commands.hx          |   27 ++
+ tests/Makefile           |   11 +-
+ tests/backup-test.c      |  517 +++++++++++++++++++++++++
+ vma-reader.c             |  799 +++++++++++++++++++++++++++++++++++++++
+ vma-writer.c             |  932 ++++++++++++++++++++++++++++++++++++++++++++++
+ vma.c                    |  559 +++++++++++++++++++++++++++
+ vma.h                    |  145 +++++++
+ 22 files changed, 4411 insertions(+), 9 deletions(-)
+ create mode 100644 backup.c
+ create mode 100644 backup.h
+ create mode 100644 docs/backup.txt
+ create mode 100644 docs/specs/vma_spec.txt
+ create mode 100644 tests/backup-test.c
+ create mode 100644 vma-reader.c
+ create mode 100644 vma-writer.c
+ create mode 100644 vma.c
+ create mode 100644 vma.h
+
+-- 
+1.7.2.5
+

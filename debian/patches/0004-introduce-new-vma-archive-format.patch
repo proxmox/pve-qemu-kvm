@@ -1,7 +1,7 @@
-From c04d17631e00ff368e42dc5d24e94152b6526014 Mon Sep 17 00:00:00 2001
+From 5476ae43806488e74cd293bbaa17f130aa53d402 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
-Subject: [PATCH v3 4/6] introduce new vma archive format
+Subject: [PATCH v4 4/6] introduce new vma archive format
 
 This is a very simple archive format, see docs/specs/vma_spec.txt
 
@@ -45,7 +45,7 @@ index 0d9099a..16f1c25 100644
  qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o
  
 diff --git a/Makefile.objs b/Makefile.objs
-index d72822b..111b9f8 100644
+index df64f70..91f133b 100644
 --- a/Makefile.objs
 +++ b/Makefile.objs
 @@ -13,7 +13,7 @@ block-obj-$(CONFIG_POSIX) += aio-posix.o
@@ -58,7 +58,7 @@ index d72822b..111b9f8 100644
  block-obj-y += qemu-coroutine.o qemu-coroutine-lock.o qemu-coroutine-io.o
  block-obj-y += qemu-coroutine-sleep.o
 diff --git a/backup.h b/backup.h
-index be52ea4..3a81e52 100644
+index c8ba153..406f011 100644
 --- a/backup.h
 +++ b/backup.h
 @@ -15,6 +15,7 @@
@@ -70,7 +70,7 @@ index be52ea4..3a81e52 100644
  #define BACKUP_CLUSTER_BITS 16
  #define BACKUP_CLUSTER_SIZE (1<<BACKUP_CLUSTER_BITS)
 diff --git a/blockdev.c b/blockdev.c
-index 92a7ca3..aad6e0c 100644
+index c340fde..1cfc780 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -21,6 +21,7 @@
@@ -81,7 +81,7 @@ index 92a7ca3..aad6e0c 100644
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1530,10 +1531,11 @@ char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
+@@ -1530,10 +1531,11 @@ char *qmp_backup(const char *backup_file, bool has_format, BackupFormat format,
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -932,7 +932,7 @@ index 0000000..7e81847
 +
 diff --git a/vma-writer.c b/vma-writer.c
 new file mode 100644
-index 0000000..04a346e
+index 0000000..761d7ca
 --- /dev/null
 +++ b/vma-writer.c
 @@ -0,0 +1,932 @@
@@ -1159,7 +1159,7 @@ index 0000000..04a346e
 +static int vma_co_write_finished(void *opaque)
 +{
 +    VmaWriter *vmaw = opaque;
-+    
++
 +    return (vmaw->co_writer != 0);
 +}
 +
@@ -1179,12 +1179,12 @@ index 0000000..04a346e
 +    vmaw->co_writer = qemu_coroutine_self();
 +
 +    qemu_aio_set_fd_handler(vmaw->fd, NULL, vma_co_continue_write,
-+			    vma_co_write_finished, vmaw);
++                            vma_co_write_finished, vmaw);
 +
 +    DPRINTF("vma_co_write wait until writable\n");
 +    qemu_coroutine_yield();
 +    DPRINTF("vma_co_write starting %zd\n", bytes);
-+ 
++
 +    while (done < bytes) {
 +        ret = write(vmaw->fd, buf + done, bytes - done);
 +        if (ret > 0) {
@@ -1870,7 +1870,7 @@ index 0000000..04a346e
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..64da334
+index 0000000..b2e276c
 --- /dev/null
 +++ b/vma.c
 @@ -0,0 +1,559 @@
@@ -2159,10 +2159,10 @@ index 0000000..64da334
 +                                        dirname, di->devname);
 +                printf("DEVINFO %s %zd\n", devfn, di->size);
 +
-+                bdrv_img_create(devfn, "raw", NULL, NULL, NULL, di->size, 
++                bdrv_img_create(devfn, "raw", NULL, NULL, NULL, di->size,
 +                                flags, &errp);
 +                if (error_is_set(&errp)) {
-+                    g_error("can't create file %s: %s", devfn, 
++                    g_error("can't create file %s: %s", devfn,
 +                            error_get_pretty(errp));
 +                }
 +
@@ -2337,12 +2337,12 @@ index 0000000..64da334
 +        bcb->vmaw = vmaw;
 +        bcb->dev_id = dev_id;
 +
-+        if (backup_job_create(bs, backup_dump_cb, backup_complete_cb, 
-+			      bcb, 0) < 0) {
++        if (backup_job_create(bs, backup_dump_cb, backup_complete_cb,
++                              bcb, 0) < 0) {
 +            unlink(archivename);
 +            g_error("backup_job_start failed");
 +        } else {
-+		backup_job_start(bs, false);
++            backup_job_start(bs, false);
 +        }
 +    }
 +

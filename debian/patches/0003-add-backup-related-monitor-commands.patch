@@ -1,7 +1,7 @@
-From 02f8d395026b507cdcaaec00b324a67779298383 Mon Sep 17 00:00:00 2001
+From 982a8ac63f778110ad89b4dc415011166c9dcd8e Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:27:56 +0100
-Subject: [PATCH v3 3/6] add backup related monitor commands
+Subject: [PATCH v4 3/6] add backup related monitor commands
 
 We use a generic BackupDriver struct to encapsulate all archive format
 related function.
@@ -18,17 +18,17 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  hmp.c            |   63 ++++++++
  hmp.h            |    3 +
  monitor.c        |    7 +
- qapi-schema.json |   91 ++++++++++++
+ qapi-schema.json |   95 ++++++++++++
  qmp-commands.hx  |   27 ++++
- 8 files changed, 657 insertions(+), 0 deletions(-)
+ 8 files changed, 661 insertions(+), 0 deletions(-)
 
 diff --git a/backup.h b/backup.h
-index 20a9016..be52ea4 100644
+index d9395bc..c8ba153 100644
 --- a/backup.h
 +++ b/backup.h
 @@ -29,4 +29,16 @@ int backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
- 		      BlockDriverCompletionFunc *backup_complete_cb,
- 		      void *opaque, int64_t speed);
+                       BlockDriverCompletionFunc *backup_complete_cb,
+                       void *opaque, int64_t speed);
  
 +typedef struct BackupDriver {
 +    const char *format;
@@ -44,7 +44,7 @@ index 20a9016..be52ea4 100644
 +
  #endif /* QEMU_BACKUP_H */
 diff --git a/blockdev.c b/blockdev.c
-index 63e6f1e..92a7ca3 100644
+index 63e6f1e..c340fde 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -20,6 +20,7 @@
@@ -71,7 +71,7 @@ index 63e6f1e..92a7ca3 100644
 +    int64_t speed;
 +    time_t start_time;
 +    time_t end_time;
-+    char *backupfile;
++    char *backup_file;
 +    const BackupDriver *driver;
 +    void *writer;
 +    GList *bcb_list;
@@ -173,12 +173,12 @@ index 63e6f1e..92a7ca3 100644
 +    while (l) {
 +        BackupCB *bcb = l->data;
 +        l = g_list_next(l);
-+	BlockJob *job = bcb->bs->job;
-+	if (job) {
++        BlockJob *job = bcb->bs->job;
++        if (job) {
 +            job_count++;
 +            if (!bcb->started) {
-+               bcb->started = true;
-+               backup_job_start(bcb->bs, true);
++                bcb->started = true;
++                backup_job_start(bcb->bs, true);
 +            }
 +            if (!bcb->completed) {
 +                block_job_cancel_sync(job);
@@ -197,7 +197,7 @@ index 63e6f1e..92a7ca3 100644
 +static void backup_run_next_job(void)
 +{
 +    GList *l = backup_state.bcb_list;
-+    while(l) {
++    while (l) {
 +        BackupCB *bcb = l->data;
 +        l = g_list_next(l);
 +
@@ -205,7 +205,7 @@ index 63e6f1e..92a7ca3 100644
 +            if (!bcb->started) {
 +                bcb->started = true;
 +                bool cancel = backup_state.error || backup_state.cancel;
-+                backup_job_start(bcb->bs,cancel);
++                backup_job_start(bcb->bs, cancel);
 +            }
 +            return;
 +        }
@@ -233,8 +233,8 @@ index 63e6f1e..92a7ca3 100644
 +    backup_run_next_job();
 +}
 +
-+char *qmp_backup(const char *backupfile, bool has_format, BackupFormat format,
-+                 bool has_config_filename, const char *config_filename,
++char *qmp_backup(const char *backup_file, bool has_format, BackupFormat format,
++                 bool has_config_file, const char *config_file,
 +                 bool has_devlist, const char *devlist,
 +                 bool has_speed, int64_t speed, Error **errp)
 +{
@@ -319,7 +319,7 @@ index 63e6f1e..92a7ca3 100644
 +
 +    uuid_generate(uuid);
 +
-+    writer = driver->open_cb(backupfile, uuid, &local_err);
++    writer = driver->open_cb(backup_file, uuid, &local_err);
 +    if (!writer) {
 +        if (error_is_set(&local_err)) {
 +            error_propagate(errp, local_err);
@@ -348,16 +348,16 @@ index 63e6f1e..92a7ca3 100644
 +    }
 +
 +    /* add configuration file to archive */
-+    if (has_config_filename) {
++    if (has_config_file) {
 +        char *cdata = NULL;
 +        gsize clen = 0;
 +        GError *err = NULL;
-+        if (!g_file_get_contents(config_filename, &cdata, &clen, &err)) {
-+            error_setg(errp, "unable to read file '%s'", config_filename);
++        if (!g_file_get_contents(config_file, &cdata, &clen, &err)) {
++            error_setg(errp, "unable to read file '%s'", config_file);
 +            goto err;
 +        }
 +
-+        const char *basename = g_path_get_basename(config_filename);
++        const char *basename = g_path_get_basename(config_file);
 +        if (driver->register_config_cb(writer, basename, cdata, clen) < 0) {
 +            error_setg(errp, "register_config failed");
 +            g_free(cdata);
@@ -382,10 +382,10 @@ index 63e6f1e..92a7ca3 100644
 +    backup_state.start_time = time(NULL);
 +    backup_state.end_time = 0;
 +
-+    if (backup_state.backupfile) {
-+        g_free(backup_state.backupfile);
++    if (backup_state.backup_file) {
++        g_free(backup_state.backup_file);
 +    }
-+    backup_state.backupfile = g_strdup(backupfile);
++    backup_state.backup_file = g_strdup(backup_file);
 +
 +    backup_state.writer = writer;
 +
@@ -426,7 +426,7 @@ index 63e6f1e..92a7ca3 100644
 +    }
 +
 +    if (writer) {
-+        unlink(backupfile);
++        unlink(backup_file);
 +        if (driver) {
 +            Error *err = NULL;
 +            driver->close_cb(writer, &err);
@@ -449,9 +449,9 @@ index 63e6f1e..92a7ca3 100644
 +    info->has_start_time = true;
 +    info->start_time = backup_state.start_time;
 +
-+    if (backup_state.backupfile) {
-+        info->has_backupfile = true;
-+        info->backupfile = g_strdup(backup_state.backupfile);
++    if (backup_state.backup_file) {
++        info->has_backup_file = true;
++        info->backup_file = g_strdup(backup_state.backup_file);
 +    }
 +
 +    info->has_uuid = true;
@@ -534,7 +534,7 @@ index 64008a9..0f178d8 100644
  show current migration capabilities
  @item info migrate_cache_size
 diff --git a/hmp.c b/hmp.c
-index 2f47a8a..9ac34c5 100644
+index 2f47a8a..b2c1f23 100644
 --- a/hmp.c
 +++ b/hmp.c
 @@ -131,6 +131,38 @@ void hmp_info_mice(Monitor *mon, const QDict *qdict)
@@ -554,14 +554,14 @@ index 2f47a8a..9ac34c5 100644
 +            monitor_printf(mon, "Backup status: %s\n", info->status);
 +        }
 +    }
-+    if (info->has_backupfile) {
++    if (info->has_backup_file) {
 +        int per = (info->has_total && info->total &&
 +            info->has_transferred && info->transferred) ?
 +            (info->transferred * 100)/info->total : 0;
 +        int zero_per = (info->has_total && info->total &&
 +                        info->has_zero_bytes && info->zero_bytes) ?
 +            (info->zero_bytes * 100)/info->total : 0;
-+        monitor_printf(mon, "Backup file: %s\n", info->backupfile);
++        monitor_printf(mon, "Backup file: %s\n", info->backup_file);
 +        monitor_printf(mon, "Backup uuid: %s\n", info->uuid);
 +        monitor_printf(mon, "Total size: %zd\n", info->total);
 +        monitor_printf(mon, "Transferred bytes: %zd (%d%%)\n",
@@ -595,13 +595,13 @@ index 2f47a8a..9ac34c5 100644
 +
 +void hmp_backup(Monitor *mon, const QDict *qdict)
 +{
-+    const char *backupfile = qdict_get_str(qdict, "backupfile");
++    const char *backup_file = qdict_get_str(qdict, "backup-file");
 +    const char *devlist = qdict_get_try_str(qdict, "devlist");
 +    int64_t speed = qdict_get_try_int(qdict, "speed", 0);
 +
 +    Error *errp = NULL;
 +
-+    qmp_backup(backupfile, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist,
++    qmp_backup(backup_file, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist,
 +               devlist, qdict_haskey(qdict, "speed"), speed, &errp);
 +
 +    if (error_is_set(&errp)) {
@@ -636,7 +636,7 @@ index 30b3c20..ad4cf80 100644
  void hmp_block_job_cancel(Monitor *mon, const QDict *qdict);
  void hmp_block_job_pause(Monitor *mon, const QDict *qdict);
 diff --git a/monitor.c b/monitor.c
-index 20bd19b..5f979ce 100644
+index 6a0f257..e4a810c 100644
 --- a/monitor.c
 +++ b/monitor.c
 @@ -2666,6 +2666,13 @@ static mon_cmd_t info_cmds[] = {
@@ -654,7 +654,7 @@ index 20bd19b..5f979ce 100644
          .args_type  = "",
          .params     = "",
 diff --git a/qapi-schema.json b/qapi-schema.json
-index bd289ae..c91df47 100644
+index 7275b5d..09ca8ef 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
 @@ -425,6 +425,39 @@
@@ -685,19 +685,19 @@ index bd289ae..c91df47 100644
 +#
 +# @uuid: #optional uuid for this backup job
 +#
-+# Since: 1.4.0
++# Since: 1.5.0
 +##
 +{ 'type': 'BackupStatus',
 +  'data': {'*status': 'str', '*errmsg': 'str', '*total': 'int',
 +           '*transferred': 'int', '*zero-bytes': 'int',
 +           '*start-time': 'int', '*end-time': 'int',
-+           '*backupfile': 'str', '*uuid': 'str' } }
++           '*backup-file': 'str', '*uuid': 'str' } }
 +
 +##
  # @query-events:
  #
  # Return a list of supported QMP events by this server
-@@ -1824,6 +1857,64 @@
+@@ -1824,6 +1857,68 @@
    'data': { 'path': 'str' },
    'returns': [ 'ObjectPropertyInfo' ] }
  
@@ -717,7 +717,7 @@ index bd289ae..c91df47 100644
 +#
 +# Starts a VM backup.
 +#
-+# @backupfile: the backup file name
++# @backup-file: the backup file name
 +#
 +# @format: format of the backup file
 +#
@@ -726,12 +726,16 @@ index bd289ae..c91df47 100644
 +#
 +# @speed: #optional the maximum speed, in bytes per second
 +#
++# @devlist: #optional list of block device names (separated by ',', ';'
++# or ':'). By default the backup includes all writable block devices.
++#
 +# Returns: the uuid of the backup job
 +#
-+# Since: 1.4.0
++# Since: 1.5.0
 +##
-+{ 'command': 'backup', 'data': { 'backupfile': 'str', '*format': 'BackupFormat',
-+                                 '*config-filename': 'str',
++{ 'command': 'backup', 'data': { 'backup-file': 'str',
++                                 '*format': 'BackupFormat',
++                                 '*config-file': 'str',
 +                                 '*devlist': 'str', '*speed': 'int' },
 +  'returns': 'str' }
 +
@@ -742,7 +746,7 @@ index bd289ae..c91df47 100644
 +#
 +# Returns: @BackupStatus
 +#
-+# Since: 1.4.0
++# Since: 1.5.0
 +##
 +{ 'command': 'query-backup', 'returns': 'BackupStatus' }
 +
@@ -755,7 +759,7 @@ index bd289ae..c91df47 100644
 +#
 +# Notes: This command succeeds even if there is no backup process running.
 +#
-+# Since: 1.4.0
++# Since: 1.5.0
 +##
 +{ 'command': 'backup-cancel' }
 +
@@ -763,7 +767,7 @@ index bd289ae..c91df47 100644
  # @qom-get:
  #
 diff --git a/qmp-commands.hx b/qmp-commands.hx
-index 799adea..ca601b3 100644
+index 799adea..17e381b 100644
 --- a/qmp-commands.hx
 +++ b/qmp-commands.hx
 @@ -889,6 +889,18 @@ EQMP
@@ -771,12 +775,12 @@ index 799adea..ca601b3 100644
  
      {
 +        .name       = "backup",
-+        .args_type  = "backupfile:s,format:s?,config-filename:F?,speed:o?,devlist:s?",
++        .args_type  = "backup-file:s,format:s?,config-file:F?,speed:o?,devlist:s?",
 +        .mhandler.cmd_new = qmp_marshal_input_backup,
 +    },
 +
 +    {
-+        .name       = "backup_cancel",
++        .name       = "backup-cancel",
 +        .args_type  = "",
 +        .mhandler.cmd_new = qmp_marshal_input_backup_cancel,
 +    },

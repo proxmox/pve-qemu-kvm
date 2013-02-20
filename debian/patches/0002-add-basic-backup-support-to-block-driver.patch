@@ -1,7 +1,7 @@
-From eb29d6acb8d8e671e292c9f50655bc87d9742282 Mon Sep 17 00:00:00 2001
+From 940afda26b17f3d5776e4809e6dfce5cee44c102 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 10:03:52 +0100
-Subject: [PATCH v3 2/6] add basic backup support to block driver
+Subject: [PATCH v4 2/6] add basic backup support to block driver
 
 Function backup_job_create() creates a block job to backup a block device.
 The coroutine is started with backup_job_start().
@@ -26,7 +26,7 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  create mode 100644 backup.h
 
 diff --git a/Makefile.objs b/Makefile.objs
-index 21e9c91..d72822b 100644
+index a68cdac..df64f70 100644
 --- a/Makefile.objs
 +++ b/Makefile.objs
 @@ -13,6 +13,7 @@ block-obj-$(CONFIG_POSIX) += aio-posix.o
@@ -39,14 +39,14 @@ index 21e9c91..d72822b 100644
  block-obj-y += qemu-coroutine-sleep.o
 diff --git a/backup.c b/backup.c
 new file mode 100644
-index 0000000..61ca668
+index 0000000..c9576d5
 --- /dev/null
 +++ b/backup.c
 @@ -0,0 +1,338 @@
 +/*
 + * QEMU backup
 + *
-+ * Copyright (C) 2012 Proxmox Server Solutions
++ * Copyright (C) 2013 Proxmox Server Solutions
 + *
 + * Authors:
 + *  Dietmar Maurer (dietmar@proxmox.com)
@@ -219,7 +219,7 @@ index 0000000..61ca668
 +static void backup_set_speed(BlockJob *job, int64_t speed, Error **errp)
 +{
 +    BackupBlockJob *s = container_of(job, BackupBlockJob, common);
-+    
++
 +    if (speed < 0) {
 +        error_set(errp, QERR_INVALID_PARAMETER, "speed");
 +        return;
@@ -260,17 +260,17 @@ index 0000000..61ca668
 +
 +        /* we need to yield so that qemu_aio_flush() returns.
 +         * (without, VM does not reboot)
-+        * Note: use 1000 instead of 0 (0 priorize this task too much)
++        * Note: use 1000 instead of 0 (0 prioritize this task too much)
 +         */
-+ 	if (job->common.speed) {
++        if (job->common.speed) {
 +            uint64_t delay_ns = ratelimit_calculate_delay(
 +                &job->limit, job->sectors_read);
 +            job->sectors_read = 0;
 +            block_job_sleep_ns(&job->common, rt_clock, delay_ns);
-+	} else {
++        } else {
 +            block_job_sleep_ns(&job->common, rt_clock, 1000);
-+	}
-+        
++        }
++
 +        if (block_job_is_cancelled(&job->common)) {
 +            ret = -1;
 +            break;
@@ -378,19 +378,19 @@ index 0000000..61ca668
 +    job->bitmap = g_new0(unsigned long, bitmap_size);
 +
 +    job->common.len = bs->total_sectors*BDRV_SECTOR_SIZE;
-+    
++
 +    return 0;
 +}
 diff --git a/backup.h b/backup.h
 new file mode 100644
-index 0000000..20a9016
+index 0000000..d9395bc
 --- /dev/null
 +++ b/backup.h
 @@ -0,0 +1,32 @@
 +/*
 + * QEMU backup related definitions
 + *
-+ * Copyright (C) Proxmox Server Solutions
++ * Copyright (C) 2013 Proxmox Server Solutions
 + *
 + * Authors:
 + *  Dietmar Maurer (dietmar@proxmox.com)
@@ -415,8 +415,8 @@ index 0000000..20a9016
 +void backup_job_start(BlockDriverState *bs, bool cancel);
 +
 +int backup_job_create(BlockDriverState *bs, BackupDumpFunc *backup_dump_cb,
-+		      BlockDriverCompletionFunc *backup_complete_cb,
-+		      void *opaque, int64_t speed);
++                      BlockDriverCompletionFunc *backup_complete_cb,
++                      void *opaque, int64_t speed);
 +
 +#endif /* QEMU_BACKUP_H */
 diff --git a/block.c b/block.c
