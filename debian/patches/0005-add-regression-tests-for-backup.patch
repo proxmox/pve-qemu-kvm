@@ -1,17 +1,15 @@
-From 4fb44b8d03b764db04e7751a14055cbb06a7791d Mon Sep 17 00:00:00 2001
+From 0c613da24e8de22960e5a9f0f1636d9e2b0bd18d Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Wed, 14 Nov 2012 09:57:04 +0100
-Subject: [PATCH v4 5/6] add regression tests for backup
+Subject: [PATCH v5 5/6] add regression tests for backup
 
 Simple regression tests using vma-reader and vma-writer.
-
-Note: the call to g_thread_init() solves problems with g_slice_alloc() - without that call we get arbitrary crashes.
 
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  tests/Makefile      |   11 +-
- tests/backup-test.c |  517 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 526 insertions(+), 2 deletions(-)
+ tests/backup-test.c |  529 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 538 insertions(+), 2 deletions(-)
  create mode 100644 tests/backup-test.c
 
 diff --git a/tests/Makefile b/tests/Makefile
@@ -54,23 +52,20 @@ index 567e36e..136be84 100644
  -include $(wildcard tests/*.d)
 diff --git a/tests/backup-test.c b/tests/backup-test.c
 new file mode 100644
-index 0000000..5ff6f1d
+index 0000000..039ac1d
 --- /dev/null
 +++ b/tests/backup-test.c
-@@ -0,0 +1,517 @@
+@@ -0,0 +1,529 @@
 +/*
 + * QEMU backup test suit
 + *
-+ * Copyright (C) Proxmox Server Solutions
++ * Copyright (C) 2013 Proxmox Server Solutions
 + *
 + * Authors:
 + *  Dietmar Maurer (dietmar@proxmox.com)
 + *
 + * This work is licensed under the terms of the GNU GPL, version 2.  See
 + * the COPYING file in the top-level directory.
-+ *
-+ * Fixme: running 'backup-test -l' trigger a bug in g_slice_alloc()
-+ * Note: 'G_SLICE=always-malloc ./tests/backup-test -l' works
 + *
 + */
 +
@@ -116,7 +111,7 @@ index 0000000..5ff6f1d
 +{
 +    BackupCB *bcb = opaque;
 +
-+    DPRINTF("backup_dump_cb C%zd %d\n", cluster_num, bcb->dev_id);
++    DPRINTF("backup_dump_cb C%" PRId64 " %d\n", cluster_num, bcb->dev_id);
 +
 +    size_t zb = 0;
 +    if (vma_writer_write(bcb->vmaw, bcb->dev_id, cluster_num, buf, &zb) < 0) {
@@ -150,26 +145,27 @@ index 0000000..5ff6f1d
 +{
 +    int ret;
 +
-+    DPRINTF("write_sec_pattern_cd %zd\n", offset);
++    DPRINTF("write_sec_pattern_cd %" PRId64 "\n", offset);
 +
 +    if (offset & 0x1ff) {
-+        g_error("write_sec_pattern_cd offset %zd is not sector aligned\n",
-+                offset);
++        g_error("write_sec_pattern_cd offset %" PRId64
++                " is not sector aligned\n", offset);
 +    }
 +
 +    ret = bdrv_write(bs, offset >> 9, buf_sec_pattern_cd, 1);
 +    if (ret < 0) {
-+        g_error("write_sec_pattern_cd %zd failed", offset);
++        g_error("write_sec_pattern_cd %" PRId64 " failed", offset);
 +    }
 +
 +}
 +
 +static void read_sec(BlockDriverState *bs, int64_t offset, unsigned char *buf)
 +{
-+    DPRINTF("read_sec C%zd start %zd\n", offset>>VMA_CLUSTER_BITS, offset);
++    DPRINTF("read_sec C%" PRId64 " start %" PRId64 "\n",
++            offset>>VMA_CLUSTER_BITS, offset);
 +
 +    if (offset & 0x1ff) {
-+        g_error("read_sec offset %zd is not sector aligned\n", offset);
++        g_error("read_sec offset %" PRId64 " is not sector aligned\n", offset);
 +    }
 +
 +    if (bdrv_read(bs, offset >> 9, buf, 1) < 0) {
@@ -281,6 +277,12 @@ index 0000000..5ff6f1d
 +        data = 0;  /* add zero region for testing */
 +    }
 +
++
++    if (sector_num >= 20*BACKUP_BLOCKS_PER_CLUSTER &&
++        sector_num <= 23*BACKUP_BLOCKS_PER_CLUSTER) {
++        data = 0;  /* another zero region for testing unallocated regions */
++    }
++
 +    for (i = 0; i < (512/sizeof(int64_t)); i++) {
 +        i64buf[i] = data;
 +    }
@@ -335,7 +337,7 @@ index 0000000..5ff6f1d
 +        }
 +        fill_test_sector(buf2, i);
 +        if (bcmp(buf, buf2, sizeof(buf))) {
-+            g_error("data is different at sector %zd", i);
++            g_error("data is different at sector %" PRId64, i);
 +        }
 +    }
 +
@@ -355,11 +357,16 @@ index 0000000..5ff6f1d
 +    int64_t buf[512/sizeof(int64_t)];
 +
 +    for (i = 0; i < sectors; i++) {
++        if (i >= 20*BACKUP_BLOCKS_PER_CLUSTER &&
++            i <= 23*BACKUP_BLOCKS_PER_CLUSTER) {
++            continue; /* create a hole */
++        }
++
 +        fill_test_sector(buf, i);
 +
-+         int res = 0;
++        int res = 0;
 +        while (1) {
-+            res = write(fd, buf, sizeof(buf));
++            res = pwrite(fd, buf, sizeof(buf), i*512);
 +            if (!(res < 0 && errno == EINTR)) {
 +                break;
 +            }
@@ -479,7 +486,7 @@ index 0000000..5ff6f1d
 +
 +    VmaStatus vmastat;
 +    vma_writer_get_status(vmaw, &vmastat);
-+    DPRINTF("statistic %zd %zd\n", vmastat.stream_info[1].size,
++    DPRINTF("statistic %" PRId64 " %" PRId64 "\n", vmastat.stream_info[1].size,
 +            vmastat.stream_info[1].transferred);
 +    assert(vmastat.stream_info[1].size == vmastat.stream_info[1].transferred);
 +
@@ -517,6 +524,9 @@ index 0000000..5ff6f1d
 +{
 +    int c;
 +
++    /* Note: GLib needs to be running in multithreaded mode in order
++     * for the GSlice allocator to be thread-safe
++     */
 +    g_thread_init(NULL);
 +
 +    for (;;) {

@@ -1,7 +1,7 @@
-From de76a5c6306d782733217668f3f55c92aa2be36a Mon Sep 17 00:00:00 2001
+From aa580be154923056a52fdeec429f7e80f04b456e Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Thu, 29 Nov 2012 10:46:49 +0100
-Subject: [PATCH v4 6/6] add vm state to backups
+Subject: [PATCH v5 6/6] add vm state to backups
 
 
 Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
@@ -12,7 +12,7 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  3 files changed, 200 insertions(+), 4 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 1cfc780..1b81824 100644
+index 683f7da..dd20631 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -22,6 +22,8 @@
@@ -50,7 +50,7 @@ index 1cfc780..1b81824 100644
 +        memset(backup_state.buf + backup_state.buf_index, 0,
 +               BACKUP_CLUSTER_SIZE - backup_state.buf_index);
 +    }
-+    int bytes = backup_state.driver->dump_cb(
++    int bytes = backup_state.driver->dump(
 +        backup_state.writer, backup_state.vmstate_dev_id,
 +        backup_state.buf_cluster_num,
 +        backup_state.buf, &zero_bytes);
@@ -64,7 +64,7 @@ index 1cfc780..1b81824 100644
 +{
 +    assert(backup_state.driver);
 +    assert(backup_state.writer);
-+    assert(backup_state.driver->dump_cb);
++    assert(backup_state.driver->dump);
 +
 +    /* Note: our backup driver expects to get whole clusters (64KB) */
 +
@@ -79,7 +79,7 @@ index 1cfc780..1b81824 100644
 +        size -= l;
 +        if (backup_state.buf_index == BACKUP_CLUSTER_SIZE) {
 +            size_t zero_bytes = 0;
-+            int bytes = backup_state.driver->dump_cb(
++            int bytes = backup_state.driver->dump(
 +                backup_state.writer, backup_state.vmstate_dev_id,
 +                backup_state.buf_cluster_num++,
 +                backup_state.buf, &zero_bytes);
@@ -162,9 +162,9 @@ index 1cfc780..1b81824 100644
 +                               "backup_start_savevm: qemu_fclose failed");
 +                    goto abort;
 +                }
-+                if (backup_state.driver->complete_cb(backup_state.writer,
++                if (backup_state.driver->complete(backup_state.writer,
 +                    backup_state.vmstate_dev_id, 0) < 0) {
-+                    err = g_strdup("backup_start_savevm: complete_cb failed");
++                    err = g_strdup("backup_start_savevm: complete failed");
 +                    goto abort;
 +                }
 +                backup_run_next_job();
@@ -183,7 +183,7 @@ index 1cfc780..1b81824 100644
 +    backup_state.end_time = time(NULL);
 +
 +    Error *local_err = NULL;
-+    backup_state.driver->close_cb(backup_state.writer, &local_err);
++    backup_state.driver->close(backup_state.writer, &local_err);
 +    backup_state.writer = NULL;
 +
 +    error_propagate(&backup_state.error, local_err);
@@ -229,7 +229,7 @@ index 1cfc780..1b81824 100644
 +         * not know that size in advance).
 +         */
 +        size_t ramsize = ram_bytes_total();
-+        vmstate_dev_id = driver->register_stream_cb(writer, "vmstate", ramsize);
++        vmstate_dev_id = driver->register_stream(writer, "vmstate", ramsize);
 +        if (vmstate_dev_id <= 0) {
 +            error_setg(errp, "register vmstate stream failed");
 +            goto err;

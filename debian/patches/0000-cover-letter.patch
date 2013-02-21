@@ -1,7 +1,7 @@
-From de76a5c6306d782733217668f3f55c92aa2be36a Mon Sep 17 00:00:00 2001
+From aa580be154923056a52fdeec429f7e80f04b456e Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
-Date: Wed, 20 Feb 2013 10:26:23 +0100
-Subject: [PATCH v4 0/6] Efficient VM backup for qemu
+Date: Thu, 21 Feb 2013 12:22:41 +0100
+Subject: [PATCH v5 0/6] Efficient VM backup for qemu
 
 This series provides a way to efficiently backup VMs.
 
@@ -41,6 +41,16 @@ Changes since v3:
 * add documentation for 'devlist' parameter.
 * rename backup_cancel to backup-cancel
 
+Changes since v4:
+
+* vma create: write verbose output to stderr (not stdout)
+* backup.c: use rwlock instead of sleep, remove backup_in_progress_count
+* BackupDriver: remove '_cb' suffix
+* include cleanups suggested by Stefan
+* use CHAR_BIT instead of magic number '8'
+* implemented bdrv_co_is_allocated_above() - disabled for now because
+  it actually slows down backup speed by 15%
+* extend regression tests to test unallocated regions
 
 Dietmar Maurer (6):
   add documenation for new backup framework
@@ -52,7 +62,7 @@ Dietmar Maurer (6):
 
  Makefile                 |    3 +-
  Makefile.objs            |    1 +
- backup.c                 |  338 +++++++++++++++++
+ backup.c                 |  355 +++++++++++++++++
  backup.h                 |   45 +++
  block.c                  |   71 ++++-
  blockdev.c               |  617 ++++++++++++++++++++++++++++++
@@ -67,12 +77,12 @@ Dietmar Maurer (6):
  qapi-schema.json         |   98 +++++
  qmp-commands.hx          |   27 ++
  tests/Makefile           |   11 +-
- tests/backup-test.c      |  517 +++++++++++++++++++++++++
+ tests/backup-test.c      |  529 ++++++++++++++++++++++++++
  vma-reader.c             |  799 +++++++++++++++++++++++++++++++++++++++
- vma-writer.c             |  932 ++++++++++++++++++++++++++++++++++++++++++++++
- vma.c                    |  559 +++++++++++++++++++++++++++
+ vma-writer.c             |  940 ++++++++++++++++++++++++++++++++++++++++++++++
+ vma.c                    |  561 +++++++++++++++++++++++++++
  vma.h                    |  145 +++++++
- 22 files changed, 4411 insertions(+), 9 deletions(-)
+ 22 files changed, 4450 insertions(+), 9 deletions(-)
  create mode 100644 backup.c
  create mode 100644 backup.h
  create mode 100644 docs/backup.txt
