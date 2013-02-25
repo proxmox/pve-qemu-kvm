@@ -1,4 +1,4 @@
-From ec5c25c57d35ea662f70382a074620ef2abd0627 Mon Sep 17 00:00:00 2001
+From 6289a43696ca6f713a5d3bb9f95a5adb608a5e13 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
 Subject: [PATCH v5 4/6] introduce new vma archive format
@@ -114,7 +114,7 @@ index 0000000..9b715f2
 +
 diff --git a/vma-reader.c b/vma-reader.c
 new file mode 100644
-index 0000000..6d5a9ba
+index 0000000..bc36cba
 --- /dev/null
 +++ b/vma-reader.c
 @@ -0,0 +1,799 @@
@@ -351,7 +351,7 @@ index 0000000..6d5a9ba
 +    if (full_read(vmar->fd, vmar->head_data, sizeof(VmaHeader)) !=
 +        sizeof(VmaHeader)) {
 +        error_setg(errp, "can't read vma header - %s",
-+                   errno ? strerror(errno) : "got EOF");
++                   errno ? g_strerror(errno) : "got EOF");
 +        return -1;
 +    }
 +
@@ -375,7 +375,7 @@ index 0000000..6d5a9ba
 +    if (full_read(vmar->fd, vmar->head_data + sizeof(VmaHeader), need) !=
 +        need) {
 +        error_setg(errp, "can't read vma header data - %s",
-+                   errno ? strerror(errno) : "got EOF");
++                   errno ? g_strerror(errno) : "got EOF");
 +        return -1;
 +    }
 +
@@ -498,7 +498,7 @@ index 0000000..6d5a9ba
 +
 +    if (vmar->fd < 0) {
 +        error_setg(errp, "can't open file %s - %s\n", filename,
-+                   strerror(errno));
++                   g_strerror(errno));
 +        goto err;
 +    }
 +
@@ -816,7 +816,7 @@ index 0000000..6d5a9ba
 +    while (1) {
 +        int bytes = full_read(vmar->fd, buf + buf_pos, sizeof(buf) - buf_pos);
 +        if (bytes < 0) {
-+            error_setg(errp, "read failed - %s", strerror(errno));
++            error_setg(errp, "read failed - %s", g_strerror(errno));
 +            return -1;
 +        }
 +
@@ -919,7 +919,7 @@ index 0000000..6d5a9ba
 +
 diff --git a/vma-writer.c b/vma-writer.c
 new file mode 100644
-index 0000000..c292851
+index 0000000..9228ca6
 --- /dev/null
 +++ b/vma-writer.c
 @@ -0,0 +1,940 @@
@@ -1184,7 +1184,7 @@ index 0000000..c292851
 +                DPRINTF("vma_co_write restart %zd\n", done);
 +            } else {
 +                vma_writer_set_error(vmaw, "vma_co_write write error - %s",
-+                                     strerror(errno));
++                                     g_strerror(errno));
 +                done = -1; /* always return failure for partial writes */
 +                break;
 +            }
@@ -1311,7 +1311,7 @@ index 0000000..c292851
 +        vmaw->cmd = popen(p, "w");
 +        if (vmaw->cmd == NULL) {
 +            error_setg(errp, "can't popen command '%s' - %s\n", p,
-+                       strerror(errno));
++                       g_strerror(errno));
 +            goto err;
 +        }
 +        vmaw->fd = fileno(vmaw->cmd);
@@ -1346,7 +1346,7 @@ index 0000000..c292851
 +
 +        if (vmaw->fd < 0) {
 +            error_setg(errp, "can't open file %s - %s\n", filename,
-+                       strerror(errno));
++                       g_strerror(errno));
 +            goto err;
 +        }
 +    }
@@ -1741,12 +1741,12 @@ index 0000000..c292851
 +    if (vmaw->cmd) {
 +        if (pclose(vmaw->cmd) < 0) {
 +            vma_writer_set_error(vmaw, "vma_writer_close: "
-+                                 "pclose failed - %s", strerror(errno));
++                                 "pclose failed - %s", g_strerror(errno));
 +        }
 +    } else {
 +        if (close(vmaw->fd) < 0) {
 +            vma_writer_set_error(vmaw, "vma_writer_close: "
-+                                 "close failed - %s", strerror(errno));
++                                 "close failed - %s", g_strerror(errno));
 +        }
 +    }
 +
@@ -1865,7 +1865,7 @@ index 0000000..c292851
 +
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..d3fe39c
+index 0000000..6633aa5
 --- /dev/null
 +++ b/vma.c
 @@ -0,0 +1,561 @@
@@ -2053,7 +2053,7 @@ index 0000000..d3fe39c
 +
 +    if (mkdir(dirname, 0777) < 0) {
 +        g_error("unable to create target directory %s - %s",
-+                dirname, strerror(errno));
++                dirname, g_strerror(errno));
 +    }
 +
 +    GList *l = vma_reader_get_config_data(vmar);
@@ -2075,7 +2075,7 @@ index 0000000..d3fe39c
 +
 +        FILE *map = fopen(readmap, "r");
 +        if (!map) {
-+            g_error("unable to open fifo %s - %s", readmap, strerror(errno));
++            g_error("unable to open fifo %s - %s", readmap, g_strerror(errno));
 +        }
 +
 +        while (1) {
@@ -2133,7 +2133,7 @@ index 0000000..d3fe39c
 +            vmstate_fd = open(statefn, O_WRONLY|O_CREAT|O_EXCL, 0644);
 +            if (vmstate_fd < 0) {
 +                g_error("create vmstate file '%s' failed - %s", statefn,
-+                        strerror(errno));
++                        g_strerror(errno));
 +            }
 +            g_free(statefn);
 +        } else if (di) {
@@ -2195,7 +2195,7 @@ index 0000000..d3fe39c
 +                                           dirname, di->devname);
 +                if (rename(tmpfn, fn) != 0) {
 +                    g_error("rename %s to %s failed - %s",
-+                            tmpfn, fn, strerror(errno));
++                            tmpfn, fn, g_strerror(errno));
 +                }
 +            }
 +        }

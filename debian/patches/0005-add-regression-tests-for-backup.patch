@@ -1,4 +1,4 @@
-From 0c613da24e8de22960e5a9f0f1636d9e2b0bd18d Mon Sep 17 00:00:00 2001
+From 348a009b2c63ac4d9b6dad7fe2169272c46221f2 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Wed, 14 Nov 2012 09:57:04 +0100
 Subject: [PATCH v5 5/6] add regression tests for backup
@@ -52,7 +52,7 @@ index 567e36e..136be84 100644
  -include $(wildcard tests/*.d)
 diff --git a/tests/backup-test.c b/tests/backup-test.c
 new file mode 100644
-index 0000000..039ac1d
+index 0000000..47a9664
 --- /dev/null
 +++ b/tests/backup-test.c
 @@ -0,0 +1,529 @@
@@ -373,7 +373,7 @@ index 0000000..039ac1d
 +        }
 +        if (res != sizeof(buf)) {
 +            g_error("can't initialize file %s - %s %d\n",
-+                    filename, strerror(errno), res);
++                    filename, g_strerror(errno), res);
 +        }
 +    }
 +
