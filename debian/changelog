@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.4-6) unstable; urgency=low
+
+  * set default cpu model to kvm64 (to avoid problems with windows activation)
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 25 Feb 2013 06:55:23 +0100
+
 pve-qemu-kvm (1.4-5) unstable; urgency=low
 
   * update backup patches to v5
