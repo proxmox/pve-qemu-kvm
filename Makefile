@@ -2,7 +2,7 @@ RELEASE=2.3
 
 # also update debian/changelog
 KVMVER=1.4
-KVMPKGREL=6
+KVMPKGREL=7
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm
@@ -19,6 +19,8 @@ download:
 	rm -rf ${KVMDIR} ${KVMSRC}
 	git clone git://git.qemu-project.org/qemu.git -b master ${KVMDIR} 
 	cd ${KVMDIR}; git checkout -b local v1.4.0
+	# update to seabios 1.7.2.1
+	cd ${KVMDIR}; git cherry-pick 5c75fb10029c5fd1e705a6ef5d698fbea06c7a33
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
 ${KVM_DEB} kvm: ${KVMSRC}
