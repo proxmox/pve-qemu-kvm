@@ -16,6 +16,7 @@ enable-kvm-by-default.patch
 0004-introduce-new-vma-archive-format.patch
 0005-add-regression-tests-for-backup.patch
 0006-add-vm-state-to-backups.patch
+0007-vma-add-verify-command.patch
 # always-update-expected-downtime.patch
 virtio-balloon-fix-query.patch
 set-cpu-model-to-kvm64.patch
