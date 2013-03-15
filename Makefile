@@ -1,4 +1,4 @@
-RELEASE=2.3
+RELEASE=3.0
 
 # also update debian/changelog
 KVMVER=1.4
