@@ -21,3 +21,4 @@ enable-kvm-by-default.patch
 # always-update-expected-downtime.patch
 virtio-balloon-fix-query.patch
 set-cpu-model-to-kvm64.patch
+rbd-add-an-asynchronous-flush.patch

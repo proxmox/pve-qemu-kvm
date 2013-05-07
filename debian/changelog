@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.4-11) unstable; urgency=low
+
+  * rbd: add an asynchronous flush
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 07 May 2013 12:14:57 +0200
+
 pve-qemu-kvm (1.4-10) unstable; urgency=low
 
   * bump version to 1.4-10
