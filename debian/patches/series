@@ -18,6 +18,7 @@ enable-kvm-by-default.patch
 0006-add-vm-state-to-backups.patch
 0007-vma-add-verify-command.patch
 0008-vma-restore-tolerate-a-size-difference-up-to-4M.patch
+0009-vma-only-store-the-basename-of-a-configuration-file.patch
 # always-update-expected-downtime.patch
 virtio-balloon-fix-query.patch
 set-cpu-model-to-kvm64.patch

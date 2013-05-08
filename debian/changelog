@@ -1,3 +1,10 @@
+pve-qemu-kvm (1.4-12) unstable; urgency=low
+
+  * vma create: only store basename of config file.
+  patch: 0009-vma-only-store-the-basename-of-a-configuration-file.patch
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 08 May 2013 10:07:50 +0200
+
 pve-qemu-kvm (1.4-11) unstable; urgency=low
 
   * rbd: add an asynchronous flush
