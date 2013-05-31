@@ -1,0 +1,35 @@
+Index: new/qapi-schema.json
+===================================================================
+--- new.orig/qapi-schema.json	2013-05-29 06:32:28.000000000 +0200
++++ new/qapi-schema.json	2013-05-29 06:35:27.000000000 +0200
+@@ -2947,11 +2947,13 @@
+ #
+ # @default: #optional whether the machine is default
+ #
++# @current: #optional whether this machine is currently used
++#
+ # Since: 1.2.0
+ ##
+ { 'type': 'MachineInfo',
+   'data': { 'name': 'str', '*alias': 'str',
+-            '*is-default': 'bool' } }
++            '*is-default': 'bool', '*is-current': 'bool', } }
+ 
+ ##
+ # @query-machines:
+Index: new/vl.c
+===================================================================
+--- new.orig/vl.c	2013-05-29 06:32:28.000000000 +0200
++++ new/vl.c	2013-05-29 06:39:13.000000000 +0200
+@@ -1579,6 +1579,11 @@
+ 
+         info->name = g_strdup(m->name);
+ 
++        if (strcmp(m->name, current_machine->name) == 0) {
++            info->has_is_current = true;
++            info->is_current = true;
++        }
++
+         entry = g_malloc0(sizeof(*entry));
+         entry->value = info;
+         entry->next = mach_list;
