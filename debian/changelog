@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.4-14) unstable; urgency=low
+
+  * add experimental code to support spice 
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 25 Jun 2013 06:41:52 +0200
+
 pve-qemu-kvm (1.4-13) unstable; urgency=low
 
   * update to qemu 1.4.2
