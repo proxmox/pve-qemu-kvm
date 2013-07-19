@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.4-15) unstable; urgency=low
+
+  * add usbredir support to spice
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 19 Jul 2013 07:41:20 +0200
+
 pve-qemu-kvm (1.4-14) unstable; urgency=low
 
   * add experimental code to support spice 
