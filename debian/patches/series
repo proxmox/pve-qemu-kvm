@@ -24,4 +24,3 @@ virtio-balloon-fix-query.patch
 set-cpu-model-to-kvm64.patch
 modify-query-machines.patch
 spice-socket.patch
-spice-tests.patch
