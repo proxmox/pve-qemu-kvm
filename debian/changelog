@@ -1,3 +1,13 @@
+pve-qemu-kvm (1.4-16) unstable; urgency=low
+
+  * add patch to use pce certs for spice by default
+  
+  * disable spice-socket.patch
+  
+  * Allow to query spice ticket
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 23 Jul 2013 10:02:14 +0200
+
 pve-qemu-kvm (1.4-15) unstable; urgency=low
 
   * add usbredir support to spice
