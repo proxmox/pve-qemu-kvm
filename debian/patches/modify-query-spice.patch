@@ -1,0 +1,35 @@
+Index: new/ui/spice-core.c
+===================================================================
+--- new.orig/ui/spice-core.c	2013-07-23 07:58:22.000000000 +0200
++++ new/ui/spice-core.c	2013-07-23 08:52:53.000000000 +0200
+@@ -541,6 +541,11 @@
+              SPICE_SERVER_VERSION & 0xff);
+     info->compiled_version = g_strdup(version_string);
+ 
++    if (auth_passwd) {
++        info->has_ticket = true;
++        info->ticket =  g_strdup(auth_passwd);
++    }
++
+     if (port) {
+         info->has_port = true;
+         info->port = port;
+Index: new/qapi-schema.json
+===================================================================
+--- new.orig/qapi-schema.json	2013-07-23 08:57:02.000000000 +0200
++++ new/qapi-schema.json	2013-07-23 08:57:36.000000000 +0200
+@@ -1088,11 +1088,14 @@
+ #
+ # @channels: a list of @SpiceChannel for each active spice channel
+ #
++# @ticket: #optional The last ticket set with set_password
++#
+ # Since: 0.14.0
+ ##
+ { 'type': 'SpiceInfo',
+   'data': {'enabled': 'bool', 'migrated': 'bool', '*host': 'str', '*port': 'int',
+            '*tls-port': 'int', '*auth': 'str', '*compiled-version': 'str',
++           '*ticket': 'str',
+            'mouse-mode': 'SpiceQueryMouseMode', '*channels': ['SpiceChannel']} }
+ 
+ ##
