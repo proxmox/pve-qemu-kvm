@@ -9,6 +9,7 @@ KVMDIR=qemu-kvm
 KVMSRC=${KVMDIR}-src.tar.gz
 
 ARCH=amd64
+GITVERSION:=$(shell cat .git/refs/heads/master)
 
 KVM_DEB=${KVMPACKAGE}_${KVMVER}-${KVMPKGREL}_${ARCH}.deb
 
@@ -25,6 +26,7 @@ ${KVM_DEB} kvm: ${KVMSRC}
 	rm -rf ${KVMDIR}
 	tar xf ${KVMSRC} 
 	cp -a debian ${KVMDIR}/debian
+	echo "git clone git://git.proxmox.com/git/pve-qemu-kvm.git\\ngit checkout ${GITVERSION}" > ${KVMDIR}/debian/SOURCE
 	cd ${KVMDIR}; dpkg-buildpackage -b -rfakeroot -us -uc
 	lintian ${KVM_DEB} || true
 
