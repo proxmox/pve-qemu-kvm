@@ -1,8 +1,8 @@
-diff --git a/hmp.c b/hmp.c
-index c16af53..8847c8f 100644
---- a/hmp.c
-+++ b/hmp.c
-@@ -497,7 +497,35 @@ void hmp_info_balloon(Monitor *mon, const QDict *qdict)
+Index: new/hmp.c
+===================================================================
+--- new.orig/hmp.c	2013-11-27 10:51:33.000000000 +0100
++++ new/hmp.c	2013-11-27 11:35:03.000000000 +0100
+@@ -525,7 +525,35 @@
          return;
      }
  
@@ -39,11 +39,11 @@ index c16af53..8847c8f 100644
  
      qapi_free_BalloonInfo(info);
  }
-diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
-index c0a7902..ba89a27 100644
---- a/hw/virtio-balloon.c
-+++ b/hw/virtio-balloon.c
-@@ -306,6 +306,35 @@ static void virtio_balloon_stat(void *opaque, BalloonInfo *info)
+Index: new/hw/virtio/virtio-balloon.c
+===================================================================
+--- new.orig/hw/virtio/virtio-balloon.c	2013-11-27 10:51:33.000000000 +0100
++++ new/hw/virtio/virtio-balloon.c	2013-11-27 11:35:03.000000000 +0100
+@@ -291,6 +291,35 @@
      VirtIOBalloon *dev = opaque;
      info->actual = ram_size - ((uint64_t) dev->actual <<
                                 VIRTIO_BALLOON_PFN_SHIFT);
@@ -79,11 +79,11 @@ index c0a7902..ba89a27 100644
  }
  
  static void virtio_balloon_to_target(void *opaque, ram_addr_t target)
-diff --git a/qapi-schema.json b/qapi-schema.json
-index eb5704b..6f76e62 100644
---- a/qapi-schema.json
-+++ b/qapi-schema.json
-@@ -1108,15 +1108,34 @@
+Index: new/qapi-schema.json
+===================================================================
+--- new.orig/qapi-schema.json	2013-11-27 10:51:33.000000000 +0100
++++ new/qapi-schema.json	2013-11-27 11:35:03.000000000 +0100
+@@ -1229,15 +1229,34 @@
  
  ##
  # @BalloonInfo:
@@ -117,15 +117,15 @@ index eb5704b..6f76e62 100644
 +  'data': {'actual': 'int', '*last_update': 'int', '*mem_swapped_in': 'int',
 +           '*mem_swapped_out': 'int', '*major_page_faults': 'int',
 +           '*minor_page_faults': 'int', '*free_mem': 'int',
-+           '*total_mem': 'int', 'max_mem': 'int', } }
++           '*total_mem': 'int', 'max_mem': 'int' } }
  
  ##
  # @query-balloon:
-diff --git a/qmp-commands.hx b/qmp-commands.hx
-index f937db7..71c9070 100644
---- a/qmp-commands.hx
-+++ b/qmp-commands.hx
-@@ -2649,6 +2649,13 @@ Make an asynchronous request for balloon info. When the request completes a
+Index: new/qmp-commands.hx
+===================================================================
+--- new.orig/qmp-commands.hx	2013-11-27 10:51:33.000000000 +0100
++++ new/qmp-commands.hx	2013-11-27 11:35:03.000000000 +0100
+@@ -2948,6 +2948,13 @@
  json-object will be returned containing the following data:
  
  - "actual": current balloon value in bytes (json-int)
@@ -139,7 +139,7 @@ index f937db7..71c9070 100644
  
  Example:
  
-@@ -2656,6 +2663,12 @@ Example:
+@@ -2955,6 +2962,12 @@
  <- {
        "return":{
           "actual":1073741824,
