@@ -1,8 +1,8 @@
-Index: new/hw/pc.c
+Index: new/hw/i386/pc.c
 ===================================================================
---- new.orig/hw/pc.c	2013-02-25 06:53:21.000000000 +0100
-+++ new/hw/pc.c	2013-02-25 06:53:37.000000000 +0100
-@@ -868,9 +868,9 @@
+--- new.orig/hw/i386/pc.c	2013-11-27 10:51:33.000000000 +0100
++++ new/hw/i386/pc.c	2013-11-27 11:37:06.000000000 +0100
+@@ -984,9 +984,9 @@
      /* init CPUs */
      if (cpu_model == NULL) {
  #ifdef TARGET_X86_64
@@ -13,4 +13,4 @@ Index: new/hw/pc.c
 +        cpu_model = "kvm32";
  #endif
      }
- 
+     current_cpu_model = cpu_model;
