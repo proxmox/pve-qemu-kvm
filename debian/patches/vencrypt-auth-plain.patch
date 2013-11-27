@@ -1,17 +1,8 @@
 Index: new/ui/vnc-auth-vencrypt.c
 ===================================================================
---- new.orig/ui/vnc-auth-vencrypt.c	2013-02-11 11:18:48.000000000 +0100
-+++ new/ui/vnc-auth-vencrypt.c	2013-02-11 11:54:47.000000000 +0100
-@@ -25,7 +25,7 @@
-  */
- 
- #include "vnc.h"
--#include "qemu_socket.h"
-+#include "qemu/sockets.h"
- 
- static int protocol_client_auth_plain(VncState *vs, uint8_t *data, size_t len)
- {
-@@ -143,6 +143,11 @@
+--- new.orig/ui/vnc-auth-vencrypt.c	2013-11-26 11:47:41.000000000 +0100
++++ new/ui/vnc-auth-vencrypt.c	2013-11-26 11:48:13.000000000 +0100
+@@ -144,6 +144,11 @@
         vnc_read_when(vs, protocol_client_auth_plain_start, 8);
         break;
  
@@ -23,7 +14,7 @@ Index: new/ui/vnc-auth-vencrypt.c
      case VNC_AUTH_VENCRYPT_TLSVNC:
      case VNC_AUTH_VENCRYPT_X509VNC:
         VNC_DEBUG("Start TLS auth VNC\n");
-@@ -227,25 +232,32 @@
+@@ -228,25 +233,32 @@
  {
      int auth = read_u32(data, 0);
  
@@ -69,7 +60,7 @@ Index: new/ui/vnc-auth-vencrypt.c
          }
      }
      return 0;
-@@ -260,10 +272,11 @@
+@@ -261,10 +273,11 @@
          vnc_flush(vs);
          vnc_client_error(vs);
      } else {
