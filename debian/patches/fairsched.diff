@@ -1,9 +1,9 @@
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2013-02-12 12:05:14.000000000 +0100
-+++ new/qemu-options.hx	2013-02-12 12:06:20.000000000 +0100
-@@ -103,6 +103,12 @@
- are split equally.
+--- new.orig/qemu-options.hx	2013-11-26 10:50:22.000000000 +0100
++++ new/qemu-options.hx	2013-11-26 11:04:08.000000000 +0100
+@@ -362,6 +362,12 @@
+ @table @option
  ETEXI
  
 +DEF("id", HAS_ARG, QEMU_OPTION_id,
@@ -17,9 +17,9 @@ Index: new/qemu-options.hx
  DEF("fdb", HAS_ARG, QEMU_OPTION_fdb, "", QEMU_ARCH_ALL)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2013-02-12 12:05:14.000000000 +0100
-+++ new/vl.c	2013-02-12 12:06:20.000000000 +0100
-@@ -154,6 +154,8 @@
+--- new.orig/vl.c	2013-11-26 10:50:23.000000000 +0100
++++ new/vl.c	2013-11-26 11:04:08.000000000 +0100
+@@ -155,6 +155,8 @@
  #endif
  #include "sysemu/qtest.h"
  
@@ -36,16 +36,7 @@ Index: new/vl.c
  int smp_cpus = 1;
  int max_cpus = 0;
  int smp_cores = 1;
-@@ -2544,7 +2547,7 @@
- }
- 
- static int debugcon_parse(const char *devname)
--{   
-+{
-     QemuOpts *opts;
- 
-     if (!qemu_chr_new("debugcon", devname, NULL)) {
-@@ -2798,6 +2801,9 @@
+@@ -2819,6 +2822,9 @@
  int main(int argc, char **argv, char **envp)
  {
      int i;
@@ -55,7 +46,7 @@ Index: new/vl.c
      int snapshot, linux_boot;
      const char *icount_option = NULL;
      const char *initrd_filename;
-@@ -3582,6 +3588,21 @@
+@@ -3553,6 +3559,21 @@
                      exit(1);
                  }
                  break;
@@ -77,18 +68,7 @@ Index: new/vl.c
  	    case QEMU_OPTION_vnc:
  #ifdef CONFIG_VNC
                  display_remote++;
-@@ -3656,8 +3677,8 @@
- 			}
- 			p += 8;
- 			os_set_proc_name(p);
--		     }	
--		 }	
-+		     }
-+		 }
-                 break;
-             case QEMU_OPTION_prom_env:
-                 if (nb_prom_envs >= MAX_PROM_ENVS) {
-@@ -4085,6 +4106,39 @@
+@@ -4136,6 +4157,39 @@
          }
      }
  
@@ -127,11 +107,11 @@ Index: new/vl.c
 +
      cpu_exec_init_all();
  
-     bdrv_init_with_whitelist();
+     blk_mig_init();
 Index: new/vzsyscalls.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vzsyscalls.h	2013-02-12 12:06:20.000000000 +0100
++++ new/vzsyscalls.h	2013-11-26 11:04:08.000000000 +0100
 @@ -0,0 +1,47 @@
 +/*
 + *  Copyright (C) 2000-2008, Parallels, Inc. All rights reserved.
