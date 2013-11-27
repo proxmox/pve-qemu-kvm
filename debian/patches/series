@@ -7,7 +7,6 @@ vencrypt-auth-plain.patch
 fix-qemu-img-snapshot-removal.patch
 move-bdrv-snapshot-find.patch
 internal-snapshot-async.patch
-qemu-img-convert-skipcreate-option.patch
 enable-kvm-by-default.patch
 # include qemu backup series
 0001-add-documenation-for-new-backup-framework.patch
