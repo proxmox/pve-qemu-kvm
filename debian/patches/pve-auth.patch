@@ -1,7 +1,7 @@
 Index: new/ui/vnc.c
 ===================================================================
---- new.orig/ui/vnc.c	2013-02-12 12:06:38.000000000 +0100
-+++ new/ui/vnc.c	2013-02-12 12:06:40.000000000 +0100
+--- new.orig/ui/vnc.c	2013-11-26 11:44:21.000000000 +0100
++++ new/ui/vnc.c	2013-11-26 11:44:30.000000000 +0100
 @@ -43,6 +43,125 @@
  #include "vnc_keysym.h"
  #include "d3des.h"
@@ -126,27 +126,9 @@ Index: new/ui/vnc.c
 +}
 +
  static VncDisplay *vnc_display; /* needed for info vnc */
- static DisplayChangeListener *dcl;
  
-@@ -2025,7 +2144,7 @@
-         vnc_write_u8(vs, VNC_MSG_SERVER_FRAMEBUFFER_UPDATE);
-         vnc_write_u8(vs, 0);
-         vnc_write_u16(vs, 1); /* number of rects */
--        vnc_framebuffer_update(vs, 0, 0, ds_get_width(vs->ds), 
-+        vnc_framebuffer_update(vs, 0, 0, ds_get_width(vs->ds),
-                                ds_get_height(vs->ds), VNC_ENCODING_WMVi);
-         pixel_format_message(vs);
-         vnc_unlock_output(vs);
-@@ -2989,7 +3108,7 @@
- char *vnc_display_local_addr(DisplayState *ds)
- {
-     VncDisplay *vs = ds ? (VncDisplay *)ds->opaque : vnc_display;
--    
-+
-     return vnc_socket_local_addr("%s:%s", vs->lsock);
- }
- 
-@@ -3077,6 +3196,7 @@
+ static int vnc_cursor_define(VncState *vs);
+@@ -3155,6 +3274,7 @@
              tls = 1; /* Require TLS */
          } else if (strncmp(options, "x509", 4) == 0) {
              char *start, *end;
@@ -154,7 +136,7 @@ Index: new/ui/vnc.c
              x509 = 1; /* Require x509 certificates */
              if (strncmp(options, "x509verify", 10) == 0)
                  vs->tls.x509verify = 1; /* ...and verify client certs */
-@@ -3097,8 +3217,10 @@
+@@ -3175,8 +3295,10 @@
                  }
                  g_free(path);
              } else {
@@ -167,7 +149,7 @@ Index: new/ui/vnc.c
              }
  #endif
  #if defined(CONFIG_VNC_TLS) || defined(CONFIG_VNC_SASL)
-@@ -3162,10 +3284,10 @@
+@@ -3240,10 +3362,10 @@
              vs->auth = VNC_AUTH_VENCRYPT;
              if (x509) {
                  VNC_DEBUG("Initializing VNC server with x509 password auth\n");
@@ -182,14 +164,14 @@ Index: new/ui/vnc.c
  #endif /* CONFIG_VNC_TLS */
 Index: new/ui/vnc-auth-vencrypt.c
 ===================================================================
---- new.orig/ui/vnc-auth-vencrypt.c	2013-02-12 12:05:14.000000000 +0100
-+++ new/ui/vnc-auth-vencrypt.c	2013-02-12 12:06:40.000000000 +0100
-@@ -25,7 +25,107 @@
-  */
+--- new.orig/ui/vnc-auth-vencrypt.c	2013-11-26 10:50:23.000000000 +0100
++++ new/ui/vnc-auth-vencrypt.c	2013-11-26 11:47:41.000000000 +0100
+@@ -26,6 +26,107 @@
  
  #include "vnc.h"
-+#include "qemu_socket.h"
- 
+ #include "qemu/main-loop.h"
++#include "qemu/sockets.h"
++
 +static int protocol_client_auth_plain(VncState *vs, uint8_t *data, size_t len)
 +{
 +	const char *err = NULL;
@@ -292,7 +274,7 @@ Index: new/ui/vnc-auth-vencrypt.c
  
  static void start_auth_vencrypt_subauth(VncState *vs)
  {
-@@ -37,6 +137,12 @@
+@@ -37,6 +138,12 @@
         start_client_init(vs);
         break;
  
@@ -307,9 +289,9 @@ Index: new/ui/vnc-auth-vencrypt.c
         VNC_DEBUG("Start TLS auth VNC\n");
 Index: new/ui/vnc.h
 ===================================================================
---- new.orig/ui/vnc.h	2013-02-12 12:05:14.000000000 +0100
-+++ new/ui/vnc.h	2013-02-12 12:06:40.000000000 +0100
-@@ -272,6 +272,8 @@
+--- new.orig/ui/vnc.h	2013-11-26 10:50:23.000000000 +0100
++++ new/ui/vnc.h	2013-11-26 11:44:30.000000000 +0100
+@@ -270,6 +270,8 @@
      char challenge[VNC_AUTH_CHALLENGE_SIZE];
  #ifdef CONFIG_VNC_TLS
      int subauth; /* Used by VeNCrypt */
@@ -318,7 +300,7 @@ Index: new/ui/vnc.h
      VncStateTLS tls;
  #endif
  #ifdef CONFIG_VNC_SASL
-@@ -581,4 +583,6 @@
+@@ -585,4 +587,6 @@
  int vnc_zywrle_send_framebuffer_update(VncState *vs, int x, int y, int w, int h);
  void vnc_zrle_clear(VncState *vs);
  
@@ -327,8 +309,8 @@ Index: new/ui/vnc.h
  #endif /* __QEMU_VNC_H */
 Index: new/ui/vnc-tls.c
 ===================================================================
---- new.orig/ui/vnc-tls.c	2013-02-12 12:05:14.000000000 +0100
-+++ new/ui/vnc-tls.c	2013-02-12 12:06:40.000000000 +0100
+--- new.orig/ui/vnc-tls.c	2013-11-26 10:50:23.000000000 +0100
++++ new/ui/vnc-tls.c	2013-11-26 11:44:30.000000000 +0100
 @@ -302,6 +302,14 @@
  
  static int vnc_set_gnutls_priority(gnutls_session_t s, int x509)
@@ -356,7 +338,7 @@ Index: new/ui/vnc-tls.c
      rc = gnutls_kx_set_priority(s, x509 ? kx_x509 : kx_anon);
      if (rc != GNUTLS_E_SUCCESS) {
          return -1;
-@@ -449,6 +462,24 @@
+@@ -466,6 +479,24 @@
      return 0;
  }
  
@@ -383,8 +365,8 @@ Index: new/ui/vnc-tls.c
                                 const char *certdir)
 Index: new/ui/vnc-tls.h
 ===================================================================
---- new.orig/ui/vnc-tls.h	2013-02-12 12:05:14.000000000 +0100
-+++ new/ui/vnc-tls.h	2013-02-12 12:06:40.000000000 +0100
+--- new.orig/ui/vnc-tls.h	2013-11-26 10:50:23.000000000 +0100
++++ new/ui/vnc-tls.h	2013-11-26 11:44:30.000000000 +0100
 @@ -68,6 +68,8 @@
  
  int vnc_tls_validate_certificate(VncState *vs);
@@ -396,9 +378,9 @@ Index: new/ui/vnc-tls.h
  
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2013-02-12 12:06:20.000000000 +0100
-+++ new/vl.c	2013-02-12 12:06:40.000000000 +0100
-@@ -3595,6 +3595,7 @@
+--- new.orig/vl.c	2013-11-26 11:44:20.000000000 +0100
++++ new/vl.c	2013-11-26 11:44:30.000000000 +0100
+@@ -3566,6 +3566,7 @@
  		    fprintf(stderr, "Invalid ID\n");
  		    exit(1);
  		}
@@ -408,13 +390,13 @@ Index: new/vl.c
                  cpuunits = atoi(optarg);
 Index: new/include/ui/console.h
 ===================================================================
---- new.orig/include/ui/console.h	2013-02-12 12:05:14.000000000 +0100
-+++ new/include/ui/console.h	2013-02-12 12:06:40.000000000 +0100
-@@ -457,6 +457,7 @@
+--- new.orig/include/ui/console.h	2013-11-26 10:50:22.000000000 +0100
++++ new/include/ui/console.h	2013-11-26 11:44:30.000000000 +0100
+@@ -312,6 +312,7 @@
  void cocoa_display_init(DisplayState *ds, int full_screen);
  
  /* vnc.c */
 +void pve_auth_setup(int vmid);
  void vnc_display_init(DisplayState *ds);
  void vnc_display_open(DisplayState *ds, const char *display, Error **errp);
- void vnc_display_add_client(DisplayState *ds, int csock, int skipauth);
+ void vnc_display_add_client(DisplayState *ds, int csock, bool skipauth);
