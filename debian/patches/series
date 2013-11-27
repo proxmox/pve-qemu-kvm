@@ -5,8 +5,9 @@ keymap.diff
 pve-auth.patch
 vencrypt-auth-plain.patch
 fix-qemu-img-snapshot-removal.patch
-move-bdrv-snapshot-find.patch
-internal-snapshot-async.patch
+# fixme: update snapshot patches for 1.7
+#move-bdrv-snapshot-find.patch
+#internal-snapshot-async.patch
 enable-kvm-by-default.patch
 # include qemu backup series
 0001-add-documenation-for-new-backup-framework.patch
