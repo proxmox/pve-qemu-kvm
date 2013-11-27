@@ -1,8 +1,8 @@
 Index: new/ui/vnc.c
 ===================================================================
---- new.orig/ui/vnc.c	2013-02-11 11:06:09.000000000 +0100
-+++ new/ui/vnc.c	2013-02-11 11:18:28.000000000 +0100
-@@ -1540,6 +1540,10 @@
+--- new.orig/ui/vnc.c	2013-11-26 10:50:23.000000000 +0100
++++ new/ui/vnc.c	2013-11-26 11:12:22.000000000 +0100
+@@ -1625,6 +1625,10 @@
  
  static void do_key_event(VncState *vs, int down, int keycode, int sym)
  {
@@ -13,10 +13,10 @@ Index: new/ui/vnc.c
      /* QEMU console switch */
      switch(keycode) {
      case 0x2a:                          /* Left Shift */
-@@ -1610,12 +1614,42 @@
+@@ -1700,12 +1704,42 @@
      }
  
-     if (is_graphic_console()) {
+     if (qemu_console_is_graphic(NULL)) {
 +
 + 	/* our java vnc client never sends ALTGR, so we create
 +	   an artificial up/down event */
@@ -25,9 +25,9 @@ Index: new/ui/vnc.c
 +	    !vs->modifiers_state[0xb8];
 +
 +	if (emul_altgr) {
-+		reset_keys(vs);
-+		kbd_put_keycode(SCANCODE_EMUL0);
-+		kbd_put_keycode(0xb8 & SCANCODE_KEYCODEMASK);
++            reset_keys(vs);
++            kbd_put_keycode(SCANCODE_EMUL0);
++            kbd_put_keycode(0xb8 & SCANCODE_KEYCODEMASK);
 +	}
 +
 +	int emul_shift = (mods & SCANCODE_SHIFT) &&
@@ -44,9 +44,9 @@ Index: new/ui/vnc.c
          else
              kbd_put_keycode(keycode | SCANCODE_UP);
 +
-+	if (emul_shift) {
-+	    kbd_put_keycode(0x2a | SCANCODE_UP);
-+	}
++        if (emul_shift) {
++            kbd_put_keycode(0x2a | SCANCODE_UP);
++ 	}
 +
 +	if (emul_altgr) {
 +	    kbd_put_keycode(SCANCODE_EMUL0);
@@ -56,7 +56,7 @@ Index: new/ui/vnc.c
      } else {
          bool numlock = vs->modifiers_state[0x45];
          bool control = (vs->modifiers_state[0x1d] ||
-@@ -1752,7 +1786,8 @@
+@@ -1842,7 +1876,8 @@
          lsym = lsym - 'A' + 'a';
      }
  
@@ -64,5 +64,14 @@ Index: new/ui/vnc.c
 +    keycode = keysym2scancode(vs->vd->kbd_layout, lsym & 0xFFFF);
 +
      do_key_event(vs, down, keycode, sym);
+ }
+ 
+@@ -3032,7 +3067,7 @@
+ char *vnc_display_local_addr(DisplayState *ds)
+ {
+     VncDisplay *vs = vnc_display;
+-    
++
+     return vnc_socket_local_addr("%s:%s", vs->lsock);
  }
  
