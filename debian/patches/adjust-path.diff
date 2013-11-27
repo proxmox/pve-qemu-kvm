@@ -1,8 +1,8 @@
 Index: new/include/net/net.h
 ===================================================================
---- new.orig/include/net/net.h	2013-02-11 11:06:09.000000000 +0100
-+++ new/include/net/net.h	2013-02-11 11:15:16.000000000 +0100
-@@ -168,8 +168,9 @@
+--- new.orig/include/net/net.h	2013-11-26 10:50:22.000000000 +0100
++++ new/include/net/net.h	2013-11-26 11:02:32.000000000 +0100
+@@ -176,8 +176,9 @@
  int net_hub_id_for_client(NetClientState *nc, int *id);
  NetClientState *net_hub_port_find(int hub_id);
  
@@ -16,8 +16,8 @@ Index: new/include/net/net.h
  
 Index: new/net/tap_int.h
 ===================================================================
---- new.orig/net/tap_int.h	2013-02-11 11:06:09.000000000 +0100
-+++ new/net/tap_int.h	2013-02-11 11:15:16.000000000 +0100
+--- new.orig/net/tap_int.h	2013-11-26 10:50:22.000000000 +0100
++++ new/net/tap_int.h	2013-11-26 11:02:32.000000000 +0100
 @@ -29,8 +29,6 @@
  #include "qemu-common.h"
  #include "qapi-types.h"
