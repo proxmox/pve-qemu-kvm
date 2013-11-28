@@ -78,7 +78,7 @@ install: build
 
 	# Install the userspace utilities
 	install -m 0755 scripts/kvm/kvm_stat $(destdir)/usr/bin/
-	#install -s -m 0755 vma $(destdir)/usr/bin/
+	install -s -m 0755 vma $(destdir)/usr/bin/
 
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifup $(destdir)/etc/kvm/kvm-ifup
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifdown $(destdir)/etc/kvm/kvm-ifdown

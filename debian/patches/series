@@ -25,3 +25,4 @@ modify-query-machines.patch
 #spice-socket.patch
 modify-query-spice.patch
 spice-use-pve-certs.patch
+backup-add-vma-binary.patch
