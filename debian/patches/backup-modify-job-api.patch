@@ -1,0 +1,149 @@
+Index: new/block/backup.c
+===================================================================
+--- new.orig/block/backup.c	2013-11-27 10:51:32.000000000 +0100
++++ new/block/backup.c	2013-12-02 07:41:30.000000000 +0100
+@@ -39,6 +39,7 @@
+     BlockDriverState *target;
+     MirrorSyncMode sync_mode;
+     RateLimit limit;
++    BackupDumpFunc *dump_cb;
+     BlockdevOnError on_source_error;
+     BlockdevOnError on_target_error;
+     CoRwlock flush_rwlock;
+@@ -137,12 +138,20 @@
+         }
+ 
+         if (buffer_is_zero(iov.iov_base, iov.iov_len)) {
+-            ret = bdrv_co_write_zeroes(job->target,
+-                                       start * BACKUP_SECTORS_PER_CLUSTER, n);
++            if (job->dump_cb) {
++                ret = job->dump_cb(job->common.opaque, bs, start, NULL);
++            } else {
++                ret = bdrv_co_write_zeroes(job->target,
++                                           start * BACKUP_SECTORS_PER_CLUSTER, n);
++            }
+         } else {
+-            ret = bdrv_co_writev(job->target,
+-                                 start * BACKUP_SECTORS_PER_CLUSTER, n,
+-                                 &bounce_qiov);
++            if (job->dump_cb) {
++                ret = job->dump_cb(job->common.opaque, bs, start, bounce_buffer);
++            } else {
++                ret = bdrv_co_writev(job->target,
++                                     start * BACKUP_SECTORS_PER_CLUSTER, n,
++                                     &bounce_qiov);
++            }
+         }
+         if (ret < 0) {
+             trace_backup_do_cow_write_fail(job, start, ret);
+@@ -199,7 +208,9 @@
+ {
+     BackupBlockJob *s = container_of(job, BackupBlockJob, common);
+ 
+-    bdrv_iostatus_reset(s->target);
++    if (s->target) {
++        bdrv_iostatus_reset(s->target);
++    }
+ }
+ 
+ static const BlockJobDriver backup_job_driver = {
+@@ -215,9 +226,11 @@
+     if (read) {
+         return block_job_error_action(&job->common, job->common.bs,
+                                       job->on_source_error, true, error);
+-    } else {
++    } else if (job->target) {
+         return block_job_error_action(&job->common, job->target,
+                                       job->on_target_error, false, error);
++    } else {
++        return BDRV_ACTION_REPORT;
+     }
+ }
+ 
+@@ -242,9 +255,11 @@
+ 
+     job->bitmap = hbitmap_alloc(end, 0);
+ 
+-    bdrv_set_enable_write_cache(target, true);
+-    bdrv_set_on_error(target, on_target_error, on_target_error);
+-    bdrv_iostatus_enable(target);
++    if (target) {
++        bdrv_set_enable_write_cache(target, true);
++        bdrv_set_on_error(target, on_target_error, on_target_error);
++        bdrv_iostatus_enable(target);
++    }
+ 
+     bdrv_add_before_write_notifier(bs, &before_write);
+ 
+@@ -337,8 +352,10 @@
+ 
+     hbitmap_free(job->bitmap);
+ 
+-    bdrv_iostatus_disable(target);
+-    bdrv_unref(target);
++    if (target) {
++        bdrv_iostatus_disable(target);
++        bdrv_unref(target);
++    }
+ 
+     block_job_completed(&job->common, ret);
+ }
+@@ -347,13 +364,14 @@
+                   int64_t speed, MirrorSyncMode sync_mode,
+                   BlockdevOnError on_source_error,
+                   BlockdevOnError on_target_error,
++                  BackupDumpFunc *dump_cb,
+                   BlockDriverCompletionFunc *cb, void *opaque,
+                   Error **errp)
+ {
+     int64_t len;
+ 
+     assert(bs);
+-    assert(target);
++    assert(target || dump_cb);
+     assert(cb);
+ 
+     if ((on_source_error == BLOCKDEV_ON_ERROR_STOP ||
+@@ -376,6 +394,7 @@
+         return;
+     }
+ 
++    job->dump_cb = dump_cb;
+     job->on_source_error = on_source_error;
+     job->on_target_error = on_target_error;
+     job->target = target;
+Index: new/blockdev.c
+===================================================================
+--- new.orig/blockdev.c	2013-12-02 06:12:24.000000000 +0100
++++ new/blockdev.c	2013-12-02 08:43:25.000000000 +0100
+@@ -1932,7 +1932,7 @@
+     }
+ 
+     backup_start(bs, target_bs, speed, sync, on_source_error, on_target_error,
+-                 block_job_cb, bs, &local_err);
++                 NULL, block_job_cb, bs, &local_err);
+     if (local_err != NULL) {
+         bdrv_unref(target_bs);
+         error_propagate(errp, local_err);
+Index: new/include/block/block_int.h
+===================================================================
+--- new.orig/include/block/block_int.h	2013-11-27 10:51:33.000000000 +0100
++++ new/include/block/block_int.h	2013-12-02 07:40:35.000000000 +0100
+@@ -54,6 +54,9 @@
+ #define BLOCK_OPT_LAZY_REFCOUNTS    "lazy_refcounts"
+ #define BLOCK_OPT_ADAPTER_TYPE      "adapter_type"
+ 
++typedef int BackupDumpFunc(void *opaque, BlockDriverState *bs,
++                           int64_t cluster_num, unsigned char *buf);
++
+ typedef struct BdrvTrackedRequest {
+     BlockDriverState *bs;
+     int64_t sector_num;
+@@ -427,6 +430,7 @@
+                   int64_t speed, MirrorSyncMode sync_mode,
+                   BlockdevOnError on_source_error,
+                   BlockdevOnError on_target_error,
++                  BackupDumpFunc *dump_cb,
+                   BlockDriverCompletionFunc *cb, void *opaque,
+                   Error **errp);
+ 
