@@ -1,0 +1,33 @@
+From 4ca68d0ccfd64f2fdc63ba44813bbafab8d90c81 Mon Sep 17 00:00:00 2001
+From: Dietmar Maurer <dietmar@proxmox.com>
+Date: Tue, 26 Mar 2013 06:21:16 +0100
+Subject: [PATCH v5 8/8] vma restore: tolerate a size difference up to 4M
+
+
+Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
+---
+ vma-reader.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/vma-reader.c b/vma-reader.c
+index a740f04..69e7578 100644
+--- a/vma-reader.c
++++ b/vma-reader.c
+@@ -465,7 +465,13 @@ int vma_reader_register_bs(VmaReader *vmar, guint8 dev_id, BlockDriverState *bs,
+     assert(vmar->rstate[dev_id].bs == NULL);
+ 
+     int64_t size = bdrv_getlength(bs);
+-    if (size != vmar->devinfo[dev_id].size) {
++    int64_t size_diff = size - vmar->devinfo[dev_id].size;
++
++    /* storage types can have different size restrictions, so it
++     * is not always possible to create an image with exact size.
++     * So we tolerate a size difference up to 4MB.
++     */
++    if ((size_diff < 0) || (size_diff > 4*1024*1024)) {
+         error_setg(errp, "vma_reader_register_bs for stream %s failed - "
+                    "unexpected size %zd != %zd", vmar->devinfo[dev_id].devname,
+                    size, vmar->devinfo[dev_id].size);
+-- 
+1.7.2.5
+
