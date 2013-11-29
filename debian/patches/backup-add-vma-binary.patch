@@ -75,7 +75,7 @@ Index: new/docs/specs/vma_spec.txt
 Index: new/vma-reader.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-reader.c	2013-11-29 10:13:24.000000000 +0100
++++ new/vma-reader.c	2013-11-29 10:18:49.000000000 +0100
 @@ -0,0 +1,799 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -879,8 +879,8 @@ Index: new/vma-reader.c
 Index: new/vma-writer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-writer.c	2013-11-29 10:08:41.000000000 +0100
-@@ -0,0 +1,869 @@
++++ new/vma-writer.c	2013-11-29 10:19:59.000000000 +0100
+@@ -0,0 +1,872 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -1028,7 +1028,10 @@ Index: new/vma-writer.c
 +    assert(data);
 +    assert(len);
 +
-+    uint32_t name_ptr = allocate_header_string(vmaw, name);
++    gchar *basename = g_path_get_basename(name);
++    uint32_t name_ptr = allocate_header_string(vmaw, basename);
++    g_free(basename);
++
 +    if (!name_ptr) {
 +        return -1;
 +    }
@@ -1753,7 +1756,7 @@ Index: new/vma-writer.c
 Index: new/vma.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.c	2013-11-29 10:14:29.000000000 +0100
++++ new/vma.c	2013-11-29 10:18:49.000000000 +0100
 @@ -0,0 +1,623 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -2381,7 +2384,7 @@ Index: new/vma.c
 Index: new/vma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.h	2013-11-29 10:13:24.000000000 +0100
++++ new/vma.h	2013-11-29 10:18:49.000000000 +0100
 @@ -0,0 +1,144 @@
 +/*
 + * VMA: Virtual Machine Archive
