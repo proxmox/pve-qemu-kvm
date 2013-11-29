@@ -24,8 +24,8 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/Makefile
 ===================================================================
---- new.orig/Makefile	2013-11-27 10:51:32.000000000 +0100
-+++ new/Makefile	2013-11-28 09:57:02.000000000 +0100
+--- new.orig/Makefile	2013-11-29 08:45:24.000000000 +0100
++++ new/Makefile	2013-11-29 10:08:41.000000000 +0100
 @@ -128,7 +128,7 @@
  include $(SRC_PATH)/libcacard/Makefile
  endif
@@ -46,7 +46,7 @@ Index: new/Makefile
 Index: new/docs/specs/vma_spec.txt
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/docs/specs/vma_spec.txt	2013-11-28 09:55:29.000000000 +0100
++++ new/docs/specs/vma_spec.txt	2013-11-29 10:08:41.000000000 +0100
 @@ -0,0 +1,24 @@
 +=Virtual Machine Archive format (VMA)=
 +
@@ -75,7 +75,7 @@ Index: new/docs/specs/vma_spec.txt
 Index: new/vma-reader.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-reader.c	2013-11-28 09:55:29.000000000 +0100
++++ new/vma-reader.c	2013-11-29 10:13:24.000000000 +0100
 @@ -0,0 +1,799 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -879,7 +879,7 @@ Index: new/vma-reader.c
 Index: new/vma-writer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-writer.c	2013-11-28 11:03:52.000000000 +0100
++++ new/vma-writer.c	2013-11-29 10:08:41.000000000 +0100
 @@ -0,0 +1,869 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -1753,7 +1753,7 @@ Index: new/vma-writer.c
 Index: new/vma.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.c	2013-11-28 12:08:39.000000000 +0100
++++ new/vma.c	2013-11-29 10:14:29.000000000 +0100
 @@ -0,0 +1,623 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -1790,7 +1790,7 @@ Index: new/vma.c
 +        "\n"
 +        "vma list <filename>\n"
 +        "vma create <filename> [-c config] <archive> pathname ...\n"
-+        "vma extract <filename> [-r] <targetdir>\n"
++        "vma extract <filename> [-r <fifo>] <targetdir>\n"
 +        ;
 +
 +    printf("%s", help_msg);
@@ -2381,7 +2381,7 @@ Index: new/vma.c
 Index: new/vma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.h	2013-11-28 12:04:49.000000000 +0100
++++ new/vma.h	2013-11-29 10:13:24.000000000 +0100
 @@ -0,0 +1,144 @@
 +/*
 + * VMA: Virtual Machine Archive
