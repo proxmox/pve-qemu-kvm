@@ -1,7 +1,7 @@
 Index: new/block/backup.c
 ===================================================================
---- new.orig/block/backup.c	2013-11-27 10:51:32.000000000 +0100
-+++ new/block/backup.c	2013-12-02 07:41:30.000000000 +0100
+--- new.orig/block/backup.c	2013-12-02 12:30:23.000000000 +0100
++++ new/block/backup.c	2013-12-02 12:56:03.000000000 +0100
 @@ -39,6 +39,7 @@
      BlockDriverState *target;
      MirrorSyncMode sync_mode;
@@ -88,12 +88,13 @@ Index: new/block/backup.c
  
      block_job_completed(&job->common, ret);
  }
-@@ -347,13 +364,14 @@
+@@ -347,13 +364,15 @@
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,
 +                  BackupDumpFunc *dump_cb,
                    BlockDriverCompletionFunc *cb, void *opaque,
++                  bool paused,
                    Error **errp)
  {
      int64_t len;
@@ -104,7 +105,7 @@ Index: new/block/backup.c
      assert(cb);
  
      if ((on_source_error == BLOCKDEV_ON_ERROR_STOP ||
-@@ -376,6 +394,7 @@
+@@ -376,10 +395,12 @@
          return;
      }
  
@@ -112,23 +113,28 @@ Index: new/block/backup.c
      job->on_source_error = on_source_error;
      job->on_target_error = on_target_error;
      job->target = target;
+     job->sync_mode = sync_mode;
++    job->common.paused = paused;
+     job->common.len = len;
+     job->common.co = qemu_coroutine_create(backup_run);
+     qemu_coroutine_enter(job->common.co, job);
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2013-12-02 06:12:24.000000000 +0100
-+++ new/blockdev.c	2013-12-02 08:43:25.000000000 +0100
+--- new.orig/blockdev.c	2013-12-02 12:30:23.000000000 +0100
++++ new/blockdev.c	2013-12-02 12:54:24.000000000 +0100
 @@ -1932,7 +1932,7 @@
      }
  
      backup_start(bs, target_bs, speed, sync, on_source_error, on_target_error,
 -                 block_job_cb, bs, &local_err);
-+                 NULL, block_job_cb, bs, &local_err);
++                 NULL, block_job_cb, bs, false, &local_err);
      if (local_err != NULL) {
          bdrv_unref(target_bs);
          error_propagate(errp, local_err);
 Index: new/include/block/block_int.h
 ===================================================================
---- new.orig/include/block/block_int.h	2013-11-27 10:51:33.000000000 +0100
-+++ new/include/block/block_int.h	2013-12-02 07:40:35.000000000 +0100
+--- new.orig/include/block/block_int.h	2013-12-02 12:30:23.000000000 +0100
++++ new/include/block/block_int.h	2013-12-02 12:52:21.000000000 +0100
 @@ -54,6 +54,9 @@
  #define BLOCK_OPT_LAZY_REFCOUNTS    "lazy_refcounts"
  #define BLOCK_OPT_ADAPTER_TYPE      "adapter_type"
@@ -139,11 +145,13 @@ Index: new/include/block/block_int.h
  typedef struct BdrvTrackedRequest {
      BlockDriverState *bs;
      int64_t sector_num;
-@@ -427,6 +430,7 @@
+@@ -427,7 +430,9 @@
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,
 +                  BackupDumpFunc *dump_cb,
                    BlockDriverCompletionFunc *cb, void *opaque,
++                  bool paused,
                    Error **errp);
  
+ #endif /* BLOCK_INT_H */

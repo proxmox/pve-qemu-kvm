@@ -1,7 +1,7 @@
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2013-12-02 11:40:36.000000000 +0100
-+++ new/blockdev.c	2013-12-02 12:07:54.000000000 +0100
+--- new.orig/blockdev.c	2013-12-02 12:54:24.000000000 +0100
++++ new/blockdev.c	2013-12-02 14:10:24.000000000 +0100
 @@ -45,6 +45,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
@@ -10,7 +10,7 @@ Index: new/blockdev.c
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1438,6 +1439,417 @@
+@@ -1438,6 +1439,418 @@
      }
  }
  
@@ -161,14 +161,14 @@ Index: new/blockdev.c
 +    while (l) {
 +        PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
 +        l = g_list_next(l);
-+
-+        if (di->bs && di->bs->job && !di->completed) {
-+            if (block_job_is_paused(di->bs->job)) {
++        BlockJob *job = di->bs->job;
++        if (di->bs && job && !di->completed) {
++            if (block_job_is_paused(job)) {
 +                bool cancel = backup_state.error || backup_state.cancel;
 +                if (cancel) {
-+                    block_job_cancel(di->bs->job);
++                    block_job_cancel(job);
 +                } else {
-+                    block_job_resume(di->bs->job);
++                    block_job_resume(job);
 +                }
 +            }
 +            return;
@@ -342,7 +342,8 @@ Index: new/blockdev.c
 +
 +        backup_start(di->bs, NULL, speed, MIRROR_SYNC_MODE_FULL,
 +                     BLOCKDEV_ON_ERROR_REPORT, BLOCKDEV_ON_ERROR_REPORT,
-+                     pvebackup_dump_cb, pvebackup_complete_cb, di, &local_err);
++                     pvebackup_dump_cb, pvebackup_complete_cb, di,
++                     true, &local_err);
 +        if (local_err != NULL) {
 +            error_setg(&backup_state.error, "backup_job_create failed");
 +            pvebackup_cancel(NULL);
@@ -430,8 +431,8 @@ Index: new/blockdev.c
  {
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2013-11-27 10:51:33.000000000 +0100
-+++ new/hmp-commands.hx	2013-12-02 11:40:36.000000000 +0100
+--- new.orig/hmp-commands.hx	2013-12-02 12:49:36.000000000 +0100
++++ new/hmp-commands.hx	2013-12-02 12:58:31.000000000 +0100
 @@ -83,6 +83,35 @@
  Copy data from a backing file into a block device.
  ETEXI
@@ -479,8 +480,8 @@ Index: new/hmp-commands.hx
  @item info migrate_capabilities
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2013-12-02 11:40:35.000000000 +0100
-+++ new/hmp.c	2013-12-02 11:40:36.000000000 +0100
+--- new.orig/hmp.c	2013-12-02 12:49:36.000000000 +0100
++++ new/hmp.c	2013-12-02 12:58:31.000000000 +0100
 @@ -133,6 +133,38 @@
      qapi_free_MouseInfoList(mice_list);
  }
@@ -560,8 +561,8 @@ Index: new/hmp.c
      Error *error = NULL;
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2013-11-27 10:51:33.000000000 +0100
-+++ new/hmp.h	2013-12-02 11:40:36.000000000 +0100
+--- new.orig/hmp.h	2013-12-02 12:49:36.000000000 +0100
++++ new/hmp.h	2013-12-02 12:58:31.000000000 +0100
 @@ -28,6 +28,7 @@
  void hmp_info_migrate(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_capabilities(Monitor *mon, const QDict *qdict);
@@ -581,8 +582,8 @@ Index: new/hmp.h
  void hmp_block_job_pause(Monitor *mon, const QDict *qdict);
 Index: new/monitor.c
 ===================================================================
---- new.orig/monitor.c	2013-11-27 10:51:33.000000000 +0100
-+++ new/monitor.c	2013-12-02 11:40:36.000000000 +0100
+--- new.orig/monitor.c	2013-12-02 12:49:36.000000000 +0100
++++ new/monitor.c	2013-12-02 12:58:31.000000000 +0100
 @@ -2880,6 +2880,13 @@
      },
  #endif
@@ -599,8 +600,8 @@ Index: new/monitor.c
          .params     = "",
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2013-12-02 11:40:35.000000000 +0100
-+++ new/qapi-schema.json	2013-12-02 11:40:36.000000000 +0100
+--- new.orig/qapi-schema.json	2013-12-02 12:49:36.000000000 +0100
++++ new/qapi-schema.json	2013-12-02 12:58:31.000000000 +0100
 @@ -547,6 +547,95 @@
  ##
  { 'command': 'query-events', 'returns': ['EventInfo'] }
@@ -699,8 +700,8 @@ Index: new/qapi-schema.json
  #
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2013-12-02 11:40:35.000000000 +0100
-+++ new/qmp-commands.hx	2013-12-02 11:40:36.000000000 +0100
+--- new.orig/qmp-commands.hx	2013-12-02 12:49:36.000000000 +0100
++++ new/qmp-commands.hx	2013-12-02 12:58:31.000000000 +0100
 @@ -966,6 +966,24 @@
  EQMP
  
