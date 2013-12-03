@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.7-2) unstable; urgency=low
+
+  * depend on latest spice server libs
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 03 Dec 2013 13:40:56 +0100
+
 pve-qemu-kvm (1.7-1) unstable; urgency=low
 
   * remove qemu-img-convert-skipcreate-option.patch (now upstream)
