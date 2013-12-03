@@ -1,7 +1,7 @@
 Index: new/blockdev.c
 ===================================================================
 --- new.orig/blockdev.c	2013-12-03 07:34:22.000000000 +0100
-+++ new/blockdev.c	2013-12-03 07:46:15.000000000 +0100
++++ new/blockdev.c	2013-12-03 08:50:24.000000000 +0100
 @@ -45,6 +45,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
@@ -10,7 +10,7 @@ Index: new/blockdev.c
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1438,6 +1439,416 @@
+@@ -1438,6 +1439,419 @@
      }
  }
  
@@ -109,6 +109,7 @@ Index: new/blockdev.c
 +    assert(backup_state.vmaw);
 +
 +    di->completed = true;
++    di->bs = NULL;
 +
 +    vma_writer_close_stream(backup_state.vmaw, di->dev_id);
 +
@@ -132,10 +133,12 @@ Index: new/blockdev.c
 +    while (l) {
 +        PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
 +        l = g_list_next(l);
-+        BlockJob *job = di->bs->job;
-+        if (job) {
-+            if (!di->completed) {
-+                block_job_cancel_sync(job);
++        if (!di->completed && di->bs) { 
++            BlockJob *job = di->bs->job;
++            if (job) {
++                if (!di->completed) {
++                    block_job_cancel_sync(job);
++                }
 +            }
 +        }
 +    }
@@ -159,8 +162,8 @@ Index: new/blockdev.c
 +    while (l) {
 +        PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
 +        l = g_list_next(l);
-+        BlockJob *job = di->bs->job;
-+        if (di->bs && job && !di->completed) {
++        if (!di->completed && di->bs && di->bs->job) {
++            BlockJob *job = di->bs->job;
 +            if (block_job_is_paused(job)) {
 +                bool cancel = backup_state.error || backup_state.cancel;
 +                if (cancel) {
