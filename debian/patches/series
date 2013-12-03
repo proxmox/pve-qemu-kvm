@@ -5,9 +5,6 @@ keymap.diff
 pve-auth.patch
 vencrypt-auth-plain.patch
 fix-qemu-img-snapshot-removal.patch
-# fixme: update snapshot patches for 1.7
-#move-bdrv-snapshot-find.patch
-#internal-snapshot-async.patch
 enable-kvm-by-default.patch
 virtio-balloon-fix-query.patch
 set-cpu-model-to-kvm64.patch
@@ -21,3 +18,4 @@ backup-add-vma-verify-command.patch
 backup-vma-restore-tolerate-a-size-difference-up-to-4M.patch
 backup-modify-job-api.patch
 backup-add-pve-monitor-commands.patch
+internal-snapshot-async.patch
