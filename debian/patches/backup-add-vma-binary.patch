@@ -24,8 +24,8 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/Makefile
 ===================================================================
---- new.orig/Makefile	2013-12-04 10:45:30.000000000 +0100
-+++ new/Makefile	2013-12-04 10:45:45.000000000 +0100
+--- new.orig/Makefile	2013-12-04 12:07:18.000000000 +0100
++++ new/Makefile	2013-12-04 12:07:25.000000000 +0100
 @@ -128,7 +128,7 @@
  include $(SRC_PATH)/libcacard/Makefile
  endif
@@ -46,9 +46,9 @@ Index: new/Makefile
 Index: new/docs/specs/vma_spec.txt
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/docs/specs/vma_spec.txt	2013-12-04 10:45:45.000000000 +0100
-@@ -0,0 +1,24 @@
-+=Virtual Machine Archive format (VMA)=
++++ new/docs/specs/vma_spec.txt	2013-12-04 14:28:27.000000000 +0100
+@@ -0,0 +1,92 @@
++= Virtual Machine Archive format (VMA) =
 +
 +This format contains a header which includes the VM configuration as
 +binary blobs, and a list of devices (dev_id, name).
@@ -71,11 +71,79 @@ Index: new/docs/specs/vma_spec.txt
 +extent headers includes that uuid and a MD5 checksum (over header
 +data).
 +
++All numbers in VMA archive are stored in Big Endian byte order.
 +
++= VMA Header =
++
++    Byte  0 -  3:   magic
++                    VMA magic string ("VMA\x00")
++
++	  4 -  7:   version
++                    Version number (valid value is 1)
++
++          8 - 23:   uuid
++		    Unique ID, Same uuid is used to mark extents.
++
++         24 - 31:   ctime
++	      	    Backup time stamp (seconds since epoch)
++
++         32 - 47:   md5sum
++	      	    Header checksum (from byte 0 to header_size). This field
++		    is filled with zero to generate the checksum.
++
++         48 - 51:   blob_buffer_offset
++	      	    Start of blob buffer (multiple of 512)
++
++         52 - 55:   blob_buffer_size
++	      	    Size of blob buffer (multiple of 512)
++
++         56 - 59:   header_size
++	      	    Overall size of this header (multiple of 512)
++
++	 60 - 2043: reserved
++
++       2044 - 3067: uint32_t config_names[256]
++       	      	    Offsets into blob_buffer table
++
++       3068 - 4091: uint32_t config_data[256]
++       	      	    Offsets into blob_buffer table
++
++       4092 - 4095: reserved
++
++       4096 - 12287: VmaDeviceInfoHeader dev_info[256]
++
++       12288 - header_size: Blob buffer
++
++
++== Devive Info Header (VmaDeviceInfoHeader) ==
++
++This is use to store details about the contained disk images.
++
++    Byte  0 -  3:   devive name (offsets into blob_buffer table)
++
++    	  4 -  7:   reserved
++
++	  8 - 15:   device size in bytes
++
++	 16 - 31:   reserved
++
++Note: Devive name 'vmstate' is reserved to store VM RAM state.
++
++== Blob buffer ==
++
++The blob buffer is used to store both configuration file names and
++configuration data.
++
++This region contain a list of binary data blobs. Each blob starts with
++a 2 byte size field, followed by the actual data.
++
++= Image Data Streams =
++
++TODO
 Index: new/vma-reader.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-reader.c	2013-12-04 10:45:45.000000000 +0100
++++ new/vma-reader.c	2013-12-04 12:07:25.000000000 +0100
 @@ -0,0 +1,799 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -879,8 +947,8 @@ Index: new/vma-reader.c
 Index: new/vma-writer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-writer.c	2013-12-04 10:45:45.000000000 +0100
-@@ -0,0 +1,872 @@
++++ new/vma-writer.c	2013-12-04 14:26:06.000000000 +0100
+@@ -0,0 +1,875 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -1249,6 +1317,9 @@ Index: new/vma-writer.c
 +    const char *p;
 +
 +    assert(sizeof(VmaHeader) == (4096 + 8192));
++    assert(G_STRUCT_OFFSET(VmaHeader, config_names) == 2044);
++    assert(G_STRUCT_OFFSET(VmaHeader, config_data) == 3068);
++    assert(G_STRUCT_OFFSET(VmaHeader, dev_info) == 4096);
 +    assert(sizeof(VmaExtentHeader) == 512);
 +
 +    VmaWriter *vmaw = g_new0(VmaWriter, 1);
@@ -1756,7 +1827,7 @@ Index: new/vma-writer.c
 Index: new/vma.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.c	2013-12-04 10:47:35.000000000 +0100
++++ new/vma.c	2013-12-04 12:07:25.000000000 +0100
 @@ -0,0 +1,579 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -2340,8 +2411,8 @@ Index: new/vma.c
 Index: new/vma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.h	2013-12-04 10:45:45.000000000 +0100
-@@ -0,0 +1,144 @@
++++ new/vma.h	2013-12-04 14:27:56.000000000 +0100
+@@ -0,0 +1,146 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -2409,6 +2480,8 @@ Index: new/vma.h
 +
 +    uint32_t config_names[VMA_MAX_CONFIGS]; /* offset into blob_buffer table */
 +    uint32_t config_data[VMA_MAX_CONFIGS];  /* offset into blob_buffer table */
++
++    uint32_t reserved1;
 +
 +    VmaDeviceInfoHeader dev_info[256];
 +} VmaHeader;
@@ -2488,8 +2561,8 @@ Index: new/vma.h
 +#endif /* BACKUP_VMA_H */
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2013-12-04 10:45:30.000000000 +0100
-+++ new/Makefile.objs	2013-12-04 10:45:45.000000000 +0100
+--- new.orig/Makefile.objs	2013-12-04 12:07:18.000000000 +0100
++++ new/Makefile.objs	2013-12-04 12:07:25.000000000 +0100
 @@ -14,6 +14,7 @@
  block-obj-y += block/
  block-obj-y += qapi-types.o qapi-visit.o
