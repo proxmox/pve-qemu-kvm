@@ -24,8 +24,8 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/Makefile
 ===================================================================
---- new.orig/Makefile	2013-11-29 08:45:24.000000000 +0100
-+++ new/Makefile	2013-11-29 12:25:23.000000000 +0100
+--- new.orig/Makefile	2013-12-04 10:45:30.000000000 +0100
++++ new/Makefile	2013-12-04 10:45:45.000000000 +0100
 @@ -128,7 +128,7 @@
  include $(SRC_PATH)/libcacard/Makefile
  endif
@@ -46,7 +46,7 @@ Index: new/Makefile
 Index: new/docs/specs/vma_spec.txt
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/docs/specs/vma_spec.txt	2013-11-29 10:08:41.000000000 +0100
++++ new/docs/specs/vma_spec.txt	2013-12-04 10:45:45.000000000 +0100
 @@ -0,0 +1,24 @@
 +=Virtual Machine Archive format (VMA)=
 +
@@ -75,7 +75,7 @@ Index: new/docs/specs/vma_spec.txt
 Index: new/vma-reader.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-reader.c	2013-11-29 12:10:53.000000000 +0100
++++ new/vma-reader.c	2013-12-04 10:45:45.000000000 +0100
 @@ -0,0 +1,799 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -879,7 +879,7 @@ Index: new/vma-reader.c
 Index: new/vma-writer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-writer.c	2013-11-29 10:19:59.000000000 +0100
++++ new/vma-writer.c	2013-12-04 10:45:45.000000000 +0100
 @@ -0,0 +1,872 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -1756,8 +1756,8 @@ Index: new/vma-writer.c
 Index: new/vma.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.c	2013-11-29 12:10:53.000000000 +0100
-@@ -0,0 +1,623 @@
++++ new/vma.c	2013-12-04 10:47:35.000000000 +0100
+@@ -0,0 +1,579 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -2105,37 +2105,6 @@ Index: new/vma.c
 +    uint8_t dev_id;
 +} BackupJob;
 +
-+/*
-+static int backup_dump_cb(void *opaque, BlockDriverState *bs,
-+                          int64_t cluster_num, unsigned char *buf)
-+{
-+    BackupCB *bcb = opaque;
-+    size_t zb = 0;
-+    if (vma_writer_write(bcb->vmaw, bcb->dev_id, cluster_num, buf, &zb) < 0) {
-+        g_warning("backup_dump_cb vma_writer_write failed");
-+        return -1;
-+    }
-+
-+    return 0;
-+}
-+
-+static void backup_complete_cb(void *opaque, int ret)
-+{
-+    BackupCB *bcb = opaque;
-+
-+    if (ret < 0) {
-+        vma_writer_set_error(bcb->vmaw, "backup_complete_cb %d", ret);
-+    }
-+
-+    if (vma_writer_close_stream(bcb->vmaw, bcb->dev_id) <= 0) {
-+        Error *err = NULL;
-+        if (vma_writer_close(bcb->vmaw, &err) != 0) {
-+            g_warning("vma_writer_close failed %s", error_get_pretty(err));
-+        }
-+    }
-+}
-+*/
-+
 +#define BACKUP_SECTORS_PER_CLUSTER (VMA_CLUSTER_SIZE / BDRV_SECTOR_SIZE)
 +
 +static void coroutine_fn backup_run(void *opaque)
@@ -2277,19 +2246,6 @@ Index: new/vma.c
 +
 +        Coroutine *co = qemu_coroutine_create(backup_run);
 +        qemu_coroutine_enter(co, job);
-+
-+       //BlockDriverState *target = NULL;
-+        //backup_start(bs, target, 0, MIRROR_SYNC_MODE_FULL,
-+        //             BLOCKDEV_ON_ERROR_STOP, BLOCKDEV_ON_ERROR_STOP,
-+        //             NULL, bcb, &errp);
-+
-+        //if (backup_job_create(bs, backup_dump_cb, backup_complete_cb,
-+        //                     bcb, 0) < 0) {
-+        //    unlink(archivename);
-+        //    g_error("backup_job_start failed");
-+        //} else {
-+        //    backup_job_start(bs, false);
-+        // }
 +    }
 +
 +    VmaStatus vmastat;
@@ -2384,7 +2340,7 @@ Index: new/vma.c
 Index: new/vma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.h	2013-11-29 12:10:53.000000000 +0100
++++ new/vma.h	2013-12-04 10:45:45.000000000 +0100
 @@ -0,0 +1,144 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -2532,8 +2488,8 @@ Index: new/vma.h
 +#endif /* BACKUP_VMA_H */
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2013-11-29 12:10:45.000000000 +0100
-+++ new/Makefile.objs	2013-11-29 12:24:55.000000000 +0100
+--- new.orig/Makefile.objs	2013-12-04 10:45:30.000000000 +0100
++++ new/Makefile.objs	2013-12-04 10:45:45.000000000 +0100
 @@ -14,6 +14,7 @@
  block-obj-y += block/
  block-obj-y += qapi-types.o qapi-visit.o
