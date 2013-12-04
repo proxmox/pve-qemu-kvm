@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.7-3) unstable; urgency=low
+
+  * vma: add 'vma config' command to easily extract VM configuration
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 04 Dec 2013 10:39:36 +0100
+
 pve-qemu-kvm (1.7-2) unstable; urgency=low
 
   * depend on latest spice server libs
