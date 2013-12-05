@@ -46,8 +46,8 @@ Index: new/Makefile
 Index: new/docs/specs/vma_spec.txt
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/docs/specs/vma_spec.txt	2013-12-04 14:28:27.000000000 +0100
-@@ -0,0 +1,92 @@
++++ new/docs/specs/vma_spec.txt	2013-12-05 08:14:11.000000000 +0100
+@@ -0,0 +1,132 @@
 += Virtual Machine Archive format (VMA) =
 +
 +This format contains a header which includes the VM configuration as
@@ -73,7 +73,7 @@ Index: new/docs/specs/vma_spec.txt
 +
 +All numbers in VMA archive are stored in Big Endian byte order.
 +
-+= VMA Header =
++== VMA Header ==
 +
 +    Byte  0 -  3:   magic
 +                    VMA magic string ("VMA\x00")
@@ -110,12 +110,14 @@ Index: new/docs/specs/vma_spec.txt
 +
 +       4092 - 4095: reserved
 +
-+       4096 - 12287: VmaDeviceInfoHeader dev_info[256]
++      4096 - 12287: VmaDeviceInfoHeader dev_info[256]
++                    The offset in this table is used as 'dev_id' inside
++		    the data streams.
 +
-+       12288 - header_size: Blob buffer
++      12288 - header_size: Blob buffer
 +
 +
-+== Devive Info Header (VmaDeviceInfoHeader) ==
++=== Devive Info Header (VmaDeviceInfoHeader) ===
 +
 +This is use to store details about the contained disk images.
 +
@@ -129,7 +131,7 @@ Index: new/docs/specs/vma_spec.txt
 +
 +Note: Devive name 'vmstate' is reserved to store VM RAM state.
 +
-+== Blob buffer ==
++=== Blob buffer ===
 +
 +The blob buffer is used to store both configuration file names and
 +configuration data.
@@ -137,9 +139,47 @@ Index: new/docs/specs/vma_spec.txt
 +This region contain a list of binary data blobs. Each blob starts with
 +a 2 byte size field, followed by the actual data.
 +
-+= Image Data Streams =
++== Image Data Streams ==
 +
-+TODO
++The VMA header is followed by the image data stream. Image data is grouped
++with extents, which contains up to 59 clusters from different images.
++
++=== VMA Extent Header ===
++
++    Byte  0 -  3:   magic
++                    VMA extent magic string ("VMAE")
++
++   	  4 -  5:   reserved
++
++   	  6 -  7:   block_count
++	      	    Overall number of contained 4K block
++
++          8 - 23:   uuid
++		    Unique ID, Same uuid as used in the VMA header.
++
++         24 - 39:   md5sum
++	      	    Header checksum (from byte 0 to header_size). This field
++		    is filled with zero to generate the checksum.
++
++        40 - 511:   blockinfo[59]
++
++
++Each 'blockinfo' (8 bytes) give further details about contained clusters:
++
++    Byte  0 - 1:   mask
++   	      	   Bitmap used to indicate non-zero 4K blocks inside the
++		   cluster.
++
++              2:   reserved
++
++              3:   dev_id
++	           Device ID (offset into dev_info table)
++
++          4 - 7:   cluster_num
++
++The extend header if followed by the actual cluster data, where we only
++store non-zero 4K blocks.
++
 Index: new/vma-reader.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
