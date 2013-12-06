@@ -23,8 +23,8 @@ Subject: [PATCH] internal-snapshot-async-qemu1.7.patch
 
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2013-12-04 10:45:45.000000000 +0100
-+++ new/Makefile.objs	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/Makefile.objs	2013-12-06 07:46:38.000000000 +0100
++++ new/Makefile.objs	2013-12-06 08:59:22.000000000 +0100
 @@ -56,6 +56,7 @@
  common-obj-y += qemu-char.o #aio.o
  common-obj-y += block-migration.o
@@ -35,8 +35,8 @@ Index: new/Makefile.objs
  
 Index: new/block.c
 ===================================================================
---- new.orig/block.c	2013-12-04 10:07:06.000000000 +0100
-+++ new/block.c	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/block.c	2013-12-06 07:46:38.000000000 +0100
++++ new/block.c	2013-12-06 08:59:22.000000000 +0100
 @@ -1710,7 +1710,7 @@
              bs_new->drv ? bs_new->drv->format_name : "");
  }
@@ -48,9 +48,9 @@ Index: new/block.c
      assert(!bs->job);
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2013-12-04 10:48:06.000000000 +0100
-+++ new/hmp-commands.hx	2013-12-04 10:48:07.000000000 +0100
-@@ -1729,6 +1729,8 @@
+--- new.orig/hmp-commands.hx	2013-12-06 08:57:27.000000000 +0100
++++ new/hmp-commands.hx	2013-12-06 08:59:22.000000000 +0100
+@@ -1731,6 +1731,8 @@
  show current migration capabilities
  @item info migrate_cache_size
  show current migration XBZRLE cache size
@@ -59,7 +59,7 @@ Index: new/hmp-commands.hx
  @item info balloon
  show balloon information
  @item info qtree
-@@ -1750,3 +1752,35 @@
+@@ -1752,3 +1754,35 @@
  STEXI
  @end table
  ETEXI
@@ -97,8 +97,8 @@ Index: new/hmp-commands.hx
 +    },
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2013-12-04 10:48:06.000000000 +0100
-+++ new/hmp.c	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/hmp.c	2013-12-06 08:57:27.000000000 +0100
++++ new/hmp.c	2013-12-06 08:59:22.000000000 +0100
 @@ -1655,3 +1655,60 @@
  
      hmp_handle_error(mon, &err);
@@ -162,8 +162,8 @@ Index: new/hmp.c
 +}
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2013-12-04 10:48:06.000000000 +0100
-+++ new/hmp.h	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/hmp.h	2013-12-06 07:46:38.000000000 +0100
++++ new/hmp.h	2013-12-06 08:59:22.000000000 +0100
 @@ -25,6 +25,7 @@
  void hmp_info_uuid(Monitor *mon, const QDict *qdict);
  void hmp_info_chardev(Monitor *mon, const QDict *qdict);
@@ -185,8 +185,8 @@ Index: new/hmp.h
  void hmp_nbd_server_start(Monitor *mon, const QDict *qdict);
 Index: new/include/block/block.h
 ===================================================================
---- new.orig/include/block/block.h	2013-12-04 10:07:06.000000000 +0100
-+++ new/include/block/block.h	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/include/block/block.h	2013-12-06 07:46:38.000000000 +0100
++++ new/include/block/block.h	2013-12-06 08:59:22.000000000 +0100
 @@ -214,6 +214,7 @@
      const char *backing_file);
  int bdrv_get_backing_file_depth(BlockDriverState *bs);
@@ -197,8 +197,8 @@ Index: new/include/block/block.h
  void bdrv_get_geometry(BlockDriverState *bs, uint64_t *nb_sectors_ptr);
 Index: new/include/sysemu/sysemu.h
 ===================================================================
---- new.orig/include/sysemu/sysemu.h	2013-12-04 10:07:06.000000000 +0100
-+++ new/include/sysemu/sysemu.h	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/include/sysemu/sysemu.h	2013-12-06 07:46:38.000000000 +0100
++++ new/include/sysemu/sysemu.h	2013-12-06 08:59:22.000000000 +0100
 @@ -73,16 +73,17 @@
  
  void do_savevm(Monitor *mon, const QDict *qdict);
@@ -221,8 +221,8 @@ Index: new/include/sysemu/sysemu.h
  int qemu_loadvm_state(QEMUFile *f);
 Index: new/monitor.c
 ===================================================================
---- new.orig/monitor.c	2013-12-04 10:48:06.000000000 +0100
-+++ new/monitor.c	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/monitor.c	2013-12-06 07:46:38.000000000 +0100
++++ new/monitor.c	2013-12-06 08:59:22.000000000 +0100
 @@ -2908,6 +2908,13 @@
          .mhandler.cmd = hmp_info_migrate_cache_size,
      },
@@ -239,8 +239,8 @@ Index: new/monitor.c
          .params     = "",
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2013-12-04 10:48:06.000000000 +0100
-+++ new/qapi-schema.json	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/qapi-schema.json	2013-12-06 08:57:27.000000000 +0100
++++ new/qapi-schema.json	2013-12-06 08:59:22.000000000 +0100
 @@ -740,6 +740,42 @@
             '*downtime': 'int',
             '*setup-time': 'int'} }
@@ -305,8 +305,8 @@ Index: new/qapi-schema.json
  #
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2013-12-04 10:07:06.000000000 +0100
-+++ new/qemu-options.hx	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/qemu-options.hx	2013-12-06 07:46:38.000000000 +0100
++++ new/qemu-options.hx	2013-12-06 08:59:22.000000000 +0100
 @@ -2734,6 +2734,19 @@
  Start right away with a saved state (@code{loadvm} in monitor)
  ETEXI
@@ -329,8 +329,8 @@ Index: new/qemu-options.hx
      "-daemonize      daemonize QEMU after initializing\n", QEMU_ARCH_ALL)
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2013-12-04 10:48:06.000000000 +0100
-+++ new/qmp-commands.hx	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/qmp-commands.hx	2013-12-06 07:46:38.000000000 +0100
++++ new/qmp-commands.hx	2013-12-06 08:59:22.000000000 +0100
 @@ -3326,3 +3326,34 @@
  <- { "return": {} }
  
@@ -369,7 +369,7 @@ Index: new/qmp-commands.hx
 Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/savevm-async.c	2013-12-04 10:48:07.000000000 +0100
++++ new/savevm-async.c	2013-12-06 08:59:22.000000000 +0100
 @@ -0,0 +1,478 @@
 +#include "qemu-common.h"
 +#include "qapi/qmp/qerror.h"
@@ -851,8 +851,8 @@ Index: new/savevm-async.c
 +}
 Index: new/savevm.c
 ===================================================================
---- new.orig/savevm.c	2013-12-04 10:07:06.000000000 +0100
-+++ new/savevm.c	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/savevm.c	2013-12-06 07:46:38.000000000 +0100
++++ new/savevm.c	2013-12-06 08:59:22.000000000 +0100
 @@ -1845,11 +1845,11 @@
      return false;
  }
@@ -903,8 +903,8 @@ Index: new/savevm.c
  uint64_t qemu_savevm_state_pending(QEMUFile *f, uint64_t max_size)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2013-12-04 10:07:06.000000000 +0100
-+++ new/vl.c	2013-12-04 10:48:07.000000000 +0100
+--- new.orig/vl.c	2013-12-06 07:46:38.000000000 +0100
++++ new/vl.c	2013-12-06 08:59:22.000000000 +0100
 @@ -1643,6 +1643,7 @@
          info->name = g_strdup(m->name);
          info->cpu_max = !m->max_cpus ? 1 : m->max_cpus;

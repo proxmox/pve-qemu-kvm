@@ -1,7 +1,7 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2013-12-06 07:46:40.000000000 +0100
-+++ new/qapi-schema.json	2013-12-06 07:46:45.000000000 +0100
+--- new.orig/qapi-schema.json	2013-12-06 08:42:27.000000000 +0100
++++ new/qapi-schema.json	2013-12-06 08:57:27.000000000 +0100
 @@ -586,7 +586,7 @@
  # @vma: Proxmox vma backup format
  ##
@@ -13,9 +13,9 @@ Index: new/qapi-schema.json
  # @backup:
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2013-12-06 07:46:40.000000000 +0100
-+++ new/blockdev.c	2013-12-06 08:09:32.000000000 +0100
-@@ -1463,6 +1463,8 @@
+--- new.orig/blockdev.c	2013-12-06 08:53:36.000000000 +0100
++++ new/blockdev.c	2013-12-06 08:59:07.000000000 +0100
+@@ -1760,6 +1760,8 @@
      uint8_t dev_id;
      //bool started;
      bool completed;
@@ -24,13 +24,16 @@ Index: new/blockdev.c
  } PVEBackupDevInfo;
  
  static void pvebackup_run_next_job(void);
-@@ -1530,12 +1532,13 @@
+@@ -1827,15 +1829,16 @@
  {
      PVEBackupDevInfo *di = opaque;
  
 -    assert(backup_state.vmaw);
 -
      di->completed = true;
+ 
+     BlockDriverState *bs = di->bs;
+ 
      di->bs = NULL;
 +    di->target = NULL;
  
@@ -39,9 +42,9 @@ Index: new/blockdev.c
 +        vma_writer_close_stream(backup_state.vmaw, di->dev_id);
 +    }
  
-     if (!backup_state.cancel) {
-         pvebackup_run_next_job();
-@@ -1610,6 +1613,7 @@
+     block_job_cb(bs, ret);
+ 
+@@ -1912,6 +1915,7 @@
                      bool has_speed, int64_t speed, Error **errp)
  {
      BlockDriverState *bs;
@@ -49,7 +52,7 @@ Index: new/blockdev.c
      Error *local_err = NULL;
      uuid_t uuid;
      VmaWriter *vmaw = NULL;
-@@ -1626,11 +1630,6 @@
+@@ -1928,11 +1932,6 @@
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -61,7 +64,7 @@ Index: new/blockdev.c
      if (has_devlist) {
          devs = g_strsplit_set(devlist, ",;:", -1);
  
-@@ -1698,27 +1697,63 @@
+@@ -2000,27 +1999,63 @@
  
      uuid_generate(uuid);
  
@@ -141,7 +144,7 @@ Index: new/blockdev.c
      }
  
      /* add configuration file to archive */
-@@ -1731,12 +1766,27 @@
+@@ -2033,12 +2068,27 @@
              goto err;
          }
  
@@ -174,7 +177,7 @@ Index: new/blockdev.c
          g_free(cdata);
      }
  
-@@ -1776,10 +1826,11 @@
+@@ -2078,10 +2128,11 @@
          PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
          l = g_list_next(l);
  
@@ -187,7 +190,7 @@ Index: new/blockdev.c
          if (local_err != NULL) {
              error_setg(&backup_state.error, "backup_job_create failed");
              pvebackup_cancel(NULL);
-@@ -1796,8 +1847,17 @@
+@@ -2098,8 +2149,17 @@
  
      l = di_list;
      while (l) {
@@ -206,7 +209,7 @@ Index: new/blockdev.c
      }
      g_list_free(di_list);
  
-@@ -1811,6 +1871,10 @@
+@@ -2113,6 +2173,10 @@
          unlink(backup_file);
      }
  
@@ -219,8 +222,8 @@ Index: new/blockdev.c
  
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2013-12-06 07:46:38.000000000 +0100
-+++ new/hmp-commands.hx	2013-12-06 08:01:26.000000000 +0100
+--- new.orig/hmp-commands.hx	2013-12-06 08:42:27.000000000 +0100
++++ new/hmp-commands.hx	2013-12-06 08:57:27.000000000 +0100
 @@ -85,9 +85,11 @@
  
     {
@@ -238,8 +241,8 @@ Index: new/hmp-commands.hx
  
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2013-12-06 07:46:38.000000000 +0100
-+++ new/hmp.c	2013-12-06 07:50:58.000000000 +0100
+--- new.orig/hmp.c	2013-12-06 08:42:27.000000000 +0100
++++ new/hmp.c	2013-12-06 08:57:27.000000000 +0100
 @@ -1245,11 +1245,13 @@
  {
      Error *error = NULL;
