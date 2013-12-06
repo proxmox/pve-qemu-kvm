@@ -1,7 +1,7 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2013-12-06 06:05:10.000000000 +0100
-+++ new/qapi-schema.json	2013-12-06 06:17:13.000000000 +0100
+--- new.orig/qapi-schema.json	2013-12-06 07:46:40.000000000 +0100
++++ new/qapi-schema.json	2013-12-06 07:46:45.000000000 +0100
 @@ -586,7 +586,7 @@
  # @vma: Proxmox vma backup format
  ##
@@ -13,8 +13,8 @@ Index: new/qapi-schema.json
  # @backup:
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2013-12-06 06:17:06.000000000 +0100
-+++ new/blockdev.c	2013-12-06 06:17:13.000000000 +0100
+--- new.orig/blockdev.c	2013-12-06 07:46:40.000000000 +0100
++++ new/blockdev.c	2013-12-06 07:46:45.000000000 +0100
 @@ -1463,6 +1463,8 @@
      uint8_t dev_id;
      //bool started;
@@ -213,3 +213,41 @@ Index: new/blockdev.c
      return NULL;
  }
  
+Index: new/hmp-commands.hx
+===================================================================
+--- new.orig/hmp-commands.hx	2013-12-06 07:46:38.000000000 +0100
++++ new/hmp-commands.hx	2013-12-06 07:57:20.000000000 +0100
+@@ -85,9 +85,11 @@
+ 
+    {
+         .name       = "backup",
+-        .args_type  = "backupfile:s,speed:o?,devlist:s?",
+-        .params     = "backupfile [speed [devlist]]",
+-        .help       = "create a VM Backup.",
++        .args_type  = "directory:-d,backupfile:s,speed:o?,devlist:s?",
++        .params     = "[-d] backupfile [speed [devlist]]",
++        .help       = "create a VM Backup." 
++		    "\n\t\t\t Use -d to dump data into a directory instead"
++		    "\n\t\t\t of using VMA format.",
+         .mhandler.cmd = hmp_backup,
+     },
+ 
+Index: new/hmp.c
+===================================================================
+--- new.orig/hmp.c	2013-12-06 07:46:38.000000000 +0100
++++ new/hmp.c	2013-12-06 07:50:58.000000000 +0100
+@@ -1245,11 +1245,13 @@
+ {
+     Error *error = NULL;
+ 
++    int dir = qdict_get_try_bool(qdict, "directory", 0);
+     const char *backup_file = qdict_get_str(qdict, "backupfile");
+     const char *devlist = qdict_get_try_str(qdict, "devlist");
+     int64_t speed = qdict_get_try_int(qdict, "speed", 0);
+ 
+-    qmp_backup(backup_file, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist,
++    qmp_backup(backup_file, true, dir ? BACKUP_FORMAT_DIR : BACKUP_FORMAT_VMA,
++               false, NULL, !!devlist,
+                devlist, qdict_haskey(qdict, "speed"), speed, &error);
+ 
+     hmp_handle_error(mon, &error);
