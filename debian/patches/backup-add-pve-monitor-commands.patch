@@ -1,7 +1,7 @@
 Index: new/blockdev.c
 ===================================================================
 --- new.orig/blockdev.c	2013-12-05 13:39:59.000000000 +0100
-+++ new/blockdev.c	2013-12-06 06:28:41.000000000 +0100
++++ new/blockdev.c	2013-12-06 06:59:11.000000000 +0100
 @@ -45,6 +45,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
@@ -488,8 +488,8 @@ Index: new/hmp-commands.hx
 Index: new/hmp.c
 ===================================================================
 --- new.orig/hmp.c	2013-12-05 13:39:59.000000000 +0100
-+++ new/hmp.c	2013-12-05 13:40:07.000000000 +0100
-@@ -133,6 +133,38 @@
++++ new/hmp.c	2013-12-06 07:25:28.000000000 +0100
+@@ -133,6 +133,44 @@
      qapi_free_MouseInfoList(mice_list);
  }
  
@@ -506,7 +506,13 @@ Index: new/hmp.c
 +            monitor_printf(mon, "Backup status: %s\n", info->status);
 +        }
 +    }
++
 +    if (info->has_backup_file) {
++        monitor_printf(mon, "Start time: %s", ctime(&info->start_time));
++        if (info->end_time) {
++            monitor_printf(mon, "End time: %s", ctime(&info->end_time));
++        }
++
 +        int per = (info->has_total && info->total &&
 +            info->has_transferred && info->transferred) ?
 +            (info->transferred * 100)/info->total : 0;
@@ -528,44 +534,36 @@ Index: new/hmp.c
  void hmp_info_migrate(Monitor *mon, const QDict *qdict)
  {
      MigrationInfo *info;
-@@ -1194,6 +1226,37 @@
+@@ -1193,6 +1231,29 @@
+ 
      hmp_handle_error(mon, &error);
  }
- 
++
 +void hmp_backup_cancel(Monitor *mon, const QDict *qdict)
 +{
-+    Error *errp = NULL;
++    Error *error = NULL;
 +
-+    qmp_backup_cancel(&errp);
++    qmp_backup_cancel(&error);
 +
-+    if (error_is_set(&errp)) {
-+        monitor_printf(mon, "%s\n", error_get_pretty(errp));
-+        error_free(errp);
-+        return;
-+    }
++    hmp_handle_error(mon, &error);
 +}
 +
 +void hmp_backup(Monitor *mon, const QDict *qdict)
 +{
-+    const char *backup_file = qdict_get_str(qdict, "backup-file");
++    Error *error = NULL;
++
++    const char *backup_file = qdict_get_str(qdict, "backupfile");
 +    const char *devlist = qdict_get_try_str(qdict, "devlist");
 +    int64_t speed = qdict_get_try_int(qdict, "speed", 0);
 +
-+    Error *errp = NULL;
-+
 +    qmp_backup(backup_file, true, BACKUP_FORMAT_VMA, false, NULL, !!devlist,
-+               devlist, qdict_haskey(qdict, "speed"), speed, &errp);
++               devlist, qdict_haskey(qdict, "speed"), speed, &error);
 +
-+    if (error_is_set(&errp)) {
-+        monitor_printf(mon, "%s\n", error_get_pretty(errp));
-+        error_free(errp);
-+        return;
-+    }
++    hmp_handle_error(mon, &error);
 +}
-+
+ 
  void hmp_block_job_set_speed(Monitor *mon, const QDict *qdict)
  {
-     Error *error = NULL;
 Index: new/hmp.h
 ===================================================================
 --- new.orig/hmp.h	2013-12-05 13:39:59.000000000 +0100
@@ -608,7 +606,7 @@ Index: new/monitor.c
 Index: new/qapi-schema.json
 ===================================================================
 --- new.orig/qapi-schema.json	2013-12-05 13:39:59.000000000 +0100
-+++ new/qapi-schema.json	2013-12-06 06:27:50.000000000 +0100
++++ new/qapi-schema.json	2013-12-06 06:59:11.000000000 +0100
 @@ -547,6 +547,95 @@
  ##
  { 'command': 'query-events', 'returns': ['EventInfo'] }
