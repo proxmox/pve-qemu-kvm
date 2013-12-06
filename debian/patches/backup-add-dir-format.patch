@@ -14,7 +14,7 @@ Index: new/qapi-schema.json
 Index: new/blockdev.c
 ===================================================================
 --- new.orig/blockdev.c	2013-12-06 07:46:40.000000000 +0100
-+++ new/blockdev.c	2013-12-06 07:46:45.000000000 +0100
++++ new/blockdev.c	2013-12-06 08:01:03.000000000 +0100
 @@ -1463,6 +1463,8 @@
      uint8_t dev_id;
      //bool started;
@@ -24,8 +24,12 @@ Index: new/blockdev.c
  } PVEBackupDevInfo;
  
  static void pvebackup_run_next_job(void);
-@@ -1534,8 +1536,11 @@
+@@ -1530,12 +1532,13 @@
+ {
+     PVEBackupDevInfo *di = opaque;
  
+-    assert(backup_state.vmaw);
+-
      di->completed = true;
      di->bs = NULL;
 +    di->target = NULL;
@@ -37,7 +41,7 @@ Index: new/blockdev.c
  
      if (!backup_state.cancel) {
          pvebackup_run_next_job();
-@@ -1610,6 +1615,7 @@
+@@ -1610,6 +1613,7 @@
                      bool has_speed, int64_t speed, Error **errp)
  {
      BlockDriverState *bs;
@@ -45,7 +49,7 @@ Index: new/blockdev.c
      Error *local_err = NULL;
      uuid_t uuid;
      VmaWriter *vmaw = NULL;
-@@ -1626,11 +1632,6 @@
+@@ -1626,11 +1630,6 @@
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -57,7 +61,7 @@ Index: new/blockdev.c
      if (has_devlist) {
          devs = g_strsplit_set(devlist, ",;:", -1);
  
-@@ -1698,27 +1699,63 @@
+@@ -1698,27 +1697,63 @@
  
      uuid_generate(uuid);
  
@@ -137,7 +141,7 @@ Index: new/blockdev.c
      }
  
      /* add configuration file to archive */
-@@ -1731,12 +1768,27 @@
+@@ -1731,12 +1766,27 @@
              goto err;
          }
  
@@ -170,7 +174,7 @@ Index: new/blockdev.c
          g_free(cdata);
      }
  
-@@ -1776,10 +1828,11 @@
+@@ -1776,10 +1826,11 @@
          PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
          l = g_list_next(l);
  
@@ -183,7 +187,7 @@ Index: new/blockdev.c
          if (local_err != NULL) {
              error_setg(&backup_state.error, "backup_job_create failed");
              pvebackup_cancel(NULL);
-@@ -1796,8 +1849,17 @@
+@@ -1796,8 +1847,17 @@
  
      l = di_list;
      while (l) {
@@ -202,7 +206,7 @@ Index: new/blockdev.c
      }
      g_list_free(di_list);
  
-@@ -1811,6 +1873,10 @@
+@@ -1811,6 +1871,10 @@
          unlink(backup_file);
      }
  
@@ -216,7 +220,7 @@ Index: new/blockdev.c
 Index: new/hmp-commands.hx
 ===================================================================
 --- new.orig/hmp-commands.hx	2013-12-06 07:46:38.000000000 +0100
-+++ new/hmp-commands.hx	2013-12-06 07:57:20.000000000 +0100
++++ new/hmp-commands.hx	2013-12-06 08:01:26.000000000 +0100
 @@ -85,9 +85,11 @@
  
     {
@@ -226,7 +230,7 @@ Index: new/hmp-commands.hx
 -        .help       = "create a VM Backup.",
 +        .args_type  = "directory:-d,backupfile:s,speed:o?,devlist:s?",
 +        .params     = "[-d] backupfile [speed [devlist]]",
-+        .help       = "create a VM Backup." 
++        .help       = "create a VM Backup."
 +		    "\n\t\t\t Use -d to dump data into a directory instead"
 +		    "\n\t\t\t of using VMA format.",
          .mhandler.cmd = hmp_backup,
