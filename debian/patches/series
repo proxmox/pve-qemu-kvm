@@ -18,4 +18,5 @@ backup-vma-add-dump-config.patch
 backup-vma-restore-tolerate-a-size-difference-up-to-4M.patch
 backup-modify-job-api.patch
 backup-add-pve-monitor-commands.patch
+backup-add-dir-format.patch
 internal-snapshot-async.patch
