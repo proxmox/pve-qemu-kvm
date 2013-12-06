@@ -1,7 +1,7 @@
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2013-12-05 10:36:23.000000000 +0100
-+++ new/blockdev.c	2013-12-05 10:37:49.000000000 +0100
+--- new.orig/blockdev.c	2013-12-05 13:39:59.000000000 +0100
++++ new/blockdev.c	2013-12-06 06:28:41.000000000 +0100
 @@ -45,6 +45,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
@@ -10,7 +10,7 @@ Index: new/blockdev.c
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1438,6 +1439,419 @@
+@@ -1438,6 +1439,425 @@
      }
  }
  
@@ -34,6 +34,7 @@ Index: new/blockdev.c
 +
 +typedef struct PVEBackupDevInfo {
 +    BlockDriverState *bs;
++    size_t size;
 +    uint8_t dev_id;
 +    //bool started;
 +    bool completed;
@@ -41,42 +42,41 @@ Index: new/blockdev.c
 +
 +static void pvebackup_run_next_job(void);
 +
-+static int pvebackup_dump_cb(void *opaque, BlockDriverState *bs,
-+                             int64_t cluster_num, unsigned char *buf)
++static int pvebackup_dump_cb(void *opaque, BlockDriverState *target,
++                             int64_t sector_num, int n_sectors,
++                             unsigned char *buf)
 +{
 +    PVEBackupDevInfo *di = opaque;
 +
-+    assert(backup_state.vmaw);
++    if (sector_num & 0x7f) {
++        if (!backup_state.error) {
++            error_setg(&backup_state.error,
++                       "got unaligned write inside backup dump "
++                       "callback (sector %ld)", sector_num);
++        }
++        return -1; // not aligned to cluster size
++    }
 +
-+    size_t zero_bytes = 0;
-+    return vma_writer_write(backup_state.vmaw, di->dev_id, cluster_num,
-+                            buf, &zero_bytes);
-+}
++    int64_t cluster_num = sector_num >> 7;
++    int size = n_sectors * BDRV_SECTOR_SIZE;
 +
-+static void pvebackup_update_status(void)
-+{
-+    g_assert(backup_state.vmaw);
++    int ret = -1;
 +
-+    VmaStatus vmastat;
-+
-+    vma_writer_get_status(backup_state.vmaw, &vmastat);
-+
-+    uint64_t total = 0;
-+    uint64_t transferred = 0;
-+    uint64_t zero_bytes = 0;
-+
-+    int i;
-+    for (i = 0; i < 256; i++) {
-+        if (vmastat.stream_info[i].size) {
-+            total += vmastat.stream_info[i].size;
-+            transferred += vmastat.stream_info[i].transferred;
-+            zero_bytes += vmastat.stream_info[i].zero_bytes;
++    if (backup_state.vmaw) {
++        size_t zero_bytes = 0;
++        ret = vma_writer_write(backup_state.vmaw, di->dev_id, cluster_num,
++                               buf, &zero_bytes);
++        backup_state.zero_bytes += zero_bytes;
++    } else {
++        ret = size;
++        if (!buf) {
++            backup_state.zero_bytes += size;
 +        }
 +    }
 +
-+    backup_state.total = total;
-+    backup_state.transferred = transferred;
-+    backup_state.zero_bytes = zero_bytes;
++    backup_state.transferred += size;
++
++    return ret;
 +}
 +
 +static void pvebackup_cleanup(void)
@@ -84,7 +84,6 @@ Index: new/blockdev.c
 +    if (backup_state.vmaw) {
 +        backup_state.end_time = time(NULL);
 +        Error *local_err = NULL;
-+        pvebackup_update_status();
 +        vma_writer_close(backup_state.vmaw, &local_err);
 +        error_propagate(&backup_state.error, local_err);
 +        backup_state.vmaw = NULL;
@@ -133,7 +132,7 @@ Index: new/blockdev.c
 +    while (l) {
 +        PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
 +        l = g_list_next(l);
-+        if (!di->completed && di->bs) { 
++        if (!di->completed && di->bs) {
 +            BlockJob *job = di->bs->job;
 +            if (job) {
 +                if (!di->completed) {
@@ -252,6 +251,8 @@ Index: new/blockdev.c
 +        goto err;
 +    }
 +
++    size_t total = 0;
++
 +    l = di_list;
 +    while (l) {
 +        PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
@@ -260,6 +261,14 @@ Index: new/blockdev.c
 +            error_set(errp, QERR_DEVICE_IN_USE, bdrv_get_device_name(di->bs));
 +            goto err;
 +        }
++
++        ssize_t size = bdrv_getlength(di->bs);
++        if (size < 0) {
++            error_setg_errno(errp, -di->size, "bdrv_getlength failed");
++            goto err;
++        }
++        di->size = size;
++        total += size;
 +    }
 +
 +    uuid_generate(uuid);
@@ -278,9 +287,8 @@ Index: new/blockdev.c
 +        PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
 +        l = g_list_next(l);
 +
-+        int64_t size = bdrv_getlength(di->bs);
 +        const char *devname = bdrv_get_device_name(di->bs);
-+        di->dev_id = vma_writer_register_stream(vmaw, devname, size);
++        di->dev_id = vma_writer_register_stream(vmaw, devname, di->size);
 +        if (di->dev_id <= 0) {
 +            error_set(errp, ERROR_CLASS_GENERIC_ERROR,
 +                      "register_stream failed");
@@ -333,7 +341,9 @@ Index: new/blockdev.c
 +
 +    backup_state.di_list = di_list;
 +
-+    pvebackup_update_status();
++    backup_state.total = total;
++    backup_state.transferred = 0;
++    backup_state.zero_bytes = 0;
 +
 +    /* start all jobs (paused state) */
 +    l = di_list;
@@ -414,10 +424,6 @@ Index: new/blockdev.c
 +        info->status = g_strdup("active");
 +    }
 +
-+    if (backup_state.vmaw) {
-+        pvebackup_update_status();
-+    }
-+
 +    info->has_total = true;
 +    info->total = backup_state.total;
 +    info->has_zero_bytes = true;
@@ -432,8 +438,8 @@ Index: new/blockdev.c
  {
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2013-12-05 10:36:23.000000000 +0100
-+++ new/hmp-commands.hx	2013-12-05 10:36:32.000000000 +0100
+--- new.orig/hmp-commands.hx	2013-12-05 13:39:59.000000000 +0100
++++ new/hmp-commands.hx	2013-12-05 13:40:07.000000000 +0100
 @@ -83,6 +83,35 @@
  Copy data from a backing file into a block device.
  ETEXI
@@ -481,8 +487,8 @@ Index: new/hmp-commands.hx
  @item info migrate_capabilities
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2013-12-05 10:36:23.000000000 +0100
-+++ new/hmp.c	2013-12-05 10:36:32.000000000 +0100
+--- new.orig/hmp.c	2013-12-05 13:39:59.000000000 +0100
++++ new/hmp.c	2013-12-05 13:40:07.000000000 +0100
 @@ -133,6 +133,38 @@
      qapi_free_MouseInfoList(mice_list);
  }
@@ -562,8 +568,8 @@ Index: new/hmp.c
      Error *error = NULL;
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2013-12-05 10:36:23.000000000 +0100
-+++ new/hmp.h	2013-12-05 10:36:32.000000000 +0100
+--- new.orig/hmp.h	2013-12-05 13:39:59.000000000 +0100
++++ new/hmp.h	2013-12-05 13:40:07.000000000 +0100
 @@ -28,6 +28,7 @@
  void hmp_info_migrate(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_capabilities(Monitor *mon, const QDict *qdict);
@@ -583,8 +589,8 @@ Index: new/hmp.h
  void hmp_block_job_pause(Monitor *mon, const QDict *qdict);
 Index: new/monitor.c
 ===================================================================
---- new.orig/monitor.c	2013-12-05 10:36:23.000000000 +0100
-+++ new/monitor.c	2013-12-05 10:36:32.000000000 +0100
+--- new.orig/monitor.c	2013-12-05 13:39:59.000000000 +0100
++++ new/monitor.c	2013-12-05 13:40:07.000000000 +0100
 @@ -2880,6 +2880,13 @@
      },
  #endif
@@ -601,8 +607,8 @@ Index: new/monitor.c
          .params     = "",
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2013-12-05 10:36:23.000000000 +0100
-+++ new/qapi-schema.json	2013-12-05 10:36:32.000000000 +0100
+--- new.orig/qapi-schema.json	2013-12-05 13:39:59.000000000 +0100
++++ new/qapi-schema.json	2013-12-06 06:27:50.000000000 +0100
 @@ -547,6 +547,95 @@
  ##
  { 'command': 'query-events', 'returns': ['EventInfo'] }
@@ -701,8 +707,8 @@ Index: new/qapi-schema.json
  #
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2013-12-05 10:36:23.000000000 +0100
-+++ new/qmp-commands.hx	2013-12-05 10:36:32.000000000 +0100
+--- new.orig/qmp-commands.hx	2013-12-05 13:39:59.000000000 +0100
++++ new/qmp-commands.hx	2013-12-05 13:40:07.000000000 +0100
 @@ -966,6 +966,24 @@
  EQMP
  
