@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.7-4) unstable; urgency=low
+
+  * disable efi enabled pxe boot roms (they do not work)
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 29 Jan 2014 12:58:46 +0100
+
 pve-qemu-kvm (1.7-3) unstable; urgency=low
 
   * vma: add 'vma config' command to easily extract VM configuration

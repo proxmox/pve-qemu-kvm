@@ -1,0 +1,65 @@
+Index: new/hw/net/e1000.c
+===================================================================
+--- new.orig/hw/net/e1000.c	2013-12-03 06:36:18.000000000 +0100
++++ new/hw/net/e1000.c	2014-01-29 12:54:48.000000000 +0100
+@@ -1571,7 +1571,7 @@
+ 
+     k->init = pci_e1000_init;
+     k->exit = pci_e1000_uninit;
+-    k->romfile = "efi-e1000.rom";
++    k->romfile = "pxe-e1000.rom";
+     k->vendor_id = PCI_VENDOR_ID_INTEL;
+     k->device_id = E1000_DEVID;
+     k->revision = 0x03;
+Index: new/hw/net/ne2000.c
+===================================================================
+--- new.orig/hw/net/ne2000.c	2013-12-03 06:36:18.000000000 +0100
++++ new/hw/net/ne2000.c	2014-01-29 12:55:50.000000000 +0100
+@@ -767,7 +767,7 @@
+ 
+     k->init = pci_ne2000_init;
+     k->exit = pci_ne2000_exit;
+-    k->romfile = "efi-ne2k_pci.rom",
++    k->romfile = "pxe-ne2k_pci.rom",
+     k->vendor_id = PCI_VENDOR_ID_REALTEK;
+     k->device_id = PCI_DEVICE_ID_REALTEK_8029;
+     k->class_id = PCI_CLASS_NETWORK_ETHERNET;
+Index: new/hw/net/pcnet-pci.c
+===================================================================
+--- new.orig/hw/net/pcnet-pci.c	2013-12-03 06:36:18.000000000 +0100
++++ new/hw/net/pcnet-pci.c	2014-01-29 12:56:21.000000000 +0100
+@@ -359,7 +359,7 @@
+ 
+     k->init = pci_pcnet_init;
+     k->exit = pci_pcnet_uninit;
+-    k->romfile = "efi-pcnet.rom",
++    k->romfile = "pxe-pcnet.rom",
+     k->vendor_id = PCI_VENDOR_ID_AMD;
+     k->device_id = PCI_DEVICE_ID_AMD_LANCE;
+     k->revision = 0x10;
+Index: new/hw/net/rtl8139.c
+===================================================================
+--- new.orig/hw/net/rtl8139.c	2013-12-03 06:36:18.000000000 +0100
++++ new/hw/net/rtl8139.c	2014-01-29 12:56:38.000000000 +0100
+@@ -3560,7 +3560,7 @@
+ 
+     k->init = pci_rtl8139_init;
+     k->exit = pci_rtl8139_uninit;
+-    k->romfile = "efi-rtl8139.rom";
++    k->romfile = "pxe-rtl8139.rom";
+     k->vendor_id = PCI_VENDOR_ID_REALTEK;
+     k->device_id = PCI_DEVICE_ID_REALTEK_8139;
+     k->revision = RTL8139_PCI_REVID; /* >=0x20 is for 8139C+ */
+Index: new/hw/virtio/virtio-pci.c
+===================================================================
+--- new.orig/hw/virtio/virtio-pci.c	2013-12-03 06:36:18.000000000 +0100
++++ new/hw/virtio/virtio-pci.c	2014-01-29 12:57:38.000000000 +0100
+@@ -1418,7 +1418,7 @@
+     PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
+     VirtioPCIClass *vpciklass = VIRTIO_PCI_CLASS(klass);
+ 
+-    k->romfile = "efi-virtio.rom";
++    k->romfile = "pxe-virtio.rom";
+     k->vendor_id = PCI_VENDOR_ID_REDHAT_QUMRANET;
+     k->device_id = PCI_DEVICE_ID_VIRTIO_NET;
+     k->revision = VIRTIO_PCI_ABI_VERSION;

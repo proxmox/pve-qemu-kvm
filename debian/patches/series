@@ -20,3 +20,4 @@ backup-modify-job-api.patch
 backup-add-pve-monitor-commands.patch
 backup-add-dir-format.patch
 internal-snapshot-async.patch
+disable-efi-enable-pxe-roms.patch
