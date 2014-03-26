@@ -1,6 +1,8 @@
 pve-qemu-kvm (1.7-5) unstable; urgency=low
 
   * update to 1.7.1
+  
+  * backup: do not report errors to the VM when backup fails.
 
  -- Proxmox Support Team <support@proxmox.com>  Wed, 26 Mar 2014 06:37:55 +0100
 
