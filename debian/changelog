@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.7-6) unstable; urgency=low
+
+  * backup: remove async queue (avoid segmentation fault)
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 27 Mar 2014 13:06:55 +0100
+
 pve-qemu-kvm (1.7-5) unstable; urgency=low
 
   * update to 1.7.1
