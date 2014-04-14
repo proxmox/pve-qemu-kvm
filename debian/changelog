@@ -1,3 +1,9 @@
+pve-qemu-kvm (1.7-7) unstable; urgency=low
+
+  * vma: allows the creation of vma files without data streams
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 14 Apr 2014 11:13:36 +0200
+
 pve-qemu-kvm (1.7-6) unstable; urgency=low
 
   * backup: remove async queue (avoid segmentation fault)
