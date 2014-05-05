@@ -1,7 +1,7 @@
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2013-12-06 10:04:18.000000000 +0100
-+++ new/blockdev.c	2013-12-06 10:27:39.000000000 +0100
+--- new.orig/blockdev.c	2014-05-05 09:16:48.000000000 +0200
++++ new/blockdev.c	2014-05-05 09:28:22.000000000 +0200
 @@ -45,6 +45,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
@@ -10,7 +10,7 @@ Index: new/blockdev.c
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1438,7 +1439,6 @@
+@@ -1513,7 +1514,6 @@
      }
  }
  
@@ -18,7 +18,7 @@ Index: new/blockdev.c
  static void eject_device(BlockDriverState *bs, int force, Error **errp)
  {
      if (bdrv_in_use(bs)) {
-@@ -1736,6 +1736,437 @@
+@@ -1826,6 +1826,437 @@
      bdrv_put_ref_bh_schedule(bs);
  }
  
@@ -458,9 +458,9 @@ Index: new/blockdev.c
                        bool has_on_error, BlockdevOnError on_error,
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2013-12-03 06:36:18.000000000 +0100
-+++ new/hmp-commands.hx	2013-12-06 10:26:47.000000000 +0100
-@@ -83,6 +83,35 @@
+--- new.orig/hmp-commands.hx	2014-05-05 06:55:26.000000000 +0200
++++ new/hmp-commands.hx	2014-05-05 09:28:22.000000000 +0200
+@@ -88,6 +88,35 @@
  Copy data from a backing file into a block device.
  ETEXI
  
@@ -496,7 +496,7 @@ Index: new/hmp-commands.hx
      {
          .name       = "block_job_set_speed",
          .args_type  = "device:B,speed:o",
-@@ -1692,6 +1721,8 @@
+@@ -1738,6 +1767,8 @@
  show CPU statistics
  @item info usernet
  show user network stack connection states
@@ -507,9 +507,9 @@ Index: new/hmp-commands.hx
  @item info migrate_capabilities
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2013-12-06 10:04:18.000000000 +0100
-+++ new/hmp.c	2013-12-06 10:26:47.000000000 +0100
-@@ -133,6 +133,44 @@
+--- new.orig/hmp.c	2014-05-05 07:34:43.000000000 +0200
++++ new/hmp.c	2014-05-05 09:28:22.000000000 +0200
+@@ -134,6 +134,44 @@
      qapi_free_MouseInfoList(mice_list);
  }
  
@@ -554,7 +554,7 @@ Index: new/hmp.c
  void hmp_info_migrate(Monitor *mon, const QDict *qdict)
  {
      MigrationInfo *info;
-@@ -1193,6 +1231,29 @@
+@@ -1196,6 +1234,29 @@
  
      hmp_handle_error(mon, &error);
  }
@@ -586,8 +586,8 @@ Index: new/hmp.c
  {
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2013-12-03 06:36:18.000000000 +0100
-+++ new/hmp.h	2013-12-06 10:04:22.000000000 +0100
+--- new.orig/hmp.h	2014-05-05 06:55:26.000000000 +0200
++++ new/hmp.h	2014-05-05 09:28:22.000000000 +0200
 @@ -28,6 +28,7 @@
  void hmp_info_migrate(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_capabilities(Monitor *mon, const QDict *qdict);
@@ -607,9 +607,9 @@ Index: new/hmp.h
  void hmp_block_job_pause(Monitor *mon, const QDict *qdict);
 Index: new/monitor.c
 ===================================================================
---- new.orig/monitor.c	2013-12-03 06:36:18.000000000 +0100
-+++ new/monitor.c	2013-12-06 10:04:22.000000000 +0100
-@@ -2880,6 +2880,13 @@
+--- new.orig/monitor.c	2014-05-05 06:55:26.000000000 +0200
++++ new/monitor.c	2014-05-05 09:28:22.000000000 +0200
+@@ -2903,6 +2903,13 @@
      },
  #endif
      {
@@ -625,9 +625,9 @@ Index: new/monitor.c
          .params     = "",
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2013-12-06 10:04:18.000000000 +0100
-+++ new/qapi-schema.json	2013-12-06 10:26:47.000000000 +0100
-@@ -547,6 +547,95 @@
+--- new.orig/qapi-schema.json	2014-05-05 08:17:59.000000000 +0200
++++ new/qapi-schema.json	2014-05-05 09:28:22.000000000 +0200
+@@ -627,6 +627,95 @@
  ##
  { 'command': 'query-events', 'returns': ['EventInfo'] }
  
@@ -725,9 +725,9 @@ Index: new/qapi-schema.json
  #
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2013-12-06 10:04:18.000000000 +0100
-+++ new/qmp-commands.hx	2013-12-06 10:04:22.000000000 +0100
-@@ -966,6 +966,24 @@
+--- new.orig/qmp-commands.hx	2014-05-05 07:34:43.000000000 +0200
++++ new/qmp-commands.hx	2014-05-05 09:28:22.000000000 +0200
+@@ -1080,6 +1080,24 @@
  EQMP
  
      {
