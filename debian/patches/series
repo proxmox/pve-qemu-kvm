@@ -4,7 +4,7 @@ fairsched.diff
 # TODO adopt patches for qemu 2.0
 #keymap.diff
 pve-auth.patch
-#vencrypt-auth-plain.patch
+vencrypt-auth-plain.patch
 #fix-qemu-img-snapshot-removal.patch
 #enable-kvm-by-default.patch
 #virtio-balloon-fix-query.patch
