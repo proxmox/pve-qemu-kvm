@@ -6,7 +6,7 @@ fairsched.diff
 pve-auth.patch
 vencrypt-auth-plain.patch
 fix-qemu-img-snapshot-removal.patch
-#enable-kvm-by-default.patch
+enable-kvm-by-default.patch
 #virtio-balloon-fix-query.patch
 #set-cpu-model-to-kvm64.patch
 #modify-query-machines.patch
