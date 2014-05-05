@@ -20,7 +20,7 @@ backup-vma-restore-tolerate-a-size-difference-up-to-4M.patch
 backup-modify-job-api.patch
 backup-add-pve-monitor-commands.patch
 backup-add-dir-format.patch
-#backup-do-not-return-errors-in-dump-callback.patch
+backup-do-not-return-errors-in-dump-callback.patch
 #backup-vma-correctly-propagate-error.patch
 #backup-vma-remove-async-queue.patch
 #internal-snapshot-async.patch
