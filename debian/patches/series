@@ -21,7 +21,7 @@ backup-modify-job-api.patch
 backup-add-pve-monitor-commands.patch
 backup-add-dir-format.patch
 backup-do-not-return-errors-in-dump-callback.patch
-#backup-vma-correctly-propagate-error.patch
+backup-vma-correctly-propagate-error.patch
 #backup-vma-remove-async-queue.patch
 #internal-snapshot-async.patch
 #disable-efi-enable-pxe-roms.patch
