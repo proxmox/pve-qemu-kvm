@@ -24,18 +24,18 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/Makefile
 ===================================================================
---- new.orig/Makefile	2013-12-04 12:07:18.000000000 +0100
-+++ new/Makefile	2013-12-04 12:07:25.000000000 +0100
-@@ -128,7 +128,7 @@
+--- new.orig/Makefile	2014-05-05 07:52:59.000000000 +0200
++++ new/Makefile	2014-05-05 07:58:22.000000000 +0200
+@@ -146,7 +146,7 @@
  include $(SRC_PATH)/libcacard/Makefile
  endif
  
--all: $(DOCS) $(TOOLS) $(HELPERS-y) recurse-all
-+all: $(DOCS) $(TOOLS) vma$(EXESUF) $(HELPERS-y) recurse-all
+-all: $(DOCS) $(TOOLS) $(HELPERS-y) recurse-all modules
++all: $(DOCS) $(TOOLS) vma$(EXESUF) $(HELPERS-y) recurse-all modules
  
- config-host.h: config-host.h-timestamp
- config-host.h-timestamp: config-host.mak
-@@ -194,6 +194,7 @@
+ vl.o: QEMU_CFLAGS+=$(GPROF_CFLAGS)
+ 
+@@ -220,6 +220,7 @@
  qemu-img$(EXESUF): qemu-img.o $(block-obj-y) libqemuutil.a libqemustub.a
  qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) libqemuutil.a libqemustub.a
  qemu-io$(EXESUF): qemu-io.o $(block-obj-y) libqemuutil.a libqemustub.a
@@ -46,7 +46,7 @@ Index: new/Makefile
 Index: new/vma-reader.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-reader.c	2013-12-04 12:07:25.000000000 +0100
++++ new/vma-reader.c	2014-05-05 07:58:22.000000000 +0200
 @@ -0,0 +1,799 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -850,7 +850,7 @@ Index: new/vma-reader.c
 Index: new/vma-writer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-writer.c	2013-12-04 14:26:06.000000000 +0100
++++ new/vma-writer.c	2014-05-05 07:58:22.000000000 +0200
 @@ -0,0 +1,875 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -1730,7 +1730,7 @@ Index: new/vma-writer.c
 Index: new/vma.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.c	2013-12-04 12:07:25.000000000 +0100
++++ new/vma.c	2014-05-05 07:58:22.000000000 +0200
 @@ -0,0 +1,579 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -2031,7 +2031,7 @@ Index: new/vma.c
 +            }
 +
 +            BlockDriverState *bs = bdrv_new(di->devname);
-+            if (bdrv_open(bs, devfn, NULL, flags, NULL, &errp)) {
++            if (bdrv_open(&bs, devfn, NULL, NULL, flags, NULL, &errp)) {
 +                g_error("can't open file %s - %s", devfn,
 +                        error_get_pretty(errp));
 +            }
@@ -2200,7 +2200,7 @@ Index: new/vma.c
 +        BlockDriverState *bs = bdrv_new(devname);
 +        Error *errp = NULL;
 +
-+        res = bdrv_open(bs, path, NULL, BDRV_O_CACHE_WB , drv, &errp);
++        res = bdrv_open(&bs, path, NULL, NULL, BDRV_O_CACHE_WB , drv, &errp);
 +        if (res < 0) {
 +            unlink(archivename);
 +            g_error("bdrv_open '%s' failed - %s", path, error_get_pretty(errp));
@@ -2314,7 +2314,7 @@ Index: new/vma.c
 Index: new/vma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.h	2013-12-04 14:27:56.000000000 +0100
++++ new/vma.h	2014-05-05 07:58:22.000000000 +0200
 @@ -0,0 +1,146 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -2464,8 +2464,8 @@ Index: new/vma.h
 +#endif /* BACKUP_VMA_H */
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2013-12-04 12:07:18.000000000 +0100
-+++ new/Makefile.objs	2013-12-04 12:07:25.000000000 +0100
+--- new.orig/Makefile.objs	2014-05-05 07:52:59.000000000 +0200
++++ new/Makefile.objs	2014-05-05 07:58:22.000000000 +0200
 @@ -14,6 +14,7 @@
  block-obj-y += block/
  block-obj-y += qapi-types.o qapi-visit.o
