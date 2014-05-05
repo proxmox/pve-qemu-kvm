@@ -1,8 +1,12 @@
 pve-qemu-kvm (2.0-1) unstable; urgency=low
 
+  * update to qemu 2.0
+  
   * remove virtio-net-fix-guest-triggerable-buffer-overrun-CVE-2014-0150.patch 
     This is now included in upstream.
 
+  * depend on libiscsi2 (>= 1.11.0)
+  
  -- Proxmox Support Team <support@proxmox.com>  Mon, 05 May 2014 06:57:34 +0200
 
 pve-qemu-kvm (1.7-8) unstable; urgency=low
