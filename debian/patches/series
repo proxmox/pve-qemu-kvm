@@ -9,8 +9,8 @@ fix-qemu-img-snapshot-removal.patch
 enable-kvm-by-default.patch
 virtio-balloon-fix-query.patch
 set-cpu-model-to-kvm64.patch
-#modify-query-machines.patch
-##spice-socket.patch
+modify-query-machines.patch
+#spice-socket.patch
 #modify-query-spice.patch
 #spice-use-pve-certs.patch
 #backup-add-vma-binary.patch
