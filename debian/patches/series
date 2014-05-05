@@ -25,4 +25,4 @@ backup-vma-correctly-propagate-error.patch
 backup-vma-remove-async-queue.patch
 internal-snapshot-async.patch
 #disable-efi-enable-pxe-roms.patch
-#backup-vma-allow-empty-backups.patch
+backup-vma-allow-empty-backups.patch
