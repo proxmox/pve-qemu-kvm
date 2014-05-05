@@ -1,8 +1,8 @@
 Index: new/ui/vnc.c
 ===================================================================
---- new.orig/ui/vnc.c	2013-11-26 10:50:23.000000000 +0100
-+++ new/ui/vnc.c	2013-11-26 11:12:22.000000000 +0100
-@@ -1625,6 +1625,10 @@
+--- new.orig/ui/vnc.c	2014-05-05 10:17:15.000000000 +0200
++++ new/ui/vnc.c	2014-05-05 11:18:48.000000000 +0200
+@@ -1619,6 +1619,10 @@
  
  static void do_key_event(VncState *vs, int down, int keycode, int sym)
  {
@@ -13,7 +13,7 @@ Index: new/ui/vnc.c
      /* QEMU console switch */
      switch(keycode) {
      case 0x2a:                          /* Left Shift */
-@@ -1700,12 +1704,42 @@
+@@ -1694,7 +1698,24 @@
      }
  
      if (qemu_console_is_graphic(NULL)) {
@@ -26,37 +26,19 @@ Index: new/ui/vnc.c
 +
 +	if (emul_altgr) {
 +            reset_keys(vs);
-+            kbd_put_keycode(SCANCODE_EMUL0);
-+            kbd_put_keycode(0xb8 & SCANCODE_KEYCODEMASK);
++            qemu_input_event_send_key_number(vs->vd->dcl.con, 0xb8, true);
 +	}
 +
-+	int emul_shift = (mods & SCANCODE_SHIFT) &&
-+	    !vs->modifiers_state[0x2a];
-+
-+	if (emul_shift) {
-+	    kbd_put_keycode(0x2a & SCANCODE_KEYCODEMASK);
-+	}
-+
-         if (keycode & SCANCODE_GREY)
-             kbd_put_keycode(SCANCODE_EMUL0);
-         if (down)
-             kbd_put_keycode(keycode & SCANCODE_KEYCODEMASK);
-         else
-             kbd_put_keycode(keycode | SCANCODE_UP);
-+
-+        if (emul_shift) {
-+            kbd_put_keycode(0x2a | SCANCODE_UP);
-+ 	}
+         qemu_input_event_send_key_number(vs->vd->dcl.con, keycode, down);
 +
 +	if (emul_altgr) {
-+	    kbd_put_keycode(SCANCODE_EMUL0);
-+	    kbd_put_keycode(0xb8 | SCANCODE_UP);
++             qemu_input_event_send_key_number(vs->vd->dcl.con, 0xb8, false);
 +	}
 +
      } else {
          bool numlock = vs->modifiers_state[0x45];
          bool control = (vs->modifiers_state[0x1d] ||
-@@ -1842,7 +1876,8 @@
+@@ -1828,7 +1849,8 @@
          lsym = lsym - 'A' + 'a';
      }
  
@@ -66,7 +48,7 @@ Index: new/ui/vnc.c
      do_key_event(vs, down, keycode, sym);
  }
  
-@@ -3032,7 +3067,7 @@
+@@ -3037,7 +3059,7 @@
  char *vnc_display_local_addr(DisplayState *ds)
  {
      VncDisplay *vs = vnc_display;

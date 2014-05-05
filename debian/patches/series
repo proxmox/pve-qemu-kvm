@@ -1,8 +1,7 @@
 fr-ca-keymap-corrections.diff
 adjust-path.diff
 fairsched.diff
-# TODO adopt patches for qemu 2.0
-#keymap.diff
+keymap.diff
 pve-auth.patch
 vencrypt-auth-plain.patch
 fix-qemu-img-snapshot-removal.patch
