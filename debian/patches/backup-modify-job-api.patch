@@ -1,7 +1,7 @@
 Index: new/block/backup.c
 ===================================================================
---- new.orig/block/backup.c	2013-12-05 08:18:53.000000000 +0100
-+++ new/block/backup.c	2013-12-05 13:16:21.000000000 +0100
+--- new.orig/block/backup.c	2014-05-05 06:55:25.000000000 +0200
++++ new/block/backup.c	2014-05-05 09:24:11.000000000 +0200
 @@ -39,6 +39,7 @@
      BlockDriverState *target;
      MirrorSyncMode sync_mode;
@@ -10,19 +10,20 @@ Index: new/block/backup.c
      BlockdevOnError on_source_error;
      BlockdevOnError on_target_error;
      CoRwlock flush_rwlock;
-@@ -136,13 +137,21 @@
+@@ -136,14 +137,21 @@
              goto out;
          }
  
 +        int64_t start_sec = start * BACKUP_SECTORS_PER_CLUSTER;
          if (buffer_is_zero(iov.iov_base, iov.iov_len)) {
 -            ret = bdrv_co_write_zeroes(job->target,
--                                       start * BACKUP_SECTORS_PER_CLUSTER, n);
+-                                       start * BACKUP_SECTORS_PER_CLUSTER,
+-                                       n, BDRV_REQ_MAY_UNMAP);
 +            if (job->dump_cb) {
 +                ret = job->dump_cb(job->common.opaque, job->target, start_sec, n, NULL);
 +            }
 +            if (job->target) {
-+                ret = bdrv_co_write_zeroes(job->target, start_sec, n);
++                ret = bdrv_co_write_zeroes(job->target, start_sec, n, BDRV_REQ_MAY_UNMAP);
 +            }
          } else {
 -            ret = bdrv_co_writev(job->target,
@@ -37,7 +38,7 @@ Index: new/block/backup.c
          }
          if (ret < 0) {
              trace_backup_do_cow_write_fail(job, start, ret);
-@@ -199,7 +208,9 @@
+@@ -205,7 +213,9 @@
  {
      BackupBlockJob *s = container_of(job, BackupBlockJob, common);
  
@@ -48,7 +49,7 @@ Index: new/block/backup.c
  }
  
  static const BlockJobDriver backup_job_driver = {
-@@ -215,9 +226,11 @@
+@@ -221,9 +231,11 @@
      if (read) {
          return block_job_error_action(&job->common, job->common.bs,
                                        job->on_source_error, true, error);
@@ -61,7 +62,7 @@ Index: new/block/backup.c
      }
  }
  
-@@ -242,9 +255,11 @@
+@@ -248,9 +260,11 @@
  
      job->bitmap = hbitmap_alloc(end, 0);
  
@@ -76,7 +77,7 @@ Index: new/block/backup.c
  
      bdrv_add_before_write_notifier(bs, &before_write);
  
-@@ -337,8 +352,10 @@
+@@ -343,8 +357,10 @@
  
      hbitmap_free(job->bitmap);
  
@@ -89,7 +90,7 @@ Index: new/block/backup.c
  
      block_job_completed(&job->common, ret);
  }
-@@ -347,13 +364,15 @@
+@@ -353,13 +369,15 @@
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,
@@ -106,7 +107,7 @@ Index: new/block/backup.c
      assert(cb);
  
      if ((on_source_error == BLOCKDEV_ON_ERROR_STOP ||
-@@ -376,10 +395,12 @@
+@@ -382,10 +400,12 @@
          return;
      }
  
@@ -121,9 +122,9 @@ Index: new/block/backup.c
      qemu_coroutine_enter(job->common.co, job);
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2013-12-05 08:18:53.000000000 +0100
-+++ new/blockdev.c	2013-12-05 13:07:43.000000000 +0100
-@@ -1932,7 +1932,7 @@
+--- new.orig/blockdev.c	2014-05-05 06:55:26.000000000 +0200
++++ new/blockdev.c	2014-05-05 09:16:48.000000000 +0200
+@@ -2030,7 +2030,7 @@
      }
  
      backup_start(bs, target_bs, speed, sync, on_source_error, on_target_error,
@@ -134,19 +135,19 @@ Index: new/blockdev.c
          error_propagate(errp, local_err);
 Index: new/include/block/block_int.h
 ===================================================================
---- new.orig/include/block/block_int.h	2013-12-05 08:18:53.000000000 +0100
-+++ new/include/block/block_int.h	2013-12-05 13:16:53.000000000 +0100
-@@ -54,6 +54,9 @@
- #define BLOCK_OPT_LAZY_REFCOUNTS    "lazy_refcounts"
+--- new.orig/include/block/block_int.h	2014-05-05 06:55:26.000000000 +0200
++++ new/include/block/block_int.h	2014-05-05 09:16:48.000000000 +0200
+@@ -55,6 +55,9 @@
  #define BLOCK_OPT_ADAPTER_TYPE      "adapter_type"
+ #define BLOCK_OPT_REDUNDANCY        "redundancy"
  
 +typedef int BackupDumpFunc(void *opaque, BlockDriverState *bs,
 +                           int64_t sector_num, int n_sectors, unsigned char *buf);
 +
  typedef struct BdrvTrackedRequest {
      BlockDriverState *bs;
-     int64_t sector_num;
-@@ -427,7 +430,9 @@
+     int64_t offset;
+@@ -496,7 +499,9 @@
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,
