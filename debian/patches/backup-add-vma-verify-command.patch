@@ -20,8 +20,8 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/vma-reader.c
 ===================================================================
---- new.orig/vma-reader.c	2013-12-04 10:45:45.000000000 +0100
-+++ new/vma-reader.c	2013-12-04 10:47:53.000000000 +0100
+--- new.orig/vma-reader.c	2014-05-05 08:19:03.000000000 +0200
++++ new/vma-reader.c	2014-05-05 08:21:52.000000000 +0200
 @@ -53,6 +53,8 @@
      time_t start_time;
      int64_t cluster_count;
@@ -227,8 +227,8 @@ Index: new/vma-reader.c
 +
 Index: new/vma.c
 ===================================================================
---- new.orig/vma.c	2013-12-04 10:47:35.000000000 +0100
-+++ new/vma.c	2013-12-04 10:47:53.000000000 +0100
+--- new.orig/vma.c	2014-05-05 08:19:03.000000000 +0200
++++ new/vma.c	2014-05-05 08:21:52.000000000 +0200
 @@ -34,6 +34,7 @@
          "vma list <filename>\n"
          "vma create <filename> [-c config] <archive> pathname ...\n"
@@ -307,9 +307,9 @@ Index: new/vma.c
      help();
 Index: new/vma.h
 ===================================================================
---- new.orig/vma.h	2013-12-04 10:45:45.000000000 +0100
-+++ new/vma.h	2013-12-04 10:47:53.000000000 +0100
-@@ -140,5 +140,6 @@
+--- new.orig/vma.h	2014-05-05 08:19:03.000000000 +0200
++++ new/vma.h	2014-05-05 08:21:52.000000000 +0200
+@@ -142,5 +142,6 @@
                             Error **errp);
  int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,
                         Error **errp);
