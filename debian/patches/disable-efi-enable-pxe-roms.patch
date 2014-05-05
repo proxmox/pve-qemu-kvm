@@ -1,7 +1,7 @@
 Index: new/hw/net/e1000.c
 ===================================================================
---- new.orig/hw/net/e1000.c	2013-12-03 06:36:18.000000000 +0100
-+++ new/hw/net/e1000.c	2014-01-29 12:54:48.000000000 +0100
+--- new.orig/hw/net/e1000.c	2014-05-05 06:55:25.000000000 +0200
++++ new/hw/net/e1000.c	2014-05-05 10:05:59.000000000 +0200
 @@ -1571,7 +1571,7 @@
  
      k->init = pci_e1000_init;
@@ -13,8 +13,8 @@ Index: new/hw/net/e1000.c
      k->revision = 0x03;
 Index: new/hw/net/ne2000.c
 ===================================================================
---- new.orig/hw/net/ne2000.c	2013-12-03 06:36:18.000000000 +0100
-+++ new/hw/net/ne2000.c	2014-01-29 12:55:50.000000000 +0100
+--- new.orig/hw/net/ne2000.c	2014-05-05 06:55:25.000000000 +0200
++++ new/hw/net/ne2000.c	2014-05-05 10:05:59.000000000 +0200
 @@ -767,7 +767,7 @@
  
      k->init = pci_ne2000_init;
@@ -26,8 +26,8 @@ Index: new/hw/net/ne2000.c
      k->class_id = PCI_CLASS_NETWORK_ETHERNET;
 Index: new/hw/net/pcnet-pci.c
 ===================================================================
---- new.orig/hw/net/pcnet-pci.c	2013-12-03 06:36:18.000000000 +0100
-+++ new/hw/net/pcnet-pci.c	2014-01-29 12:56:21.000000000 +0100
+--- new.orig/hw/net/pcnet-pci.c	2014-05-05 06:55:25.000000000 +0200
++++ new/hw/net/pcnet-pci.c	2014-05-05 10:05:59.000000000 +0200
 @@ -359,7 +359,7 @@
  
      k->init = pci_pcnet_init;
@@ -39,8 +39,8 @@ Index: new/hw/net/pcnet-pci.c
      k->revision = 0x10;
 Index: new/hw/net/rtl8139.c
 ===================================================================
---- new.orig/hw/net/rtl8139.c	2013-12-03 06:36:18.000000000 +0100
-+++ new/hw/net/rtl8139.c	2014-01-29 12:56:38.000000000 +0100
+--- new.orig/hw/net/rtl8139.c	2014-05-05 06:55:25.000000000 +0200
++++ new/hw/net/rtl8139.c	2014-05-05 10:05:59.000000000 +0200
 @@ -3560,7 +3560,7 @@
  
      k->init = pci_rtl8139_init;
@@ -52,9 +52,9 @@ Index: new/hw/net/rtl8139.c
      k->revision = RTL8139_PCI_REVID; /* >=0x20 is for 8139C+ */
 Index: new/hw/virtio/virtio-pci.c
 ===================================================================
---- new.orig/hw/virtio/virtio-pci.c	2013-12-03 06:36:18.000000000 +0100
-+++ new/hw/virtio/virtio-pci.c	2014-01-29 12:57:38.000000000 +0100
-@@ -1418,7 +1418,7 @@
+--- new.orig/hw/virtio/virtio-pci.c	2014-05-05 06:55:25.000000000 +0200
++++ new/hw/virtio/virtio-pci.c	2014-05-05 10:05:59.000000000 +0200
+@@ -1445,7 +1445,7 @@
      PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
      VirtioPCIClass *vpciklass = VIRTIO_PCI_CLASS(klass);
  
