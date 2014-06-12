@@ -25,5 +25,3 @@ backup-vma-remove-async-queue.patch
 internal-snapshot-async.patch
 disable-efi-enable-pxe-roms.patch
 backup-vma-allow-empty-backups.patch
-0001-aio-Fix-use-after-free-in-cancellation-path.patch
-0001-aio-fix-qemu_bh_schedule-bh-ctx-race-condition.patch

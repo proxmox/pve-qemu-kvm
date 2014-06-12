@@ -1,8 +1,8 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-05-05 07:54:16.000000000 +0200
-+++ new/qapi-schema.json	2014-05-05 08:09:23.000000000 +0200
-@@ -3431,6 +3431,8 @@
+--- new.orig/qapi-schema.json	2014-06-12 10:50:04.000000000 +0200
++++ new/qapi-schema.json	2014-06-12 10:53:30.000000000 +0200
+@@ -2241,6 +2241,8 @@
  #
  # @default: #optional whether the machine is default
  #
@@ -11,7 +11,7 @@ Index: new/qapi-schema.json
  # @cpu-max: maximum number of CPUs supported by the machine type
  #           (since 1.5.0)
  #
-@@ -3438,7 +3440,7 @@
+@@ -2248,7 +2250,7 @@
  ##
  { 'type': 'MachineInfo',
    'data': { 'name': 'str', '*alias': 'str',
@@ -22,13 +22,13 @@ Index: new/qapi-schema.json
  # @query-machines:
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2014-05-05 07:54:16.000000000 +0200
-+++ new/vl.c	2014-05-05 08:14:33.000000000 +0200
-@@ -1673,6 +1673,11 @@
-         info->name = g_strdup(m->name);
-         info->cpu_max = !m->max_cpus ? 1 : m->max_cpus;
+--- new.orig/vl.c	2014-06-12 10:49:25.000000000 +0200
++++ new/vl.c	2014-06-12 11:09:49.000000000 +0200
+@@ -1699,6 +1699,11 @@
+         info->name = g_strdup(mc->name);
+         info->cpu_max = !mc->max_cpus ? 1 : mc->max_cpus;
  
-+        if (strcmp(m->name, MACHINE_GET_CLASS(current_machine)->qemu_machine->name) == 0) {
++        if (strcmp(mc->name, MACHINE_GET_CLASS(current_machine)->name) == 0) {
 +            info->has_is_current = true;
 +            info->is_current = true;
 +        }

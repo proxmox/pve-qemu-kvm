@@ -23,9 +23,9 @@ Subject: [PATCH] internal-snapshot-async-qemu1.7.patch
 
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2014-05-05 09:49:29.000000000 +0200
-+++ new/Makefile.objs	2014-05-05 09:54:17.000000000 +0200
-@@ -55,6 +55,7 @@
+--- new.orig/Makefile.objs	2014-06-12 11:17:40.000000000 +0200
++++ new/Makefile.objs	2014-06-12 12:08:10.000000000 +0200
+@@ -57,6 +57,7 @@
  common-obj-y += qemu-char.o #aio.o
  common-obj-y += block-migration.o
  common-obj-y += page_cache.o xbzrle.o
@@ -35,10 +35,10 @@ Index: new/Makefile.objs
  
 Index: new/block.c
 ===================================================================
---- new.orig/block.c	2014-05-05 09:49:29.000000000 +0200
-+++ new/block.c	2014-05-05 09:54:17.000000000 +0200
-@@ -1967,7 +1967,7 @@
-             bs_new->drv ? bs_new->drv->format_name : "");
+--- new.orig/block.c	2014-06-12 10:19:18.000000000 +0200
++++ new/block.c	2014-06-12 12:08:10.000000000 +0200
+@@ -2077,7 +2077,7 @@
+     bdrv_set_backing_hd(bs_top, bs_new);
  }
  
 -static void bdrv_delete(BlockDriverState *bs)
@@ -48,9 +48,9 @@ Index: new/block.c
      assert(!bs->job);
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2014-05-05 09:49:29.000000000 +0200
-+++ new/hmp-commands.hx	2014-05-05 09:54:17.000000000 +0200
-@@ -1777,6 +1777,8 @@
+--- new.orig/hmp-commands.hx	2014-06-12 11:51:17.000000000 +0200
++++ new/hmp-commands.hx	2014-06-12 12:08:10.000000000 +0200
+@@ -1803,6 +1803,8 @@
  show current migration capabilities
  @item info migrate_cache_size
  show current migration XBZRLE cache size
@@ -59,7 +59,7 @@ Index: new/hmp-commands.hx
  @item info balloon
  show balloon information
  @item info qtree
-@@ -1798,3 +1800,35 @@
+@@ -1824,3 +1826,35 @@
  STEXI
  @end table
  ETEXI
@@ -97,9 +97,9 @@ Index: new/hmp-commands.hx
 +    },
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2014-05-05 09:49:29.000000000 +0200
-+++ new/hmp.c	2014-05-05 09:54:17.000000000 +0200
-@@ -1738,3 +1738,60 @@
+--- new.orig/hmp.c	2014-06-12 11:51:17.000000000 +0200
++++ new/hmp.c	2014-06-12 12:08:10.000000000 +0200
+@@ -1767,3 +1767,60 @@
      qmp_object_del(id, &err);
      hmp_handle_error(mon, &err);
  }
@@ -162,9 +162,9 @@ Index: new/hmp.c
 +}
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2014-05-05 09:49:29.000000000 +0200
-+++ new/hmp.h	2014-05-05 09:54:17.000000000 +0200
-@@ -25,6 +25,7 @@
+--- new.orig/hmp.h	2014-06-12 11:39:32.000000000 +0200
++++ new/hmp.h	2014-06-12 12:08:10.000000000 +0200
+@@ -26,6 +26,7 @@
  void hmp_info_uuid(Monitor *mon, const QDict *qdict);
  void hmp_info_chardev(Monitor *mon, const QDict *qdict);
  void hmp_info_mice(Monitor *mon, const QDict *qdict);
@@ -172,7 +172,7 @@ Index: new/hmp.h
  void hmp_info_migrate(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_capabilities(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_cache_size(Monitor *mon, const QDict *qdict);
-@@ -84,6 +85,10 @@
+@@ -85,6 +86,10 @@
  void hmp_netdev_del(Monitor *mon, const QDict *qdict);
  void hmp_getfd(Monitor *mon, const QDict *qdict);
  void hmp_closefd(Monitor *mon, const QDict *qdict);
@@ -185,9 +185,9 @@ Index: new/hmp.h
  void hmp_nbd_server_start(Monitor *mon, const QDict *qdict);
 Index: new/include/block/block.h
 ===================================================================
---- new.orig/include/block/block.h	2014-05-05 09:49:29.000000000 +0200
-+++ new/include/block/block.h	2014-05-05 09:54:17.000000000 +0200
-@@ -251,6 +251,7 @@
+--- new.orig/include/block/block.h	2014-06-12 10:19:18.000000000 +0200
++++ new/include/block/block.h	2014-06-12 12:08:10.000000000 +0200
+@@ -279,6 +279,7 @@
      const char *backing_file);
  int bdrv_get_backing_file_depth(BlockDriverState *bs);
  int bdrv_truncate(BlockDriverState *bs, int64_t offset);
@@ -197,8 +197,8 @@ Index: new/include/block/block.h
  void bdrv_get_geometry(BlockDriverState *bs, uint64_t *nb_sectors_ptr);
 Index: new/include/sysemu/sysemu.h
 ===================================================================
---- new.orig/include/sysemu/sysemu.h	2014-05-05 09:49:29.000000000 +0200
-+++ new/include/sysemu/sysemu.h	2014-05-05 09:54:17.000000000 +0200
+--- new.orig/include/sysemu/sysemu.h	2014-06-12 10:19:18.000000000 +0200
++++ new/include/sysemu/sysemu.h	2014-06-12 12:08:10.000000000 +0200
 @@ -73,16 +73,17 @@
  
  void do_savevm(Monitor *mon, const QDict *qdict);
@@ -221,9 +221,9 @@ Index: new/include/sysemu/sysemu.h
  int qemu_loadvm_state(QEMUFile *f);
 Index: new/monitor.c
 ===================================================================
---- new.orig/monitor.c	2014-05-05 09:49:29.000000000 +0200
-+++ new/monitor.c	2014-05-05 09:54:17.000000000 +0200
-@@ -2931,6 +2931,13 @@
+--- new.orig/monitor.c	2014-06-12 11:39:32.000000000 +0200
++++ new/monitor.c	2014-06-12 12:08:10.000000000 +0200
+@@ -2925,6 +2925,13 @@
          .mhandler.cmd = hmp_info_migrate_cache_size,
      },
      {
@@ -239,9 +239,9 @@ Index: new/monitor.c
          .params     = "",
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-05-05 09:49:29.000000000 +0200
-+++ new/qapi-schema.json	2014-05-05 09:54:17.000000000 +0200
-@@ -820,6 +820,42 @@
+--- new.orig/qapi-schema.json	2014-06-12 11:51:17.000000000 +0200
++++ new/qapi-schema.json	2014-06-12 12:08:10.000000000 +0200
+@@ -538,6 +538,42 @@
             '*downtime': 'int',
             '*setup-time': 'int'} }
  
@@ -284,7 +284,7 @@ Index: new/qapi-schema.json
  ##
  # @query-migrate
  #
-@@ -3687,8 +3723,18 @@
+@@ -2497,8 +2533,18 @@
  #
  # Since: 1.2.0
  ##
@@ -305,9 +305,9 @@ Index: new/qapi-schema.json
  #
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2014-05-05 09:49:29.000000000 +0200
-+++ new/qemu-options.hx	2014-05-05 09:54:17.000000000 +0200
-@@ -2759,6 +2759,19 @@
+--- new.orig/qemu-options.hx	2014-06-12 10:39:20.000000000 +0200
++++ new/qemu-options.hx	2014-06-12 12:08:10.000000000 +0200
+@@ -2838,6 +2838,19 @@
  Start right away with a saved state (@code{loadvm} in monitor)
  ETEXI
  
@@ -329,9 +329,9 @@ Index: new/qemu-options.hx
      "-daemonize      daemonize QEMU after initializing\n", QEMU_ARCH_ALL)
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2014-05-05 09:49:29.000000000 +0200
-+++ new/qmp-commands.hx	2014-05-05 09:54:17.000000000 +0200
-@@ -3593,3 +3593,34 @@
+--- new.orig/qmp-commands.hx	2014-06-12 11:39:32.000000000 +0200
++++ new/qmp-commands.hx	2014-06-12 12:08:10.000000000 +0200
+@@ -3603,3 +3603,34 @@
                     } } ] }
  
  EQMP
@@ -369,8 +369,8 @@ Index: new/qmp-commands.hx
 Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/savevm-async.c	2014-05-05 09:55:53.000000000 +0200
-@@ -0,0 +1,478 @@
++++ new/savevm-async.c	2014-06-12 12:38:38.000000000 +0200
+@@ -0,0 +1,486 @@
 +#include "qemu-common.h"
 +#include "qapi/qmp/qerror.h"
 +#include "sysemu/sysemu.h"
@@ -407,6 +407,7 @@ Index: new/savevm-async.c
 +    size_t bs_pos;
 +    int state;
 +    Error *error;
++    Error *blocker;
 +    int saved_vm_running;
 +    QEMUFile *file;
 +    int64_t total_time;
@@ -469,7 +470,9 @@ Index: new/savevm-async.c
 +         */
 +        size_t size = (snap_state.bs_pos + BDRV_SECTOR_SIZE) & BDRV_SECTOR_MASK;
 +        bdrv_truncate(snap_state.bs, size);
-+        bdrv_set_in_use(snap_state.bs, 0);
++        bdrv_op_unblock_all(snap_state.bs, snap_state.blocker);
++        error_free(snap_state.blocker);
++        snap_state.blocker = NULL;
 +        bdrv_unref(snap_state.bs);
 +        snap_state.bs = NULL;
 +    }
@@ -611,6 +614,7 @@ Index: new/savevm-async.c
 +    snap_state.saved_vm_running = runstate_is_running();
 +    snap_state.bs_pos = 0;
 +    snap_state.total_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
++    snap_state.blocker = NULL;
 +
 +    if (snap_state.error) {
 +        error_free(snap_state.error);
@@ -628,7 +632,7 @@ Index: new/savevm-async.c
 +    }
 +
 +    /* Open the image */
-+    snap_state.bs = bdrv_new("vmstate");
++    snap_state.bs = bdrv_new("vmstate", &error_abort);
 +    ret = bdrv_open(&snap_state.bs, statefile, NULL, NULL, bdrv_oflags, drv, &local_err);
 +
 +    if (ret < 0) {
@@ -644,7 +648,8 @@ Index: new/savevm-async.c
 +    }
 +
 +
-+    bdrv_set_in_use(snap_state.bs, 1);
++    error_setg(&snap_state.blocker, "block device is in use by savevm");
++    bdrv_op_block_all(snap_state.bs, snap_state.blocker);
 +    bdrv_ref(snap_state.bs);
 +
 +    Coroutine *co = qemu_coroutine_create(process_savevm_co);
@@ -710,7 +715,7 @@ Index: new/savevm-async.c
 +    }
 +
 +    if (!bdrv_can_snapshot(bs)) {
-+        error_set(errp, QERR_NOT_SUPPORTED);
++        error_set(errp, QERR_UNSUPPORTED);
 +        return;
 +    }
 +
@@ -766,7 +771,7 @@ Index: new/savevm-async.c
 +    }
 +
 +    if (!bdrv_can_snapshot(bs)) {
-+        error_set(errp, QERR_NOT_SUPPORTED);
++        error_set(errp, QERR_UNSUPPORTED);
 +        return;
 +    }
 +
@@ -809,13 +814,15 @@ Index: new/savevm-async.c
 +    BlockDriverState *bs = NULL;
 +    BlockDriver *drv = NULL;
 +    Error *local_err = NULL;
++    Error *blocker = NULL;
 +
 +    QEMUFile *f;
 +    int ret = -1;
 +
-+    bs = bdrv_new("vmstate");
++    bs = bdrv_new("vmstate", &error_abort);
 +    ret = bdrv_open(&bs, filename, NULL, NULL, BDRV_O_CACHE_WB, drv, &local_err);
-+    bdrv_set_in_use(bs, 1);
++    error_setg(&blocker, "block device is in use by load state");
++    bdrv_op_block_all(bs, blocker);
 +    bdrv_ref(bs);
 +
 +    if (ret < 0) {
@@ -844,16 +851,17 @@ Index: new/savevm-async.c
 +
 + the_end:
 +    if (bs) {
-+        bdrv_set_in_use(bs, 0);
++        bdrv_op_unblock_all(bs, blocker);
++        error_free(blocker);
 +        bdrv_unref(bs);
 +    }
 +    return ret;
 +}
 Index: new/savevm.c
 ===================================================================
---- new.orig/savevm.c	2014-05-05 09:49:29.000000000 +0200
-+++ new/savevm.c	2014-05-05 09:54:17.000000000 +0200
-@@ -460,11 +460,11 @@
+--- new.orig/savevm.c	2014-06-12 10:19:18.000000000 +0200
++++ new/savevm.c	2014-06-12 12:08:10.000000000 +0200
+@@ -461,11 +461,11 @@
      return false;
  }
  
@@ -867,7 +875,7 @@ Index: new/savevm.c
  
      trace_savevm_state_begin();
      QTAILQ_FOREACH(se, &savevm_handlers, entry) {
-@@ -506,6 +506,7 @@
+@@ -507,6 +507,7 @@
              break;
          }
      }
@@ -875,7 +883,7 @@ Index: new/savevm.c
  }
  
  /*
-@@ -554,7 +555,7 @@
+@@ -555,7 +556,7 @@
      return ret;
  }
  
@@ -884,7 +892,7 @@ Index: new/savevm.c
  {
      SaveStateEntry *se;
      int ret;
-@@ -581,7 +582,7 @@
+@@ -582,7 +583,7 @@
          trace_savevm_section_end(se->idstr, se->section_id);
          if (ret < 0) {
              qemu_file_set_error(f, ret);
@@ -893,7 +901,7 @@ Index: new/savevm.c
          }
      }
  
-@@ -610,6 +611,7 @@
+@@ -611,6 +612,7 @@
  
      qemu_put_byte(f, QEMU_VM_EOF);
      qemu_fflush(f);
@@ -903,17 +911,17 @@ Index: new/savevm.c
  uint64_t qemu_savevm_state_pending(QEMUFile *f, uint64_t max_size)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2014-05-05 09:49:29.000000000 +0200
-+++ new/vl.c	2014-05-05 09:54:17.000000000 +0200
-@@ -2953,6 +2953,7 @@
+--- new.orig/vl.c	2014-06-12 11:09:49.000000000 +0200
++++ new/vl.c	2014-06-12 12:08:10.000000000 +0200
+@@ -2979,6 +2979,7 @@
      int optind;
      const char *optarg;
      const char *loadvm = NULL;
 +    const char *loadstate = NULL;
      MachineClass *machine_class;
-     QEMUMachine *machine;
      const char *cpu_model;
-@@ -3574,6 +3575,9 @@
+     const char *vga_model = NULL;
+@@ -3628,6 +3629,9 @@
  	    case QEMU_OPTION_loadvm:
  		loadvm = optarg;
  		break;
@@ -923,7 +931,7 @@ Index: new/vl.c
              case QEMU_OPTION_full_screen:
                  full_screen = 1;
                  break;
-@@ -4541,6 +4545,10 @@
+@@ -4599,6 +4603,10 @@
          if (load_vmstate(loadvm) < 0) {
              autostart = 0;
          }
@@ -933,4 +941,4 @@ Index: new/vl.c
 +        }
      }
  
-     if (incoming) {
+     qdev_prop_check_global();

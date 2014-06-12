@@ -1,8 +1,8 @@
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-05-05 09:16:48.000000000 +0200
-+++ new/blockdev.c	2014-05-05 09:28:22.000000000 +0200
-@@ -45,6 +45,7 @@
+--- new.orig/blockdev.c	2014-06-12 11:39:00.000000000 +0200
++++ new/blockdev.c	2014-06-12 11:49:28.000000000 +0200
+@@ -44,6 +44,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
  #include "sysemu/arch_init.h"
@@ -10,15 +10,15 @@ Index: new/blockdev.c
  
  static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
  
-@@ -1513,7 +1514,6 @@
+@@ -1556,7 +1557,6 @@
      }
  }
  
 -
  static void eject_device(BlockDriverState *bs, int force, Error **errp)
  {
-     if (bdrv_in_use(bs)) {
-@@ -1826,6 +1826,437 @@
+     if (bdrv_op_is_blocked(bs, BLOCK_OP_TYPE_EJECT, errp)) {
+@@ -1878,6 +1878,436 @@
      bdrv_put_ref_bh_schedule(bs);
  }
  
@@ -276,8 +276,7 @@ Index: new/blockdev.c
 +    while (l) {
 +        PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
 +        l = g_list_next(l);
-+        if (bdrv_in_use(di->bs)) {
-+            error_set(errp, QERR_DEVICE_IN_USE, bdrv_get_device_name(di->bs));
++        if (bdrv_op_is_blocked(di->bs, BLOCK_OP_TYPE_BACKUP_SOURCE, errp)) {
 +            goto err;
 +        }
 +
@@ -294,7 +293,7 @@ Index: new/blockdev.c
 +
 +    vmaw = vma_writer_create(backup_file, uuid, &local_err);
 +    if (!vmaw) {
-+        if (error_is_set(&local_err)) {
++        if (local_err) {
 +            error_propagate(errp, local_err);
 +        }
 +        goto err;
@@ -458,8 +457,8 @@ Index: new/blockdev.c
                        bool has_on_error, BlockdevOnError on_error,
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2014-05-05 06:55:26.000000000 +0200
-+++ new/hmp-commands.hx	2014-05-05 09:28:22.000000000 +0200
+--- new.orig/hmp-commands.hx	2014-06-12 10:19:18.000000000 +0200
++++ new/hmp-commands.hx	2014-06-12 11:39:32.000000000 +0200
 @@ -88,6 +88,35 @@
  Copy data from a backing file into a block device.
  ETEXI
@@ -496,7 +495,7 @@ Index: new/hmp-commands.hx
      {
          .name       = "block_job_set_speed",
          .args_type  = "device:B,speed:o",
-@@ -1738,6 +1767,8 @@
+@@ -1764,6 +1793,8 @@
  show CPU statistics
  @item info usernet
  show user network stack connection states
@@ -507,9 +506,9 @@ Index: new/hmp-commands.hx
  @item info migrate_capabilities
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2014-05-05 07:34:43.000000000 +0200
-+++ new/hmp.c	2014-05-05 09:28:22.000000000 +0200
-@@ -134,6 +134,44 @@
+--- new.orig/hmp.c	2014-06-12 10:50:04.000000000 +0200
++++ new/hmp.c	2014-06-12 11:39:32.000000000 +0200
+@@ -135,6 +135,44 @@
      qapi_free_MouseInfoList(mice_list);
  }
  
@@ -554,7 +553,7 @@ Index: new/hmp.c
  void hmp_info_migrate(Monitor *mon, const QDict *qdict)
  {
      MigrationInfo *info;
-@@ -1196,6 +1234,29 @@
+@@ -1206,6 +1244,29 @@
  
      hmp_handle_error(mon, &error);
  }
@@ -586,9 +585,9 @@ Index: new/hmp.c
  {
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2014-05-05 06:55:26.000000000 +0200
-+++ new/hmp.h	2014-05-05 09:28:22.000000000 +0200
-@@ -28,6 +28,7 @@
+--- new.orig/hmp.h	2014-06-12 10:19:18.000000000 +0200
++++ new/hmp.h	2014-06-12 11:39:32.000000000 +0200
+@@ -29,6 +29,7 @@
  void hmp_info_migrate(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_capabilities(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_cache_size(Monitor *mon, const QDict *qdict);
@@ -596,7 +595,7 @@ Index: new/hmp.h
  void hmp_info_cpus(Monitor *mon, const QDict *qdict);
  void hmp_info_block(Monitor *mon, const QDict *qdict);
  void hmp_info_blockstats(Monitor *mon, const QDict *qdict);
-@@ -69,6 +70,8 @@
+@@ -70,6 +71,8 @@
  void hmp_change(Monitor *mon, const QDict *qdict);
  void hmp_block_set_io_throttle(Monitor *mon, const QDict *qdict);
  void hmp_block_stream(Monitor *mon, const QDict *qdict);
@@ -607,9 +606,9 @@ Index: new/hmp.h
  void hmp_block_job_pause(Monitor *mon, const QDict *qdict);
 Index: new/monitor.c
 ===================================================================
---- new.orig/monitor.c	2014-05-05 06:55:26.000000000 +0200
-+++ new/monitor.c	2014-05-05 09:28:22.000000000 +0200
-@@ -2903,6 +2903,13 @@
+--- new.orig/monitor.c	2014-06-12 10:19:18.000000000 +0200
++++ new/monitor.c	2014-06-12 11:39:32.000000000 +0200
+@@ -2897,6 +2897,13 @@
      },
  #endif
      {
@@ -625,9 +624,9 @@ Index: new/monitor.c
          .params     = "",
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-05-05 08:17:59.000000000 +0200
-+++ new/qapi-schema.json	2014-05-05 09:28:22.000000000 +0200
-@@ -627,6 +627,95 @@
+--- new.orig/qapi-schema.json	2014-06-12 11:13:26.000000000 +0200
++++ new/qapi-schema.json	2014-06-12 11:39:32.000000000 +0200
+@@ -340,6 +340,95 @@
  ##
  { 'command': 'query-events', 'returns': ['EventInfo'] }
  
@@ -725,8 +724,8 @@ Index: new/qapi-schema.json
  #
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2014-05-05 07:34:43.000000000 +0200
-+++ new/qmp-commands.hx	2014-05-05 09:28:22.000000000 +0200
+--- new.orig/qmp-commands.hx	2014-06-12 10:50:04.000000000 +0200
++++ new/qmp-commands.hx	2014-06-12 11:39:32.000000000 +0200
 @@ -1080,6 +1080,24 @@
  EQMP
  
