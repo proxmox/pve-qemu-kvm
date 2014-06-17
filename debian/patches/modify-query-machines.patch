@@ -1,7 +1,7 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-06-12 10:50:04.000000000 +0200
-+++ new/qapi-schema.json	2014-06-12 10:53:30.000000000 +0200
+--- new.orig/qapi-schema.json	2014-06-17 06:14:58.000000000 +0200
++++ new/qapi-schema.json	2014-06-17 06:15:00.000000000 +0200
 @@ -2241,6 +2241,8 @@
  #
  # @default: #optional whether the machine is default
@@ -22,8 +22,8 @@ Index: new/qapi-schema.json
  # @query-machines:
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2014-06-12 10:49:25.000000000 +0200
-+++ new/vl.c	2014-06-12 11:09:49.000000000 +0200
+--- new.orig/vl.c	2014-06-17 06:14:57.000000000 +0200
++++ new/vl.c	2014-06-17 06:15:00.000000000 +0200
 @@ -1699,6 +1699,11 @@
          info->name = g_strdup(mc->name);
          info->cpu_max = !mc->max_cpus ? 1 : mc->max_cpus;

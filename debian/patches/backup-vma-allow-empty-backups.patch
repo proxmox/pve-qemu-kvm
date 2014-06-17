@@ -5,8 +5,8 @@ user set backup=no to all VM disks.
 
 Index: new/vma-reader.c
 ===================================================================
---- new.orig/vma-reader.c	2014-05-05 09:15:31.000000000 +0200
-+++ new/vma-reader.c	2014-05-05 09:45:24.000000000 +0200
+--- new.orig/vma-reader.c	2014-06-17 06:15:05.000000000 +0200
++++ new/vma-reader.c	2014-06-17 06:15:13.000000000 +0200
 @@ -334,11 +334,6 @@
          }
      }
@@ -52,8 +52,8 @@ Index: new/vma-reader.c
      return ret;
 Index: new/vma-writer.c
 ===================================================================
---- new.orig/vma-writer.c	2014-05-05 09:41:57.000000000 +0200
-+++ new/vma-writer.c	2014-05-05 09:45:24.000000000 +0200
+--- new.orig/vma-writer.c	2014-06-17 06:15:10.000000000 +0200
++++ new/vma-writer.c	2014-06-17 06:15:13.000000000 +0200
 @@ -257,7 +257,7 @@
      }
  
@@ -114,8 +114,8 @@ Index: new/vma-writer.c
      return open_drives;
 Index: new/vma.c
 ===================================================================
---- new.orig/vma.c	2014-05-05 08:22:49.000000000 +0200
-+++ new/vma.c	2014-05-05 09:45:24.000000000 +0200
+--- new.orig/vma.c	2014-06-17 06:15:04.000000000 +0200
++++ new/vma.c	2014-06-17 06:15:13.000000000 +0200
 @@ -33,7 +33,7 @@
          "\n"
          "vma list <filename>\n"
@@ -168,8 +168,8 @@ Index: new/vma.c
 +        path = extract_devname(path, &devname, devcount++);
  
          BlockDriver *drv = NULL;
-         BlockDriverState *bs = bdrv_new(devname);
-@@ -546,37 +558,42 @@
+         Error *errp = NULL;
+@@ -550,37 +562,42 @@
      int percent = 0;
      int last_percent = -1;
  
@@ -240,8 +240,8 @@ Index: new/vma.c
      bdrv_drain_all();
 Index: new/vma.h
 ===================================================================
---- new.orig/vma.h	2014-05-05 09:41:01.000000000 +0200
-+++ new/vma.h	2014-05-05 09:45:24.000000000 +0200
+--- new.orig/vma.h	2014-06-17 06:15:09.000000000 +0200
++++ new/vma.h	2014-06-17 06:15:13.000000000 +0200
 @@ -128,6 +128,7 @@
                                        size_t *zero_bytes);
  

@@ -1,7 +1,7 @@
 Index: new/block/backup.c
 ===================================================================
---- new.orig/block/backup.c	2014-05-05 06:55:25.000000000 +0200
-+++ new/block/backup.c	2014-05-05 09:24:11.000000000 +0200
+--- new.orig/block/backup.c	2014-06-17 06:14:27.000000000 +0200
++++ new/block/backup.c	2014-06-17 06:15:06.000000000 +0200
 @@ -39,6 +39,7 @@
      BlockDriverState *target;
      MirrorSyncMode sync_mode;
@@ -122,9 +122,9 @@ Index: new/block/backup.c
      qemu_coroutine_enter(job->common.co, job);
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-05-05 06:55:26.000000000 +0200
-+++ new/blockdev.c	2014-05-05 09:16:48.000000000 +0200
-@@ -2030,7 +2030,7 @@
+--- new.orig/blockdev.c	2014-06-17 06:14:27.000000000 +0200
++++ new/blockdev.c	2014-06-17 06:15:06.000000000 +0200
+@@ -2089,7 +2089,7 @@
      }
  
      backup_start(bs, target_bs, speed, sync, on_source_error, on_target_error,
@@ -135,8 +135,8 @@ Index: new/blockdev.c
          error_propagate(errp, local_err);
 Index: new/include/block/block_int.h
 ===================================================================
---- new.orig/include/block/block_int.h	2014-05-05 06:55:26.000000000 +0200
-+++ new/include/block/block_int.h	2014-05-05 09:16:48.000000000 +0200
+--- new.orig/include/block/block_int.h	2014-06-17 06:14:27.000000000 +0200
++++ new/include/block/block_int.h	2014-06-17 06:15:06.000000000 +0200
 @@ -55,6 +55,9 @@
  #define BLOCK_OPT_ADAPTER_TYPE      "adapter_type"
  #define BLOCK_OPT_REDUNDANCY        "redundancy"
@@ -147,7 +147,7 @@ Index: new/include/block/block_int.h
  typedef struct BdrvTrackedRequest {
      BlockDriverState *bs;
      int64_t offset;
-@@ -496,7 +499,9 @@
+@@ -532,7 +535,9 @@
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,

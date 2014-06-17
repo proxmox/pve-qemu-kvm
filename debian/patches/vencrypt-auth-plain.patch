@@ -1,7 +1,7 @@
 Index: new/ui/vnc-auth-vencrypt.c
 ===================================================================
---- new.orig/ui/vnc-auth-vencrypt.c	2013-11-26 11:47:41.000000000 +0100
-+++ new/ui/vnc-auth-vencrypt.c	2013-11-26 11:48:13.000000000 +0100
+--- new.orig/ui/vnc-auth-vencrypt.c	2014-06-17 06:14:54.000000000 +0200
++++ new/ui/vnc-auth-vencrypt.c	2014-06-17 06:14:55.000000000 +0200
 @@ -144,6 +144,11 @@
         vnc_read_when(vs, protocol_client_auth_plain_start, 8);
         break;

@@ -24,8 +24,8 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/Makefile
 ===================================================================
---- new.orig/Makefile	2014-06-12 10:19:18.000000000 +0200
-+++ new/Makefile	2014-06-12 11:17:40.000000000 +0200
+--- new.orig/Makefile	2014-06-17 06:14:27.000000000 +0200
++++ new/Makefile	2014-06-17 06:15:02.000000000 +0200
 @@ -146,7 +146,7 @@
  include $(SRC_PATH)/libcacard/Makefile
  endif
@@ -46,7 +46,7 @@ Index: new/Makefile
 Index: new/vma-reader.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-reader.c	2014-06-12 11:17:40.000000000 +0200
++++ new/vma-reader.c	2014-06-17 06:15:02.000000000 +0200
 @@ -0,0 +1,799 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -850,7 +850,7 @@ Index: new/vma-reader.c
 Index: new/vma-writer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-writer.c	2014-06-12 11:17:40.000000000 +0200
++++ new/vma-writer.c	2014-06-17 06:15:02.000000000 +0200
 @@ -0,0 +1,875 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -1730,7 +1730,7 @@ Index: new/vma-writer.c
 Index: new/vma.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.c	2014-06-12 11:37:50.000000000 +0200
++++ new/vma.c	2014-06-17 06:15:02.000000000 +0200
 @@ -0,0 +1,583 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -2318,7 +2318,7 @@ Index: new/vma.c
 Index: new/vma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.h	2014-06-12 11:17:40.000000000 +0200
++++ new/vma.h	2014-06-17 06:15:02.000000000 +0200
 @@ -0,0 +1,146 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -2468,8 +2468,8 @@ Index: new/vma.h
 +#endif /* BACKUP_VMA_H */
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2014-06-12 10:19:18.000000000 +0200
-+++ new/Makefile.objs	2014-06-12 11:17:40.000000000 +0200
+--- new.orig/Makefile.objs	2014-06-17 06:14:27.000000000 +0200
++++ new/Makefile.objs	2014-06-17 06:15:02.000000000 +0200
 @@ -14,6 +14,7 @@
  block-obj-y += block/
  block-obj-y += qapi-types.o qapi-visit.o

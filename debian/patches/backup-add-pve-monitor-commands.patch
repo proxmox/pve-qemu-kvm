@@ -1,7 +1,7 @@
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-06-12 11:39:00.000000000 +0200
-+++ new/blockdev.c	2014-06-12 11:49:28.000000000 +0200
+--- new.orig/blockdev.c	2014-06-17 06:15:06.000000000 +0200
++++ new/blockdev.c	2014-06-17 06:15:07.000000000 +0200
 @@ -44,6 +44,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
@@ -457,8 +457,8 @@ Index: new/blockdev.c
                        bool has_on_error, BlockdevOnError on_error,
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2014-06-12 10:19:18.000000000 +0200
-+++ new/hmp-commands.hx	2014-06-12 11:39:32.000000000 +0200
+--- new.orig/hmp-commands.hx	2014-06-17 06:14:27.000000000 +0200
++++ new/hmp-commands.hx	2014-06-17 06:15:07.000000000 +0200
 @@ -88,6 +88,35 @@
  Copy data from a backing file into a block device.
  ETEXI
@@ -506,8 +506,8 @@ Index: new/hmp-commands.hx
  @item info migrate_capabilities
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2014-06-12 10:50:04.000000000 +0200
-+++ new/hmp.c	2014-06-12 11:39:32.000000000 +0200
+--- new.orig/hmp.c	2014-06-17 06:14:58.000000000 +0200
++++ new/hmp.c	2014-06-17 06:15:07.000000000 +0200
 @@ -135,6 +135,44 @@
      qapi_free_MouseInfoList(mice_list);
  }
@@ -585,8 +585,8 @@ Index: new/hmp.c
  {
 Index: new/hmp.h
 ===================================================================
---- new.orig/hmp.h	2014-06-12 10:19:18.000000000 +0200
-+++ new/hmp.h	2014-06-12 11:39:32.000000000 +0200
+--- new.orig/hmp.h	2014-06-17 06:14:27.000000000 +0200
++++ new/hmp.h	2014-06-17 06:15:07.000000000 +0200
 @@ -29,6 +29,7 @@
  void hmp_info_migrate(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_capabilities(Monitor *mon, const QDict *qdict);
@@ -606,8 +606,8 @@ Index: new/hmp.h
  void hmp_block_job_pause(Monitor *mon, const QDict *qdict);
 Index: new/monitor.c
 ===================================================================
---- new.orig/monitor.c	2014-06-12 10:19:18.000000000 +0200
-+++ new/monitor.c	2014-06-12 11:39:32.000000000 +0200
+--- new.orig/monitor.c	2014-06-17 06:14:27.000000000 +0200
++++ new/monitor.c	2014-06-17 06:15:07.000000000 +0200
 @@ -2897,6 +2897,13 @@
      },
  #endif
@@ -624,8 +624,8 @@ Index: new/monitor.c
          .params     = "",
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-06-12 11:13:26.000000000 +0200
-+++ new/qapi-schema.json	2014-06-12 11:39:32.000000000 +0200
+--- new.orig/qapi-schema.json	2014-06-17 06:15:00.000000000 +0200
++++ new/qapi-schema.json	2014-06-17 06:15:07.000000000 +0200
 @@ -340,6 +340,95 @@
  ##
  { 'command': 'query-events', 'returns': ['EventInfo'] }
@@ -724,8 +724,8 @@ Index: new/qapi-schema.json
  #
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2014-06-12 10:50:04.000000000 +0200
-+++ new/qmp-commands.hx	2014-06-12 11:39:32.000000000 +0200
+--- new.orig/qmp-commands.hx	2014-06-17 06:14:58.000000000 +0200
++++ new/qmp-commands.hx	2014-06-17 06:15:07.000000000 +0200
 @@ -1080,6 +1080,24 @@
  EQMP
  

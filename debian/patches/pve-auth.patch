@@ -1,8 +1,8 @@
 Index: new/ui/vnc.c
 ===================================================================
---- new.orig/ui/vnc.c	2014-05-05 06:55:26.000000000 +0200
-+++ new/ui/vnc.c	2014-05-05 07:24:10.000000000 +0200
-@@ -44,6 +44,125 @@
+--- new.orig/ui/vnc.c	2014-06-17 06:14:54.000000000 +0200
++++ new/ui/vnc.c	2014-06-17 06:14:54.000000000 +0200
+@@ -45,6 +45,125 @@
  #include "vnc_keysym.h"
  #include "d3des.h"
  
@@ -128,7 +128,7 @@ Index: new/ui/vnc.c
  static VncDisplay *vnc_display; /* needed for info vnc */
  
  static int vnc_cursor_define(VncState *vs);
-@@ -3125,6 +3244,7 @@
+@@ -3146,6 +3265,7 @@
              tls = 1; /* Require TLS */
          } else if (strncmp(options, "x509", 4) == 0) {
              char *start, *end;
@@ -136,7 +136,7 @@ Index: new/ui/vnc.c
              x509 = 1; /* Require x509 certificates */
              if (strncmp(options, "x509verify", 10) == 0)
                  vs->tls.x509verify = 1; /* ...and verify client certs */
-@@ -3145,8 +3265,10 @@
+@@ -3166,8 +3286,10 @@
                  }
                  g_free(path);
              } else {
@@ -149,7 +149,7 @@ Index: new/ui/vnc.c
              }
  #endif
  #if defined(CONFIG_VNC_TLS) || defined(CONFIG_VNC_SASL)
-@@ -3219,10 +3341,10 @@
+@@ -3240,10 +3362,10 @@
              vs->auth = VNC_AUTH_VENCRYPT;
              if (x509) {
                  VNC_DEBUG("Initializing VNC server with x509 password auth\n");
@@ -164,8 +164,8 @@ Index: new/ui/vnc.c
  #endif /* CONFIG_VNC_TLS */
 Index: new/ui/vnc-auth-vencrypt.c
 ===================================================================
---- new.orig/ui/vnc-auth-vencrypt.c	2014-05-05 06:55:26.000000000 +0200
-+++ new/ui/vnc-auth-vencrypt.c	2014-05-05 07:24:10.000000000 +0200
+--- new.orig/ui/vnc-auth-vencrypt.c	2014-06-17 06:14:28.000000000 +0200
++++ new/ui/vnc-auth-vencrypt.c	2014-06-17 06:14:54.000000000 +0200
 @@ -26,6 +26,107 @@
  
  #include "vnc.h"
@@ -289,8 +289,8 @@ Index: new/ui/vnc-auth-vencrypt.c
         VNC_DEBUG("Start TLS auth VNC\n");
 Index: new/ui/vnc.h
 ===================================================================
---- new.orig/ui/vnc.h	2014-05-05 06:55:26.000000000 +0200
-+++ new/ui/vnc.h	2014-05-05 07:24:10.000000000 +0200
+--- new.orig/ui/vnc.h	2014-06-17 06:14:28.000000000 +0200
++++ new/ui/vnc.h	2014-06-17 06:14:54.000000000 +0200
 @@ -279,6 +279,8 @@
      char challenge[VNC_AUTH_CHALLENGE_SIZE];
  #ifdef CONFIG_VNC_TLS
@@ -309,8 +309,8 @@ Index: new/ui/vnc.h
  #endif /* __QEMU_VNC_H */
 Index: new/ui/vnc-tls.c
 ===================================================================
---- new.orig/ui/vnc-tls.c	2014-05-05 06:55:26.000000000 +0200
-+++ new/ui/vnc-tls.c	2014-05-05 07:24:10.000000000 +0200
+--- new.orig/ui/vnc-tls.c	2014-06-17 06:14:28.000000000 +0200
++++ new/ui/vnc-tls.c	2014-06-17 06:14:54.000000000 +0200
 @@ -302,6 +302,14 @@
  
  static int vnc_set_gnutls_priority(gnutls_session_t s, int x509)
@@ -365,8 +365,8 @@ Index: new/ui/vnc-tls.c
                                 const char *certdir)
 Index: new/ui/vnc-tls.h
 ===================================================================
---- new.orig/ui/vnc-tls.h	2014-05-05 06:55:26.000000000 +0200
-+++ new/ui/vnc-tls.h	2014-05-05 07:24:10.000000000 +0200
+--- new.orig/ui/vnc-tls.h	2014-06-17 06:14:28.000000000 +0200
++++ new/ui/vnc-tls.h	2014-06-17 06:14:54.000000000 +0200
 @@ -68,6 +68,8 @@
  
  int vnc_tls_validate_certificate(VncState *vs);
@@ -378,9 +378,9 @@ Index: new/ui/vnc-tls.h
  
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2014-05-05 07:13:45.000000000 +0200
-+++ new/vl.c	2014-05-05 07:24:10.000000000 +0200
-@@ -3690,6 +3690,7 @@
+--- new.orig/vl.c	2014-06-17 06:14:52.000000000 +0200
++++ new/vl.c	2014-06-17 06:14:54.000000000 +0200
+@@ -3744,6 +3744,7 @@
  		    fprintf(stderr, "Invalid ID\n");
  		    exit(1);
  		}
@@ -390,9 +390,9 @@ Index: new/vl.c
                  cpuunits = atoi(optarg);
 Index: new/include/ui/console.h
 ===================================================================
---- new.orig/include/ui/console.h	2014-05-05 06:55:26.000000000 +0200
-+++ new/include/ui/console.h	2014-05-05 07:24:10.000000000 +0200
-@@ -319,6 +319,7 @@
+--- new.orig/include/ui/console.h	2014-06-17 06:14:28.000000000 +0200
++++ new/include/ui/console.h	2014-06-17 06:14:54.000000000 +0200
+@@ -322,6 +322,7 @@
  void cocoa_display_init(DisplayState *ds, int full_screen);
  
  /* vnc.c */
