@@ -1,8 +1,8 @@
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2014-06-17 06:14:28.000000000 +0200
-+++ new/hmp.c	2014-06-17 06:14:58.000000000 +0200
-@@ -536,7 +536,35 @@
+--- new.orig/hmp.c	2014-07-16 11:53:56.000000000 +0200
++++ new/hmp.c	2014-07-16 12:01:29.000000000 +0200
+@@ -539,7 +539,35 @@
          return;
      }
  
@@ -41,9 +41,9 @@ Index: new/hmp.c
  }
 Index: new/hw/virtio/virtio-balloon.c
 ===================================================================
---- new.orig/hw/virtio/virtio-balloon.c	2014-06-17 06:14:28.000000000 +0200
-+++ new/hw/virtio/virtio-balloon.c	2014-06-17 06:14:58.000000000 +0200
-@@ -305,6 +305,35 @@
+--- new.orig/hw/virtio/virtio-balloon.c	2014-07-16 11:53:56.000000000 +0200
++++ new/hw/virtio/virtio-balloon.c	2014-07-16 12:01:29.000000000 +0200
+@@ -309,6 +309,35 @@
      VirtIOBalloon *dev = opaque;
      info->actual = ram_size - ((uint64_t) dev->actual <<
                                 VIRTIO_BALLOON_PFN_SHIFT);
@@ -81,9 +81,9 @@ Index: new/hw/virtio/virtio-balloon.c
  static void virtio_balloon_to_target(void *opaque, ram_addr_t target)
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-06-17 06:14:28.000000000 +0200
-+++ new/qapi-schema.json	2014-06-17 06:14:58.000000000 +0200
-@@ -815,15 +815,34 @@
+--- new.orig/qapi-schema.json	2014-07-16 11:53:56.000000000 +0200
++++ new/qapi-schema.json	2014-07-16 12:01:29.000000000 +0200
+@@ -885,15 +885,34 @@
  
  ##
  # @BalloonInfo:
@@ -123,9 +123,9 @@ Index: new/qapi-schema.json
  # @query-balloon:
 Index: new/qmp-commands.hx
 ===================================================================
---- new.orig/qmp-commands.hx	2014-06-17 06:14:28.000000000 +0200
-+++ new/qmp-commands.hx	2014-06-17 06:14:58.000000000 +0200
-@@ -3162,6 +3162,13 @@
+--- new.orig/qmp-commands.hx	2014-07-16 11:53:56.000000000 +0200
++++ new/qmp-commands.hx	2014-07-16 12:01:29.000000000 +0200
+@@ -3235,6 +3235,13 @@
  json-object will be returned containing the following data:
  
  - "actual": current balloon value in bytes (json-int)
@@ -139,7 +139,7 @@ Index: new/qmp-commands.hx
  
  Example:
  
-@@ -3169,6 +3176,12 @@
+@@ -3242,6 +3249,12 @@
  <- {
        "return":{
           "actual":1073741824,

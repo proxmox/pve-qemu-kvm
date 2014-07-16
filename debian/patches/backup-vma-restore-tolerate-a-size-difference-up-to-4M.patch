@@ -11,8 +11,8 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/vma-reader.c
 ===================================================================
---- new.orig/vma-reader.c	2014-06-17 06:15:03.000000000 +0200
-+++ new/vma-reader.c	2014-06-17 06:15:05.000000000 +0200
+--- new.orig/vma-reader.c	2014-07-16 12:01:32.000000000 +0200
++++ new/vma-reader.c	2014-07-16 12:01:33.000000000 +0200
 @@ -465,7 +465,13 @@
      assert(vmar->rstate[dev_id].bs == NULL);
  

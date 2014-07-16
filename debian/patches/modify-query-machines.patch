@@ -1,8 +1,8 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-06-17 06:14:58.000000000 +0200
-+++ new/qapi-schema.json	2014-06-17 06:15:00.000000000 +0200
-@@ -2241,6 +2241,8 @@
+--- new.orig/qapi-schema.json	2014-07-16 12:01:29.000000000 +0200
++++ new/qapi-schema.json	2014-07-16 12:01:30.000000000 +0200
+@@ -2388,6 +2388,8 @@
  #
  # @default: #optional whether the machine is default
  #
@@ -11,7 +11,7 @@ Index: new/qapi-schema.json
  # @cpu-max: maximum number of CPUs supported by the machine type
  #           (since 1.5.0)
  #
-@@ -2248,7 +2250,7 @@
+@@ -2395,7 +2397,7 @@
  ##
  { 'type': 'MachineInfo',
    'data': { 'name': 'str', '*alias': 'str',
@@ -22,9 +22,9 @@ Index: new/qapi-schema.json
  # @query-machines:
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2014-06-17 06:14:57.000000000 +0200
-+++ new/vl.c	2014-06-17 06:15:00.000000000 +0200
-@@ -1699,6 +1699,11 @@
+--- new.orig/vl.c	2014-07-16 12:01:29.000000000 +0200
++++ new/vl.c	2014-07-16 12:01:30.000000000 +0200
+@@ -1660,6 +1660,11 @@
          info->name = g_strdup(mc->name);
          info->cpu_max = !mc->max_cpus ? 1 : mc->max_cpus;
  

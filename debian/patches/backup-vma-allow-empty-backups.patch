@@ -5,8 +5,8 @@ user set backup=no to all VM disks.
 
 Index: new/vma-reader.c
 ===================================================================
---- new.orig/vma-reader.c	2014-06-17 06:15:05.000000000 +0200
-+++ new/vma-reader.c	2014-06-17 06:15:13.000000000 +0200
+--- new.orig/vma-reader.c	2014-07-16 12:01:33.000000000 +0200
++++ new/vma-reader.c	2014-07-16 12:01:39.000000000 +0200
 @@ -334,11 +334,6 @@
          }
      }
@@ -52,9 +52,9 @@ Index: new/vma-reader.c
      return ret;
 Index: new/vma-writer.c
 ===================================================================
---- new.orig/vma-writer.c	2014-06-17 06:15:10.000000000 +0200
-+++ new/vma-writer.c	2014-06-17 06:15:13.000000000 +0200
-@@ -257,7 +257,7 @@
+--- new.orig/vma-writer.c	2014-07-16 12:01:36.000000000 +0200
++++ new/vma-writer.c	2014-07-16 12:01:39.000000000 +0200
+@@ -258,7 +258,7 @@
      }
  
      vmaw->co_writer = NULL;
@@ -63,7 +63,7 @@ Index: new/vma-writer.c
      return (done == bytes) ? bytes : -1;
  }
  
-@@ -381,10 +381,6 @@
+@@ -382,10 +382,6 @@
      time_t ctime = time(NULL);
      head->ctime = GUINT64_TO_BE(ctime);
  
@@ -74,7 +74,7 @@ Index: new/vma-writer.c
      for (i = 0; i < VMA_MAX_CONFIGS; i++) {
          head->config_names[i] = GUINT32_TO_BE(vmaw->config_names[i]);
          head->config_data[i] = GUINT32_TO_BE(vmaw->config_data[i]);
-@@ -501,6 +497,23 @@
+@@ -502,6 +498,23 @@
      return open_drives;
  }
  
@@ -98,7 +98,7 @@ Index: new/vma-writer.c
  /**
   * all jobs should call this when there is no more data
   * Returns: number of remaining stream (0 ==> finished)
-@@ -528,12 +541,7 @@
+@@ -529,12 +542,7 @@
  
      if (open_drives <= 0) {
          DPRINTF("vma_writer_set_status all drives completed\n");
@@ -114,8 +114,8 @@ Index: new/vma-writer.c
      return open_drives;
 Index: new/vma.c
 ===================================================================
---- new.orig/vma.c	2014-06-17 06:15:04.000000000 +0200
-+++ new/vma.c	2014-06-17 06:15:13.000000000 +0200
+--- new.orig/vma.c	2014-07-16 12:01:33.000000000 +0200
++++ new/vma.c	2014-07-16 12:01:39.000000000 +0200
 @@ -33,7 +33,7 @@
          "\n"
          "vma list <filename>\n"
@@ -240,8 +240,8 @@ Index: new/vma.c
      bdrv_drain_all();
 Index: new/vma.h
 ===================================================================
---- new.orig/vma.h	2014-06-17 06:15:09.000000000 +0200
-+++ new/vma.h	2014-06-17 06:15:13.000000000 +0200
+--- new.orig/vma.h	2014-07-16 12:01:35.000000000 +0200
++++ new/vma.h	2014-07-16 12:01:39.000000000 +0200
 @@ -128,6 +128,7 @@
                                        size_t *zero_bytes);
  

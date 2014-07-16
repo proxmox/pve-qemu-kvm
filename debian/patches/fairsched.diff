@@ -1,7 +1,7 @@
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2014-07-16 09:54:13.000000000 +0200
-+++ new/qemu-options.hx	2014-07-16 09:55:58.000000000 +0200
+--- new.orig/qemu-options.hx	2014-07-16 11:53:56.000000000 +0200
++++ new/qemu-options.hx	2014-07-16 12:01:27.000000000 +0200
 @@ -379,6 +379,12 @@
  @table @option
  ETEXI
@@ -17,8 +17,8 @@ Index: new/qemu-options.hx
  DEF("fdb", HAS_ARG, QEMU_OPTION_fdb, "", QEMU_ARCH_ALL)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2014-07-16 09:54:13.000000000 +0200
-+++ new/vl.c	2014-07-16 10:01:14.000000000 +0200
+--- new.orig/vl.c	2014-07-16 11:53:56.000000000 +0200
++++ new/vl.c	2014-07-16 12:01:27.000000000 +0200
 @@ -101,6 +101,8 @@
  #endif
  #include "sysemu/qtest.h"
@@ -112,7 +112,7 @@ Index: new/vl.c
 Index: new/vzsyscalls.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vzsyscalls.h	2014-07-16 09:55:58.000000000 +0200
++++ new/vzsyscalls.h	2014-07-16 12:01:27.000000000 +0200
 @@ -0,0 +1,47 @@
 +/*
 + *  Copyright (C) 2000-2008, Parallels, Inc. All rights reserved.
