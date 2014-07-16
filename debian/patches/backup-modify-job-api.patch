@@ -1,7 +1,7 @@
 Index: new/block/backup.c
 ===================================================================
---- new.orig/block/backup.c	2014-06-17 06:14:27.000000000 +0200
-+++ new/block/backup.c	2014-06-17 06:15:06.000000000 +0200
+--- new.orig/block/backup.c	2014-07-16 11:09:01.000000000 +0200
++++ new/block/backup.c	2014-07-16 11:16:47.000000000 +0200
 @@ -39,6 +39,7 @@
      BlockDriverState *target;
      MirrorSyncMode sync_mode;
@@ -58,7 +58,7 @@ Index: new/block/backup.c
          return block_job_error_action(&job->common, job->target,
                                        job->on_target_error, false, error);
 +    } else {
-+        return BDRV_ACTION_REPORT;
++        return BLOCK_ERROR_ACTION_REPORT;
      }
  }
  
@@ -122,9 +122,9 @@ Index: new/block/backup.c
      qemu_coroutine_enter(job->common.co, job);
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-06-17 06:14:27.000000000 +0200
-+++ new/blockdev.c	2014-06-17 06:15:06.000000000 +0200
-@@ -2089,7 +2089,7 @@
+--- new.orig/blockdev.c	2014-07-16 11:09:01.000000000 +0200
++++ new/blockdev.c	2014-07-16 11:10:45.000000000 +0200
+@@ -2115,7 +2115,7 @@
      }
  
      backup_start(bs, target_bs, speed, sync, on_source_error, on_target_error,
@@ -135,11 +135,11 @@ Index: new/blockdev.c
          error_propagate(errp, local_err);
 Index: new/include/block/block_int.h
 ===================================================================
---- new.orig/include/block/block_int.h	2014-06-17 06:14:27.000000000 +0200
-+++ new/include/block/block_int.h	2014-06-17 06:15:06.000000000 +0200
-@@ -55,6 +55,9 @@
- #define BLOCK_OPT_ADAPTER_TYPE      "adapter_type"
+--- new.orig/include/block/block_int.h	2014-07-16 11:09:01.000000000 +0200
++++ new/include/block/block_int.h	2014-07-16 11:10:45.000000000 +0200
+@@ -56,6 +56,9 @@
  #define BLOCK_OPT_REDUNDANCY        "redundancy"
+ #define BLOCK_OPT_NOCOW             "nocow"
  
 +typedef int BackupDumpFunc(void *opaque, BlockDriverState *bs,
 +                           int64_t sector_num, int n_sectors, unsigned char *buf);
@@ -147,7 +147,7 @@ Index: new/include/block/block_int.h
  typedef struct BdrvTrackedRequest {
      BlockDriverState *bs;
      int64_t offset;
-@@ -532,7 +535,9 @@
+@@ -539,7 +542,9 @@
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,

@@ -5,9 +5,9 @@ Also, previous code produced segmentation faults in qemu_co_mutex_lock().
 
 Index: new/vma-writer.c
 ===================================================================
---- new.orig/vma-writer.c	2014-06-17 06:15:09.000000000 +0200
-+++ new/vma-writer.c	2014-06-17 06:15:10.000000000 +0200
-@@ -33,14 +33,8 @@
+--- new.orig/vma-writer.c	2014-07-16 11:35:17.000000000 +0200
++++ new/vma-writer.c	2014-07-16 11:49:27.000000000 +0200
+@@ -34,14 +34,8 @@
      do { if (DEBUG_VMA) { printf("vma: " fmt, ## __VA_ARGS__); } } while (0)
  
  #define WRITE_BUFFERS 5
@@ -24,7 +24,7 @@ Index: new/vma-writer.c
  
  struct VmaWriter {
      int fd;
-@@ -52,16 +46,14 @@
+@@ -53,16 +47,14 @@
      bool closed;
  
      /* we always write extents */
@@ -43,7 +43,7 @@ Index: new/vma-writer.c
      CoMutex flush_lock;
      Coroutine *co_writer;
  
-@@ -222,38 +214,39 @@
+@@ -223,38 +215,39 @@
  }
  
  static ssize_t coroutine_fn
@@ -68,16 +68,16 @@ Index: new/vma-writer.c
  
      vmaw->co_writer = qemu_coroutine_self();
  
--    qemu_aio_set_fd_handler(vmaw->fd, NULL, vma_co_continue_write, vmaw);
+-    aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, NULL, vma_co_continue_write, vmaw);
 -
 -    DPRINTF("vma_co_write wait until writable\n");
 -    qemu_coroutine_yield();
 -    DPRINTF("vma_co_write starting %zd\n", bytes);
 -
      while (done < bytes) {
-+        qemu_aio_set_fd_handler(vmaw->fd, NULL, vma_co_continue_write, vmaw);
++        aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, NULL, vma_co_continue_write, vmaw);
 +        qemu_coroutine_yield();
-+        qemu_aio_set_fd_handler(vmaw->fd, NULL, NULL, NULL);
++        aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, NULL, NULL, NULL);
 +        if (vmaw->status < 0) {
 +            DPRINTF("vma_queue_write detected canceled backup\n");
 +            done = -1;
@@ -101,11 +101,11 @@ Index: new/vma-writer.c
                                       g_strerror(errno));
                  done = -1; /* always return failure for partial writes */
                  break;
-@@ -263,102 +256,9 @@
+@@ -264,102 +257,9 @@
          }
      }
  
--    qemu_aio_set_fd_handler(vmaw->fd, NULL, NULL, NULL);
+-    aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, NULL, NULL, NULL);
 -
      vmaw->co_writer = NULL;
 -
@@ -206,7 +206,7 @@ Index: new/vma-writer.c
  }
  
  VmaWriter *vma_writer_create(const char *filename, uuid_t uuid, Error **errp)
-@@ -425,20 +325,16 @@
+@@ -426,20 +326,16 @@
      }
  
      /* we use O_DIRECT, so we need to align IO buffers */
@@ -230,7 +230,7 @@ Index: new/vma-writer.c
  
      uuid_copy(vmaw->uuid, uuid);
  
-@@ -465,8 +361,7 @@
+@@ -466,8 +362,7 @@
  static int coroutine_fn vma_write_header(VmaWriter *vmaw)
  {
      assert(vmaw);
@@ -240,7 +240,7 @@ Index: new/vma-writer.c
      VmaHeader *head = (VmaHeader *)buf;
  
      int i;
-@@ -477,7 +372,7 @@
+@@ -478,7 +373,7 @@
          return vmaw->status;
      }
  
@@ -249,7 +249,7 @@ Index: new/vma-writer.c
  
      head->magic = VMA_MAGIC;
      head->version = GUINT32_TO_BE(1); /* v1 */
-@@ -512,7 +407,7 @@
+@@ -513,7 +408,7 @@
      uint32_t header_size = sizeof(VmaHeader) + vmaw->header_blob_table_size;
      head->header_size = GUINT32_TO_BE(header_size);
  
@@ -258,7 +258,7 @@ Index: new/vma-writer.c
          return -1; /* just to be sure */
      }
  
-@@ -810,13 +705,7 @@
+@@ -811,13 +706,7 @@
  
      int i;
  
@@ -273,7 +273,7 @@ Index: new/vma-writer.c
  
      if (vmaw->cmd) {
          if (pclose(vmaw->cmd) < 0) {
-@@ -874,9 +763,5 @@
+@@ -875,9 +764,5 @@
          g_checksum_free(vmaw->md5csum);
      }
  
@@ -285,9 +285,9 @@ Index: new/vma-writer.c
  }
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-06-17 06:15:09.000000000 +0200
-+++ new/blockdev.c	2014-06-17 06:15:10.000000000 +0200
-@@ -2017,6 +2017,11 @@
+--- new.orig/blockdev.c	2014-07-16 11:35:17.000000000 +0200
++++ new/blockdev.c	2014-07-16 11:45:01.000000000 +0200
+@@ -2010,6 +2010,11 @@
          error_setg(&backup_state.error, "backup cancelled");
      }
  
@@ -299,7 +299,7 @@ Index: new/blockdev.c
      /* drain all i/o (awake jobs waiting for aio) */
      bdrv_drain_all();
  
-@@ -2029,6 +2034,7 @@
+@@ -2022,6 +2027,7 @@
              if (job) {
                  if (!di->completed) {
                       block_job_cancel_sync(job);
