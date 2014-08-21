@@ -2,12 +2,12 @@ Source: pve-qemu-kvm
 Section: admin
 Priority: extra
 Maintainer: Proxmox Support Team <support@proxmox.com>
-Build-Depends: debhelper (>= 5), autotools-dev, libpci-dev, quilt, texinfo, texi2html, libgnutls-dev, libsdl1.2-dev, check, libaio-dev, uuid-dev, librbd-dev (>= 0.48), libiscsi-dev (>= 1.11.0), libspice-protocol-dev (>= 0.12.5), pve-libspice-server-dev (>= 0.12.4-3), libusbredirparser-dev (>= 0.6-2), glusterfs-common (>= 3.4.0-2), libusb-1.0-0-dev (>= 1.0.17-1)
+Build-Depends: debhelper (>= 5), autotools-dev, libpci-dev, quilt, texinfo, texi2html, libgnutls-dev, libsdl1.2-dev, check, libaio-dev, uuid-dev, librbd-dev (>= 0.48), libiscsi-dev (>= 1.12.0), libspice-protocol-dev (>= 0.12.5), pve-libspice-server-dev (>= 0.12.4-3), libusbredirparser-dev (>= 0.6-2), glusterfs-common (>= 3.5.2-1), libusb-1.0-0-dev (>= 1.0.17-1)
 Standards-Version: 3.7.2
 
 Package: pve-qemu-kvm
 Architecture: any
-Depends: iproute, bridge-utils, python, libsdl1.2debian, libaio1, libuuid1, ceph-common (>= 0.48), libiscsi2 (>= 1.11.0), pve-libspice-server1 (>= 0.12.3), ${shlibs:Depends}, ${misc:Depends}, libusbredirparser1 (>= 0.6-2), glusterfs-common (>= 3.4.0-2), libusb-1.0-0 (>= 1.0.17-1)
+Depends: iproute, bridge-utils, python, libsdl1.2debian, libaio1, libuuid1, ceph-common (>= 0.48), libiscsi4 (>= 1.12.0), pve-libspice-server1 (>= 0.12.3), ${shlibs:Depends}, ${misc:Depends}, libusbredirparser1 (>= 0.6-2), glusterfs-common (>= 3.5.2-1), libusb-1.0-0 (>= 1.0.17-1)
 Conflicts: qemu, qemu-kvm, kvm, pve-kvm, pve-qemu-kvm-2.6.18
 Replaces: pve-kvm, pve-qemu-kvm-2.6.18
 Description: Full virtualization on x86 hardware
