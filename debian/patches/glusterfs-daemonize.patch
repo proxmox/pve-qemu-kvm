@@ -1,0 +1,23 @@
+glusterfs: do not log to stdout if daemonized
+
+Else stdout is not closed correctly.
+
+Index: new/block/gluster.c
+===================================================================
+--- new.orig/block/gluster.c	2014-08-22 13:21:39.000000000 +0200
++++ new/block/gluster.c	2014-08-22 13:25:18.000000000 +0200
+@@ -196,9 +196,11 @@
+      * TODO: Use GF_LOG_ERROR instead of hard code value of 4 here when
+      * GlusterFS makes GF_LOG_* macros available to libgfapi users.
+      */
+-    ret = glfs_set_logging(glfs, "-", 4);
+-    if (ret < 0) {
+-        goto out;
++    if (!is_daemonized()) {
++        ret = glfs_set_logging(glfs, "-", 4);
++        if (ret < 0) {
++            goto out;
++        }
+     }
+ 
+     ret = glfs_init(glfs);
