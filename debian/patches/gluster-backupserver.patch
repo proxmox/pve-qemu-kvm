@@ -1,3 +1,19 @@
+Allow to specify a backup volfile server
+
+Unfortunately, it dos now work as expected:
+
+ # qemu-img info gluster://<myserverip>/myvolume/test.raw
+
+works, but (1.2.3.4 is a non-existent server)
+
+ # qemu-img info gluster://1.2.3.4/myvolume/test.raw?s2=<myserverip>
+
+does not work. Also 
+
+ # qemu-img info gluster://<myserverip>/myvolume/test.raw?s2=<myserverip>
+
+simply hangs forever.
+ 
 Index: new/block/gluster.c
 ===================================================================
 --- new.orig/block/gluster.c	2014-08-26 11:48:49.000000000 +0200
