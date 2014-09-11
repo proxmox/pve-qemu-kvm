@@ -18,8 +18,8 @@ all: ${KVM_DEB} ${KVMSRC}
 .PHONY: download
 download:
 	rm -rf ${KVMDIR} ${KVMSRC}
-	git clone git://git.qemu-project.org/qemu.git -b master ${KVMDIR} 
-	cd ${KVMDIR}; git checkout v2.1.0
+	git clone git://git.qemu-project.org/qemu.git -b stable-2.1 ${KVMDIR} 
+	cd ${KVMDIR}; git checkout v2.1.1
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
 ${KVM_DEB} kvm: ${KVMSRC}
