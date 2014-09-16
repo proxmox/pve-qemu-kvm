@@ -1,0 +1,55 @@
+Date: Thu, 11 Sep 2014 19:18:37 +0300
+From: "Michael S. Tsirkin" <mst@redhat.com>
+To: <qemu-devel@nongnu.org>
+
+This reverts commit a1bc7b827e422e1ff065640d8ec5347c4aadfcd8.
+    virtio: don't call device on !vm_running
+It turns out that virtio net assumes that vm_running
+is updated before device status callback in many places,
+so this change leads to asserts.
+Previous commit fixes the root issue that motivated
+a1bc7b827e422e1ff065640d8ec5347c4aadfcd8 differently,
+so there's no longer a need for this change.
+
+In the future, we might be able to drop checking vm_running
+completely, and check vm state directly.
+
+Reported-by: Dietmar Maurer <dietmar@proxmox.com>
+Cc: qemu-stable@nongnu.org
+Cc: Jason Wang <jasowang@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/virtio/virtio.c | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
+
+diff --git a/hw/virtio/virtio.c b/hw/virtio/virtio.c
+index ac22238..5c98180 100644
+--- a/hw/virtio/virtio.c
++++ b/hw/virtio/virtio.c
+@@ -1108,10 +1108,7 @@ static void virtio_vmstate_change(void *opaque, int running, RunState state)
+     BusState *qbus = qdev_get_parent_bus(DEVICE(vdev));
+     VirtioBusClass *k = VIRTIO_BUS_GET_CLASS(qbus);
+     bool backend_run = running && (vdev->status & VIRTIO_CONFIG_S_DRIVER_OK);
+-
+-    if (running) {
+-        vdev->vm_running = running;
+-    }
++    vdev->vm_running = running;
+ 
+     if (backend_run) {
+         virtio_set_status(vdev, vdev->status);
+@@ -1124,10 +1121,6 @@ static void virtio_vmstate_change(void *opaque, int running, RunState state)
+     if (!backend_run) {
+         virtio_set_status(vdev, vdev->status);
+     }
+-
+-    if (!running) {
+-        vdev->vm_running = running;
+-    }
+ }
+ 
+ void virtio_init(VirtIODevice *vdev, const char *name,
+-- 
+MST
+
+
