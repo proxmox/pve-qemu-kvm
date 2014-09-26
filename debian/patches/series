@@ -27,5 +27,3 @@ disable-efi-enable-pxe-roms.patch
 backup-vma-allow-empty-backups.patch
 glusterfs-daemonize.patch
 gluster-backupserver.patch
-virtio-net_drop_assert_on_vm_stop.patch
-revert_virtio_dont_call_device_on_not_vm_running.patch

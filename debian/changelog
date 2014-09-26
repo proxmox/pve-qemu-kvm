@@ -1,3 +1,13 @@
+pve-qemu-kvm (2.1-9) unstable; urgency=low
+
+  * update to v2.1.2
+  
+  * remove temporary patches (now upstream)
+    - virtio-net_drop_assert_on_vm_stop.patch
+    - revert_virtio_dont_call_device_on_not_vm_running.patch
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 26 Sep 2014 11:25:57 +0200
+
 pve-qemu-kvm (2.1-8) unstable; urgency=low
 
   * apply patches/hotfix for virtio-net migration problem in 2.1.1
