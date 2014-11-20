@@ -1,8 +1,8 @@
 Index: new/include/net/net.h
 ===================================================================
---- new.orig/include/net/net.h	2014-07-16 11:53:56.000000000 +0200
-+++ new/include/net/net.h	2014-07-16 12:01:25.000000000 +0200
-@@ -196,8 +196,9 @@
+--- new.orig/include/net/net.h	2014-11-20 06:45:06.000000000 +0100
++++ new/include/net/net.h	2014-11-20 06:47:47.000000000 +0100
+@@ -195,8 +195,9 @@
  int net_hub_id_for_client(NetClientState *nc, int *id);
  NetClientState *net_hub_port_find(int hub_id);
  
@@ -14,16 +14,3 @@ Index: new/include/net/net.h
  #define DEFAULT_BRIDGE_HELPER CONFIG_QEMU_HELPERDIR "/qemu-bridge-helper"
  #define DEFAULT_BRIDGE_INTERFACE "br0"
  
-Index: new/net/tap_int.h
-===================================================================
---- new.orig/net/tap_int.h	2014-07-16 11:53:56.000000000 +0200
-+++ new/net/tap_int.h	2014-07-16 12:01:25.000000000 +0200
-@@ -29,8 +29,6 @@
- #include "qemu-common.h"
- #include "qapi-types.h"
- 
--#define DEFAULT_NETWORK_SCRIPT "/etc/qemu-ifup"
--#define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/qemu-ifdown"
- 
- int tap_open(char *ifname, int ifname_size, int *vnet_hdr,
-              int vnet_hdr_required, int mq_required);

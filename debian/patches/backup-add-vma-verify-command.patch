@@ -20,8 +20,8 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/vma-reader.c
 ===================================================================
---- new.orig/vma-reader.c	2014-07-16 12:01:32.000000000 +0200
-+++ new/vma-reader.c	2014-07-16 12:01:32.000000000 +0200
+--- new.orig/vma-reader.c	2014-11-20 08:15:12.000000000 +0100
++++ new/vma-reader.c	2014-11-20 08:47:30.000000000 +0100
 @@ -53,6 +53,8 @@
      time_t start_time;
      int64_t cluster_count;
@@ -227,8 +227,8 @@ Index: new/vma-reader.c
 +
 Index: new/vma.c
 ===================================================================
---- new.orig/vma.c	2014-07-16 12:01:32.000000000 +0200
-+++ new/vma.c	2014-07-16 12:01:32.000000000 +0200
+--- new.orig/vma.c	2014-11-20 08:47:23.000000000 +0100
++++ new/vma.c	2014-11-20 08:47:30.000000000 +0100
 @@ -34,6 +34,7 @@
          "vma list <filename>\n"
          "vma create <filename> [-c config] <archive> pathname ...\n"
@@ -296,7 +296,7 @@ Index: new/vma.c
  typedef struct BackupJob {
      BlockDriverState *bs;
      int64_t len;
-@@ -576,6 +629,8 @@
+@@ -575,6 +628,8 @@
          return create_archive(argc, argv);
      } else if (!strcmp(cmdname, "extract")) {
          return extract_content(argc, argv);
@@ -307,8 +307,8 @@ Index: new/vma.c
      help();
 Index: new/vma.h
 ===================================================================
---- new.orig/vma.h	2014-07-16 12:01:32.000000000 +0200
-+++ new/vma.h	2014-07-16 12:01:32.000000000 +0200
+--- new.orig/vma.h	2014-11-20 08:15:12.000000000 +0100
++++ new/vma.h	2014-11-20 08:47:30.000000000 +0100
 @@ -142,5 +142,6 @@
                             Error **errp);
  int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,

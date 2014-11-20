@@ -1,7 +1,7 @@
 Index: new/vma.c
 ===================================================================
---- new.orig/vma.c	2014-07-16 12:01:32.000000000 +0200
-+++ new/vma.c	2014-07-16 12:01:33.000000000 +0200
+--- new.orig/vma.c	2014-11-20 08:47:30.000000000 +0100
++++ new/vma.c	2014-11-20 08:47:47.000000000 +0100
 @@ -32,6 +32,7 @@
          "usage: vma command [command options]\n"
          "\n"
@@ -10,7 +10,7 @@ Index: new/vma.c
          "vma create <filename> [-c config] <archive> pathname ...\n"
          "vma extract <filename> [-r <fifo>] <targetdir>\n"
          "vma verify <filename> [-v]\n"
-@@ -605,6 +606,67 @@
+@@ -601,6 +602,67 @@
      return 0;
  }
  
@@ -78,7 +78,7 @@ Index: new/vma.c
  int main(int argc, char **argv)
  {
      const char *cmdname;
-@@ -631,6 +693,8 @@
+@@ -630,6 +692,8 @@
          return extract_content(argc, argv);
      } else if (!strcmp(cmdname, "verify")) {
          return verify_content(argc, argv);

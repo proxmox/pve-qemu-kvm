@@ -1,8 +1,8 @@
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-07-16 12:01:34.000000000 +0200
-+++ new/qapi-schema.json	2014-07-16 12:01:35.000000000 +0200
-@@ -388,7 +388,7 @@
+--- new.orig/qapi-schema.json	2014-11-20 08:59:29.000000000 +0100
++++ new/qapi-schema.json	2014-11-20 09:03:23.000000000 +0100
+@@ -391,7 +391,7 @@
  # @vma: Proxmox vma backup format
  ##
  { 'enum': 'BackupFormat',
@@ -13,9 +13,9 @@ Index: new/qapi-schema.json
  # @backup:
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-07-16 12:01:34.000000000 +0200
-+++ new/blockdev.c	2014-07-16 12:01:35.000000000 +0200
-@@ -1895,6 +1895,8 @@
+--- new.orig/blockdev.c	2014-11-20 08:59:29.000000000 +0100
++++ new/blockdev.c	2014-11-20 09:04:05.000000000 +0100
+@@ -1979,6 +1979,8 @@
      uint8_t dev_id;
      //bool started;
      bool completed;
@@ -24,7 +24,7 @@ Index: new/blockdev.c
  } PVEBackupDevInfo;
  
  static void pvebackup_run_next_job(void);
-@@ -1963,8 +1965,6 @@
+@@ -2047,8 +2049,6 @@
  {
      PVEBackupDevInfo *di = opaque;
  
@@ -33,7 +33,7 @@ Index: new/blockdev.c
      di->completed = true;
  
      if (ret < 0 && !backup_state.error) {
-@@ -1975,8 +1975,11 @@
+@@ -2059,8 +2059,11 @@
      BlockDriverState *bs = di->bs;
  
      di->bs = NULL;
@@ -46,7 +46,7 @@ Index: new/blockdev.c
  
      block_job_cb(bs, ret);
  
-@@ -2054,6 +2057,7 @@
+@@ -2138,6 +2141,7 @@
                      bool has_speed, int64_t speed, Error **errp)
  {
      BlockDriverState *bs;
@@ -54,7 +54,7 @@ Index: new/blockdev.c
      Error *local_err = NULL;
      uuid_t uuid;
      VmaWriter *vmaw = NULL;
-@@ -2070,11 +2074,6 @@
+@@ -2154,11 +2158,6 @@
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -66,7 +66,7 @@ Index: new/blockdev.c
      if (has_devlist) {
          devs = g_strsplit_set(devlist, ",;:", -1);
  
-@@ -2141,27 +2140,63 @@
+@@ -2225,27 +2224,63 @@
  
      uuid_generate(uuid);
  
@@ -133,7 +133,7 @@ Index: new/blockdev.c
 +                goto err;
 +            }
 +
-+            di->target = bdrv_new("", &error_abort);
++            di->target = bdrv_new();
 +            if (bdrv_open(&di->target, di->targetfile, NULL, NULL, flags, NULL, &local_err) < 0) {
 +                bdrv_unref(di->target);
 +                error_propagate(errp, local_err);
@@ -146,7 +146,7 @@ Index: new/blockdev.c
      }
  
      /* add configuration file to archive */
-@@ -2174,12 +2209,27 @@
+@@ -2258,12 +2293,27 @@
              goto err;
          }
  
@@ -179,7 +179,7 @@ Index: new/blockdev.c
          g_free(cdata);
      }
  
-@@ -2219,10 +2269,11 @@
+@@ -2303,10 +2353,11 @@
          PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
          l = g_list_next(l);
  
@@ -192,7 +192,7 @@ Index: new/blockdev.c
          if (local_err != NULL) {
              error_setg(&backup_state.error, "backup_job_create failed");
              pvebackup_cancel(NULL);
-@@ -2239,8 +2290,17 @@
+@@ -2323,8 +2374,17 @@
  
      l = di_list;
      while (l) {
@@ -211,7 +211,7 @@ Index: new/blockdev.c
      }
      g_list_free(di_list);
  
-@@ -2254,6 +2314,10 @@
+@@ -2338,6 +2398,10 @@
          unlink(backup_file);
      }
  
@@ -224,8 +224,8 @@ Index: new/blockdev.c
  
 Index: new/hmp-commands.hx
 ===================================================================
---- new.orig/hmp-commands.hx	2014-07-16 12:01:34.000000000 +0200
-+++ new/hmp-commands.hx	2014-07-16 12:01:35.000000000 +0200
+--- new.orig/hmp-commands.hx	2014-11-20 08:59:29.000000000 +0100
++++ new/hmp-commands.hx	2014-11-20 09:03:23.000000000 +0100
 @@ -90,9 +90,11 @@
  
     {
@@ -243,9 +243,9 @@ Index: new/hmp-commands.hx
  
 Index: new/hmp.c
 ===================================================================
---- new.orig/hmp.c	2014-07-16 12:01:34.000000000 +0200
-+++ new/hmp.c	2014-07-16 12:01:35.000000000 +0200
-@@ -1262,11 +1262,13 @@
+--- new.orig/hmp.c	2014-11-20 08:59:29.000000000 +0100
++++ new/hmp.c	2014-11-20 09:03:23.000000000 +0100
+@@ -1264,11 +1264,13 @@
  {
      Error *error = NULL;
  

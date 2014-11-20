@@ -5,8 +5,8 @@ Also, previous code produced segmentation faults in qemu_co_mutex_lock().
 
 Index: new/vma-writer.c
 ===================================================================
---- new.orig/vma-writer.c	2014-07-16 12:01:35.000000000 +0200
-+++ new/vma-writer.c	2014-07-16 12:01:36.000000000 +0200
+--- new.orig/vma-writer.c	2014-11-20 09:08:33.000000000 +0100
++++ new/vma-writer.c	2014-11-20 09:10:14.000000000 +0100
 @@ -34,14 +34,8 @@
      do { if (DEBUG_VMA) { printf("vma: " fmt, ## __VA_ARGS__); } } while (0)
  
@@ -267,7 +267,7 @@ Index: new/vma-writer.c
 -    /* this should not happen - just to be sure */
 -    while (!qemu_co_queue_empty(&vmaw->wqueue)) {
 -        DPRINTF("vma_writer_close wait\n");
--        co_sleep_ns(QEMU_CLOCK_REALTIME, 1000000);
+-        co_aio_sleep_ns(qemu_get_aio_context(), QEMU_CLOCK_REALTIME, 1000000);
 -    }
 +    assert(vmaw->co_writer == NULL);
  
@@ -285,9 +285,9 @@ Index: new/vma-writer.c
  }
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-07-16 12:01:35.000000000 +0200
-+++ new/blockdev.c	2014-07-16 12:01:36.000000000 +0200
-@@ -2010,6 +2010,11 @@
+--- new.orig/blockdev.c	2014-11-20 09:08:33.000000000 +0100
++++ new/blockdev.c	2014-11-20 09:08:49.000000000 +0100
+@@ -2094,6 +2094,11 @@
          error_setg(&backup_state.error, "backup cancelled");
      }
  
@@ -299,7 +299,7 @@ Index: new/blockdev.c
      /* drain all i/o (awake jobs waiting for aio) */
      bdrv_drain_all();
  
-@@ -2022,6 +2027,7 @@
+@@ -2106,6 +2111,7 @@
              if (job) {
                  if (!di->completed) {
                       block_job_cancel_sync(job);

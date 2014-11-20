@@ -1,8 +1,8 @@
 Index: new/qemu-options.hx
 ===================================================================
---- new.orig/qemu-options.hx	2014-07-16 11:53:56.000000000 +0200
-+++ new/qemu-options.hx	2014-07-16 12:01:27.000000000 +0200
-@@ -379,6 +379,12 @@
+--- new.orig/qemu-options.hx	2014-11-20 06:45:06.000000000 +0100
++++ new/qemu-options.hx	2014-11-20 06:50:44.000000000 +0100
+@@ -386,6 +386,12 @@
  @table @option
  ETEXI
  
@@ -17,8 +17,8 @@ Index: new/qemu-options.hx
  DEF("fdb", HAS_ARG, QEMU_OPTION_fdb, "", QEMU_ARCH_ALL)
 Index: new/vl.c
 ===================================================================
---- new.orig/vl.c	2014-07-16 11:53:56.000000000 +0200
-+++ new/vl.c	2014-07-16 12:01:27.000000000 +0200
+--- new.orig/vl.c	2014-11-20 06:45:06.000000000 +0100
++++ new/vl.c	2014-11-20 06:50:44.000000000 +0100
 @@ -101,6 +101,8 @@
  #endif
  #include "sysemu/qtest.h"
@@ -28,7 +28,7 @@ Index: new/vl.c
  #include "disas/disas.h"
  
  
-@@ -153,6 +155,7 @@
+@@ -154,6 +156,7 @@
  CharDriverState *sclp_hds[MAX_SCLP_CONSOLES];
  int win2k_install_hack = 0;
  int singlestep = 0;
@@ -36,7 +36,7 @@ Index: new/vl.c
  int smp_cpus = 1;
  int max_cpus = 0;
  int smp_cores = 1;
-@@ -2897,6 +2900,9 @@
+@@ -2738,6 +2741,9 @@
  int main(int argc, char **argv, char **envp)
  {
      int i;
@@ -44,9 +44,9 @@ Index: new/vl.c
 +    long int fairsched_id_long = 0;
 +    char *ep;
      int snapshot, linux_boot;
-     const char *icount_option = NULL;
      const char *initrd_filename;
-@@ -3717,6 +3723,21 @@
+     const char *kernel_filename, *kernel_cmdline;
+@@ -3560,6 +3566,21 @@
                      exit(1);
                  }
                  break;
@@ -68,7 +68,7 @@ Index: new/vl.c
  	    case QEMU_OPTION_vnc:
  #ifdef CONFIG_VNC
                  display_remote++;
-@@ -3992,6 +4013,40 @@
+@@ -3844,6 +3865,40 @@
                            OBJECT_CLASS(machine_class))));
      object_property_add_child(object_get_root(), "machine",
                                OBJECT(current_machine), &error_abort);
@@ -112,7 +112,7 @@ Index: new/vl.c
 Index: new/vzsyscalls.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vzsyscalls.h	2014-07-16 12:01:27.000000000 +0200
++++ new/vzsyscalls.h	2014-11-20 06:50:44.000000000 +0100
 @@ -0,0 +1,47 @@
 +/*
 + *  Copyright (C) 2000-2008, Parallels, Inc. All rights reserved.

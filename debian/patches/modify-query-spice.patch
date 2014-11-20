@@ -9,8 +9,8 @@ Limits: This only works for a single spice session.
 
 Index: new/ui/spice-core.c
 ===================================================================
---- new.orig/ui/spice-core.c	2014-07-16 11:53:56.000000000 +0200
-+++ new/ui/spice-core.c	2014-07-16 12:01:31.000000000 +0200
+--- new.orig/ui/spice-core.c	2014-11-20 06:45:06.000000000 +0100
++++ new/ui/spice-core.c	2014-11-20 07:26:43.000000000 +0100
 @@ -544,6 +544,11 @@
      micro = SPICE_SERVER_VERSION & 0xff;
      info->compiled_version = g_strdup_printf("%d.%d.%d", major, minor, micro);
@@ -25,9 +25,9 @@ Index: new/ui/spice-core.c
          info->port = port;
 Index: new/qapi-schema.json
 ===================================================================
---- new.orig/qapi-schema.json	2014-07-16 12:01:30.000000000 +0200
-+++ new/qapi-schema.json	2014-07-16 12:01:31.000000000 +0200
-@@ -865,11 +865,14 @@
+--- new.orig/qapi-schema.json	2014-11-20 07:26:39.000000000 +0100
++++ new/qapi-schema.json	2014-11-20 07:26:43.000000000 +0100
+@@ -868,11 +868,14 @@
  #
  # @channels: a list of @SpiceChannel for each active spice channel
  #

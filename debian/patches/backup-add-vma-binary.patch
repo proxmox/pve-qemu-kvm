@@ -24,9 +24,9 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 
 Index: new/Makefile
 ===================================================================
---- new.orig/Makefile	2014-07-16 11:53:56.000000000 +0200
-+++ new/Makefile	2014-07-16 12:01:32.000000000 +0200
-@@ -146,7 +146,7 @@
+--- new.orig/Makefile	2014-11-20 08:12:54.000000000 +0100
++++ new/Makefile	2014-11-20 08:15:12.000000000 +0100
+@@ -152,7 +152,7 @@
  include $(SRC_PATH)/libcacard/Makefile
  endif
  
@@ -35,7 +35,7 @@ Index: new/Makefile
  
  config-host.h: config-host.h-timestamp
  config-host.h-timestamp: config-host.mak
-@@ -214,6 +214,7 @@
+@@ -220,6 +220,7 @@
  qemu-img$(EXESUF): qemu-img.o $(block-obj-y) libqemuutil.a libqemustub.a
  qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) libqemuutil.a libqemustub.a
  qemu-io$(EXESUF): qemu-io.o $(block-obj-y) libqemuutil.a libqemustub.a
@@ -46,7 +46,7 @@ Index: new/Makefile
 Index: new/vma-reader.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-reader.c	2014-07-16 12:01:32.000000000 +0200
++++ new/vma-reader.c	2014-11-20 08:15:12.000000000 +0100
 @@ -0,0 +1,799 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -850,7 +850,7 @@ Index: new/vma-reader.c
 Index: new/vma-writer.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma-writer.c	2014-07-16 12:01:32.000000000 +0200
++++ new/vma-writer.c	2014-11-20 08:31:06.000000000 +0100
 @@ -0,0 +1,876 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -1663,7 +1663,7 @@ Index: new/vma-writer.c
 +    /* this should not happen - just to be sure */
 +    while (!qemu_co_queue_empty(&vmaw->wqueue)) {
 +        DPRINTF("vma_writer_close wait\n");
-+        co_sleep_ns(QEMU_CLOCK_REALTIME, 1000000);
++        co_aio_sleep_ns(qemu_get_aio_context(), QEMU_CLOCK_REALTIME, 1000000);
 +    }
 +
 +    if (vmaw->cmd) {
@@ -1731,8 +1731,8 @@ Index: new/vma-writer.c
 Index: new/vma.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.c	2014-07-16 12:01:32.000000000 +0200
-@@ -0,0 +1,583 @@
++++ new/vma.c	2014-11-20 08:47:23.000000000 +0100
+@@ -0,0 +1,582 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -2031,7 +2031,7 @@ Index: new/vma.c
 +                write_zero = false;
 +            }
 +
-+            BlockDriverState *bs = bdrv_new(di->devname, &errp);
++            BlockDriverState *bs = bdrv_new();
 +            if (errp || bdrv_open(&bs, devfn, NULL, NULL, flags, NULL, &errp)) {
 +                g_error("can't open file %s - %s", devfn,
 +                        error_get_pretty(errp));
@@ -2199,12 +2199,8 @@ Index: new/vma.c
 +
 +        BlockDriver *drv = NULL;
 +        Error *errp = NULL;
-+        BlockDriverState *bs = bdrv_new(devname, &errp);
-+        
-+        if (errp) {
-+            g_error("bdrv_new '%s' failed - %s", devname, error_get_pretty(errp));
-+        }
-+ 
++        BlockDriverState *bs = bdrv_new();
++
 +        res = bdrv_open(&bs, path, NULL, NULL, BDRV_O_CACHE_WB , drv, &errp);
 +        if (res < 0) {
 +            unlink(archivename);
@@ -2290,10 +2286,13 @@ Index: new/vma.c
 +int main(int argc, char **argv)
 +{
 +    const char *cmdname;
++    Error *main_loop_err = NULL;
 +
 +    error_set_progname(argv[0]);
 +
-+    qemu_init_main_loop();
++    if (qemu_init_main_loop(&main_loop_err)) {
++        g_error("%s", error_get_pretty(main_loop_err));
++    }
 +
 +    bdrv_init();
 +
@@ -2319,7 +2318,7 @@ Index: new/vma.c
 Index: new/vma.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ new/vma.h	2014-07-16 12:01:32.000000000 +0200
++++ new/vma.h	2014-11-20 08:15:12.000000000 +0100
 @@ -0,0 +1,146 @@
 +/*
 + * VMA: Virtual Machine Archive
@@ -2469,11 +2468,11 @@ Index: new/vma.h
 +#endif /* BACKUP_VMA_H */
 Index: new/Makefile.objs
 ===================================================================
---- new.orig/Makefile.objs	2014-07-16 11:53:56.000000000 +0200
-+++ new/Makefile.objs	2014-07-16 12:01:32.000000000 +0200
-@@ -14,6 +14,7 @@
+--- new.orig/Makefile.objs	2014-11-20 08:12:54.000000000 +0100
++++ new/Makefile.objs	2014-11-20 08:15:12.000000000 +0100
+@@ -13,6 +13,7 @@
+ block-obj-$(CONFIG_WIN32) += aio-win32.o
  block-obj-y += block/
- block-obj-y += qapi-types.o qapi-visit.o qapi-event.o
  block-obj-y += qemu-io-cmds.o
 +block-obj-y += vma-writer.o
  

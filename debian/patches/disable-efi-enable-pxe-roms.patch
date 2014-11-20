@@ -1,8 +1,8 @@
 Index: new/hw/net/e1000.c
 ===================================================================
---- new.orig/hw/net/e1000.c	2014-07-16 11:53:55.000000000 +0200
-+++ new/hw/net/e1000.c	2014-07-16 12:01:38.000000000 +0200
-@@ -1590,7 +1590,7 @@
+--- new.orig/hw/net/e1000.c	2014-11-20 06:45:06.000000000 +0100
++++ new/hw/net/e1000.c	2014-11-20 07:54:14.000000000 +0100
+@@ -1606,7 +1606,7 @@
  
      k->init = pci_e1000_init;
      k->exit = pci_e1000_uninit;
@@ -13,9 +13,9 @@ Index: new/hw/net/e1000.c
      k->revision = info->revision;
 Index: new/hw/net/ne2000.c
 ===================================================================
---- new.orig/hw/net/ne2000.c	2014-07-16 11:53:55.000000000 +0200
-+++ new/hw/net/ne2000.c	2014-07-16 12:01:38.000000000 +0200
-@@ -765,7 +765,7 @@
+--- new.orig/hw/net/ne2000.c	2014-11-20 06:45:06.000000000 +0100
++++ new/hw/net/ne2000.c	2014-11-20 07:54:14.000000000 +0100
+@@ -773,7 +773,7 @@
  
      k->init = pci_ne2000_init;
      k->exit = pci_ne2000_exit;
@@ -26,9 +26,9 @@ Index: new/hw/net/ne2000.c
      k->class_id = PCI_CLASS_NETWORK_ETHERNET;
 Index: new/hw/net/pcnet-pci.c
 ===================================================================
---- new.orig/hw/net/pcnet-pci.c	2014-07-16 11:53:55.000000000 +0200
-+++ new/hw/net/pcnet-pci.c	2014-07-16 12:01:38.000000000 +0200
-@@ -358,7 +358,7 @@
+--- new.orig/hw/net/pcnet-pci.c	2014-11-20 06:45:06.000000000 +0100
++++ new/hw/net/pcnet-pci.c	2014-11-20 07:54:14.000000000 +0100
+@@ -367,7 +367,7 @@
  
      k->init = pci_pcnet_init;
      k->exit = pci_pcnet_uninit;
@@ -39,9 +39,9 @@ Index: new/hw/net/pcnet-pci.c
      k->revision = 0x10;
 Index: new/hw/net/rtl8139.c
 ===================================================================
---- new.orig/hw/net/rtl8139.c	2014-07-16 11:53:55.000000000 +0200
-+++ new/hw/net/rtl8139.c	2014-07-16 12:01:38.000000000 +0200
-@@ -3557,7 +3557,7 @@
+--- new.orig/hw/net/rtl8139.c	2014-11-20 06:45:06.000000000 +0100
++++ new/hw/net/rtl8139.c	2014-11-20 07:54:14.000000000 +0100
+@@ -3562,7 +3562,7 @@
  
      k->init = pci_rtl8139_init;
      k->exit = pci_rtl8139_uninit;
@@ -52,9 +52,9 @@ Index: new/hw/net/rtl8139.c
      k->revision = RTL8139_PCI_REVID; /* >=0x20 is for 8139C+ */
 Index: new/hw/virtio/virtio-pci.c
 ===================================================================
---- new.orig/hw/virtio/virtio-pci.c	2014-07-16 11:53:55.000000000 +0200
-+++ new/hw/virtio/virtio-pci.c	2014-07-16 12:01:38.000000000 +0200
-@@ -1444,7 +1444,7 @@
+--- new.orig/hw/virtio/virtio-pci.c	2014-11-20 06:45:06.000000000 +0100
++++ new/hw/virtio/virtio-pci.c	2014-11-20 07:54:14.000000000 +0100
+@@ -1445,7 +1445,7 @@
      PCIDeviceClass *k = PCI_DEVICE_CLASS(klass);
      VirtioPCIClass *vpciklass = VIRTIO_PCI_CLASS(klass);
  

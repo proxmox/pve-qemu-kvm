@@ -1,8 +1,8 @@
 Index: new/ui/vnc.c
 ===================================================================
---- new.orig/ui/vnc.c	2014-07-16 11:53:56.000000000 +0200
-+++ new/ui/vnc.c	2014-07-16 12:01:27.000000000 +0200
-@@ -1631,6 +1631,10 @@
+--- new.orig/ui/vnc.c	2014-11-20 06:45:06.000000000 +0100
++++ new/ui/vnc.c	2014-11-20 06:50:51.000000000 +0100
+@@ -1633,6 +1633,10 @@
  
  static void do_key_event(VncState *vs, int down, int keycode, int sym)
  {
@@ -13,7 +13,7 @@ Index: new/ui/vnc.c
      /* QEMU console switch */
      switch(keycode) {
      case 0x2a:                          /* Left Shift */
-@@ -1710,7 +1714,24 @@
+@@ -1712,7 +1716,24 @@
      }
  
      if (qemu_console_is_graphic(NULL)) {
@@ -38,7 +38,7 @@ Index: new/ui/vnc.c
      } else {
          bool numlock = vs->modifiers_state[0x45];
          bool control = (vs->modifiers_state[0x1d] ||
-@@ -1849,7 +1870,8 @@
+@@ -1851,7 +1872,8 @@
          lsym = lsym - 'A' + 'a';
      }
  
@@ -48,7 +48,7 @@ Index: new/ui/vnc.c
      trace_vnc_key_event_map(down, sym, keycode, code2name(keycode));
      do_key_event(vs, down, keycode, sym);
  }
-@@ -3032,7 +3054,7 @@
+@@ -3046,7 +3068,7 @@
  char *vnc_display_local_addr(DisplayState *ds)
  {
      VncDisplay *vs = vnc_display;

@@ -1,7 +1,7 @@
 Index: new/block/backup.c
 ===================================================================
---- new.orig/block/backup.c	2014-07-16 11:53:56.000000000 +0200
-+++ new/block/backup.c	2014-07-16 12:01:34.000000000 +0200
+--- new.orig/block/backup.c	2014-11-20 07:55:31.000000000 +0100
++++ new/block/backup.c	2014-11-20 08:56:23.000000000 +0100
 @@ -39,6 +39,7 @@
      BlockDriverState *target;
      MirrorSyncMode sync_mode;
@@ -62,7 +62,7 @@ Index: new/block/backup.c
      }
  }
  
-@@ -248,9 +260,11 @@
+@@ -264,9 +276,11 @@
  
      job->bitmap = hbitmap_alloc(end, 0);
  
@@ -77,25 +77,23 @@ Index: new/block/backup.c
  
      bdrv_add_before_write_notifier(bs, &before_write);
  
-@@ -343,8 +357,10 @@
+@@ -359,7 +373,9 @@
  
      hbitmap_free(job->bitmap);
  
 -    bdrv_iostatus_disable(target);
--    bdrv_unref(target);
 +    if (target) {
 +        bdrv_iostatus_disable(target);
-+        bdrv_unref(target);
 +    }
  
-     block_job_completed(&job->common, ret);
- }
-@@ -353,13 +369,15 @@
+     data = g_malloc(sizeof(*data));
+     data->ret = ret;
+@@ -370,13 +386,15 @@
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,
 +                  BackupDumpFunc *dump_cb,
-                   BlockDriverCompletionFunc *cb, void *opaque,
+                   BlockCompletionFunc *cb, void *opaque,
 +                  bool paused,
                    Error **errp)
  {
@@ -107,7 +105,7 @@ Index: new/block/backup.c
      assert(cb);
  
      if ((on_source_error == BLOCKDEV_ON_ERROR_STOP ||
-@@ -382,10 +400,12 @@
+@@ -399,10 +417,12 @@
          return;
      }
  
@@ -122,10 +120,10 @@ Index: new/block/backup.c
      qemu_coroutine_enter(job->common.co, job);
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-07-16 11:53:56.000000000 +0200
-+++ new/blockdev.c	2014-07-16 12:01:34.000000000 +0200
-@@ -2115,7 +2115,7 @@
-     }
+--- new.orig/blockdev.c	2014-11-20 07:55:31.000000000 +0100
++++ new/blockdev.c	2014-11-20 08:48:02.000000000 +0100
+@@ -2223,7 +2223,7 @@
+     bdrv_set_aio_context(target_bs, aio_context);
  
      backup_start(bs, target_bs, speed, sync, on_source_error, on_target_error,
 -                 block_job_cb, bs, &local_err);
@@ -135,9 +133,9 @@ Index: new/blockdev.c
          error_propagate(errp, local_err);
 Index: new/include/block/block_int.h
 ===================================================================
---- new.orig/include/block/block_int.h	2014-07-16 11:53:56.000000000 +0200
-+++ new/include/block/block_int.h	2014-07-16 12:01:34.000000000 +0200
-@@ -56,6 +56,9 @@
+--- new.orig/include/block/block_int.h	2014-11-20 07:55:31.000000000 +0100
++++ new/include/block/block_int.h	2014-11-20 08:52:59.000000000 +0100
+@@ -57,6 +57,9 @@
  #define BLOCK_OPT_REDUNDANCY        "redundancy"
  #define BLOCK_OPT_NOCOW             "nocow"
  
@@ -147,13 +145,13 @@ Index: new/include/block/block_int.h
  typedef struct BdrvTrackedRequest {
      BlockDriverState *bs;
      int64_t offset;
-@@ -539,7 +542,9 @@
+@@ -583,7 +586,9 @@
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,
 +                  BackupDumpFunc *dump_cb,
-                   BlockDriverCompletionFunc *cb, void *opaque,
+                   BlockCompletionFunc *cb, void *opaque,
 +                  bool paused,
                    Error **errp);
  
- #endif /* BLOCK_INT_H */
+ void blk_dev_change_media_cb(BlockBackend *blk, bool load);

@@ -6,9 +6,9 @@ We simply report success and cancel the backup job instead.
 
 Index: new/blockdev.c
 ===================================================================
---- new.orig/blockdev.c	2014-07-16 12:01:35.000000000 +0200
-+++ new/blockdev.c	2014-07-16 12:01:35.000000000 +0200
-@@ -1907,6 +1907,11 @@
+--- new.orig/blockdev.c	2014-11-20 07:49:05.000000000 +0100
++++ new/blockdev.c	2014-11-20 07:49:14.000000000 +0100
+@@ -1991,6 +1991,11 @@
  {
      PVEBackupDevInfo *di = opaque;
  
@@ -20,7 +20,7 @@ Index: new/blockdev.c
      if (sector_num & 0x7f) {
          if (!backup_state.error) {
              error_setg(&backup_state.error,
-@@ -1917,7 +1922,6 @@
+@@ -2001,7 +2006,6 @@
      }
  
      int64_t cluster_num = sector_num >> 7;
@@ -28,7 +28,7 @@ Index: new/blockdev.c
  
      int ret = -1;
  
-@@ -1925,17 +1929,27 @@
+@@ -2009,17 +2013,27 @@
          size_t zero_bytes = 0;
          ret = vma_writer_write(backup_state.vmaw, di->dev_id, cluster_num,
                                 buf, &zero_bytes);
@@ -60,7 +60,7 @@ Index: new/blockdev.c
  }
  
  static void pvebackup_cleanup(void)
-@@ -2007,7 +2021,7 @@
+@@ -2091,7 +2105,7 @@
              BlockJob *job = di->bs->job;
              if (job) {
                  if (!di->completed) {
