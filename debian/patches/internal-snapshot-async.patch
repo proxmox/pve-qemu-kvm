@@ -370,7 +370,7 @@ Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ new/savevm-async.c	2014-11-20 09:17:48.000000000 +0100
-@@ -0,0 +1,484 @@
+@@ -0,0 +1,497 @@
 +#include "qemu-common.h"
 +#include "qapi/qmp/qerror.h"
 +#include "sysemu/sysemu.h"
@@ -399,6 +399,7 @@ Index: new/savevm-async.c
 +    SAVE_STATE_ERROR,
 +    SAVE_STATE_ACTIVE,
 +    SAVE_STATE_COMPLETED,
++    SAVE_STATE_CANCELLED
 +};
 +
 +
@@ -588,6 +589,13 @@ Index: new/savevm-async.c
 +            }
 +        }
 +    }
++
++    if(snap_state.state == SAVE_STATE_CANCELLED) {
++        save_snapshot_completed();
++        Error *errp = NULL;
++        qmp_savevm_end(&errp);
++    }
++
 +}
 +
 +static const QEMUFileOps block_file_ops = {
@@ -670,6 +678,11 @@ Index: new/savevm-async.c
 +    if (snap_state.state == SAVE_STATE_DONE) {
 +        error_set(errp, ERROR_CLASS_GENERIC_ERROR,
 +                  "VM snapshot not started\n");
++        return;
++    }
++
++    if (snap_state.state == SAVE_STATE_ACTIVE) {
++        snap_state.state = SAVE_STATE_CANCELLED;
 +        return;
 +    }
 +
