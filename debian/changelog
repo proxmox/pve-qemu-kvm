@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-4) unstable; urgency=low
+
+  * update to qemu v2.2.0
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 10 Dec 2014 06:18:34 +0100
+
 pve-qemu-kvm (2.2-3) unstable; urgency=low
 
   * update to qemu v2.2.0-rc5
