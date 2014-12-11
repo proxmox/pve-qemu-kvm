@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-5) unstable; urgency=low
+
+  * add new qmp command: get_link_status
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 11 Dec 2014 10:42:20 +0100
+
 pve-qemu-kvm (2.2-4) unstable; urgency=low
 
   * update to qemu v2.2.0
