@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-6) unstable; urgency=low
+
+  * qmp: fix backup-cancel
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 29 Dec 2014 07:21:24 +0100
+
 pve-qemu-kvm (2.2-5) unstable; urgency=low
 
   * add new qmp command: get_link_status
