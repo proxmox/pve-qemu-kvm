@@ -2,7 +2,7 @@ RELEASE=3.3
 
 # also update debian/changelog
 KVMVER=2.1
-KVMPKGREL=10
+KVMPKGREL=11
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm
@@ -19,7 +19,7 @@ all: ${KVM_DEB} ${KVMSRC}
 download:
 	rm -rf ${KVMDIR} ${KVMSRC}
 	git clone git://git.qemu-project.org/qemu.git -b stable-2.1 ${KVMDIR} 
-	cd ${KVMDIR}; git checkout v2.1.2
+	cd ${KVMDIR}; git checkout v2.1.3
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
 ${KVM_DEB} kvm: ${KVMSRC}
