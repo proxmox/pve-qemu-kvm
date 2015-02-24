@@ -1,3 +1,10 @@
+pve-qemu-kvm (2.2-7) unstable; urgency=low
+
+  * fix mc146818rtc wrong subsection name to avoid
+    vmstate_subsection_load() fail.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 24 Feb 2015 17:38:31 +0100
+
 pve-qemu-kvm (2.2-6) unstable; urgency=low
 
   * qmp: fix backup-cancel

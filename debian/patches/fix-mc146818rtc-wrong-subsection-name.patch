@@ -1,0 +1,35 @@
+To: qemu-devel@nongnu.org
+Date: Thu,  5 Feb 2015 17:24:27 +0100
+Subject: [Qemu-devel] [PULL 10/10] fix mc146818rtc wrong subsection name to
+	avoid vmstate_subsection_load() fail
+
+From: Zhang Haoyu <zhanghy@sangfor.com.cn>
+
+fix mc146818rtc wrong subsection name to avoid vmstate_subsection_load() fail
+during incoming migration or loadvm.
+
+Signed-off-by: Zhang Haoyu <zhanghy@sangfor.com.cn>
+Reviewed-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ hw/timer/mc146818rtc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hw/timer/mc146818rtc.c b/hw/timer/mc146818rtc.c
+index 5a107fa..0600c9a 100644
+--- a/hw/timer/mc146818rtc.c
++++ b/hw/timer/mc146818rtc.c
+@@ -734,7 +734,7 @@ static int rtc_post_load(void *opaque, int version_id)
+ }
+
+ static const VMStateDescription vmstate_rtc_irq_reinject_on_ack_count = {
+-    .name = "irq_reinject_on_ack_count",
++    .name = "mc146818rtc/irq_reinject_on_ack_count",
+     .version_id = 1,
+     .minimum_version_id = 1,
+     .fields = (VMStateField[]) {
+-- 
+2.1.0
+
+
+
