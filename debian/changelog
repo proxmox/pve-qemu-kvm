@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-8) unstable; urgency=medium
+
+  * fix package dependencies for Debian Jessie
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 26 Feb 2015 12:47:17 +0100
+
 pve-qemu-kvm (2.2-7) unstable; urgency=low
 
   * fix mc146818rtc wrong subsection name to avoid
