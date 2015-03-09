@@ -1,0 +1,93 @@
+From patchwork Wed Mar  4 19:13:32 2015
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [PULL,
+ 2/5] virtio-balloon: Fix balloon not working correctly when hotplug
+ memory
+From: Luiz Capitulino <lcapitulino@redhat.com>
+X-Patchwork-Id: 446384
+Message-Id: <1425496415-6161-3-git-send-email-lcapitulino@redhat.com>
+To: peter.maydell@linaro.org
+Cc: qemu-devel@nongnu.org
+Date: Wed,  4 Mar 2015 14:13:32 -0500
+
+From: zhanghailiang <zhang.zhanghailiang@huawei.com>
+
+When do memory balloon, it takes the 'ram_size' as the VM's current ram size,
+But 'ram_size' is the startup configured ram size, it does not take into
+account the hotplugged memory.
+
+As a result, the balloon result will be confused.
+Steps to reproduce:
+(1)Start VM: qemu -m size=1024,slots=4,maxmem=8G
+(2)In VM: #free -m : 1024M
+(3)qmp balloon 512M
+(4)In VM: #free -m : 512M
+(5)hotplug pc-dimm 1G
+(6)In VM: #free -m : 1512M
+(7)qmp balloon 256M
+(8)In VM: #free -m :1256M
+We expect the VM's available ram size to be 256M after 'qmp balloon 256M'
+command, but VM's real available ram size is 1256M.
+
+For "qmp balloon" is not performance critical code, we use function
+'get_current_ram_size' to get VM's current ram size.
+
+Signed-off-by: zhanghailiang <zhang.zhanghailiang@huawei.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
+---
+ hw/virtio/virtio-balloon.c |   16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/hw/virtio/virtio-balloon.c b/hw/virtio/virtio-balloon.c
+index 14390e1..df3333c 100644
+--- a/hw/virtio/virtio-balloon.c
++++ b/hw/virtio/virtio-balloon.c
+@@ -294,10 +294,12 @@ static void virtio_balloon_set_config(VirtIODevice *vdev,
+     VirtIOBalloon *dev = VIRTIO_BALLOON(vdev);
+     struct virtio_balloon_config config;
+     uint32_t oldactual = dev->actual;
++    ram_addr_t vm_ram_size = get_current_ram_size();
++
+     memcpy(&config, config_data, sizeof(struct virtio_balloon_config));
+     dev->actual = le32_to_cpu(config.actual);
+     if (dev->actual != oldactual) {
+-        qapi_event_send_balloon_change(ram_size -
++        qapi_event_send_balloon_change(vm_ram_size -
+                         ((ram_addr_t) dev->actual << VIRTIO_BALLOON_PFN_SHIFT),
+                         &error_abort);
+     }
+@@ -312,9 +314,8 @@ static uint32_t virtio_balloon_get_features(VirtIODevice *vdev, uint32_t f)
+ static void virtio_balloon_stat(void *opaque, BalloonInfo *info)
+ {
+     VirtIOBalloon *dev = opaque;
+-    info->actual = ram_size - ((uint64_t) dev->actual <<
+-                               VIRTIO_BALLOON_PFN_SHIFT);
+-
++    info->actual = get_current_ram_size() - ((uint64_t) dev->actual <<
++                                             VIRTIO_BALLOON_PFN_SHIFT);
+     info->max_mem = ram_size;
+ 
+     if (!(balloon_stats_enabled(dev) && balloon_stats_supported(dev) &&
+@@ -349,12 +350,13 @@ static void virtio_balloon_to_target(void *opaque, ram_addr_t target)
+ {
+     VirtIOBalloon *dev = VIRTIO_BALLOON(opaque);
+     VirtIODevice *vdev = VIRTIO_DEVICE(dev);
++    ram_addr_t vm_ram_size = get_current_ram_size();
+ 
+-    if (target > ram_size) {
+-        target = ram_size;
++    if (target > vm_ram_size) {
++        target = vm_ram_size;
+     }
+     if (target) {
+-        dev->num_pages = (ram_size - target) >> VIRTIO_BALLOON_PFN_SHIFT;
++        dev->num_pages = (vm_ram_size - target) >> VIRTIO_BALLOON_PFN_SHIFT;
+         virtio_notify_config(vdev);
+     }
+ }
+-- 
+1.7.10.4
+

@@ -1,8 +1,10 @@
 pve-qemu-kvm (2.2-8) unstable; urgency=medium
 
   * fix package dependencies for Debian Jessie
-
- -- Proxmox Support Team <support@proxmox.com>  Thu, 26 Feb 2015 12:47:17 +0100
+  
+  * fix ballooning with memory hotplug
+    
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 11 Mar 2015 07:12:43 +0100
 
 pve-qemu-kvm (2.2-7) unstable; urgency=low
 
