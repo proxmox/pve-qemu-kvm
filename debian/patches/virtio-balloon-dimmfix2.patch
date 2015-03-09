@@ -1,0 +1,93 @@
+From patchwork Wed Mar  4 19:13:31 2015
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [PULL, 1/5] pc-dimm: add a function to calculate VM's current RAM size
+From: Luiz Capitulino <lcapitulino@redhat.com>
+X-Patchwork-Id: 446386
+Message-Id: <1425496415-6161-2-git-send-email-lcapitulino@redhat.com>
+To: peter.maydell@linaro.org
+Cc: qemu-devel@nongnu.org
+Date: Wed,  4 Mar 2015 14:13:31 -0500
+
+From: zhanghailiang <zhang.zhanghailiang@huawei.com>
+
+The global parameter 'ram_size' does not take into account
+the hotplugged memory.
+
+In some codes, we use 'ram_size' as current VM's real RAM size,
+which is not correct.
+
+Add function 'get_current_ram_size' to calculate VM's current RAM size,
+it will enumerate present memory devices and also plus ram_size.
+
+Signed-off-by: zhanghailiang <zhang.zhanghailiang@huawei.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/mem/pc-dimm.c                | 26 ++++++++++++++++++++++++++
+ include/exec/cpu-common.h       |  1 +
+ stubs/qmp_pc_dimm_device_list.c |  5 +++++
+ 3 files changed, 32 insertions(+)
+
+diff --git a/hw/mem/pc-dimm.c b/hw/mem/pc-dimm.c
+index f27a087..de81b9c 100644
+--- a/hw/mem/pc-dimm.c
++++ b/hw/mem/pc-dimm.c
+@@ -100,6 +100,32 @@ int qmp_pc_dimm_device_list(Object *obj, void *opaque)
+     return 0;
+ }
+ 
++ram_addr_t get_current_ram_size(void)
++{
++    MemoryDeviceInfoList *info_list = NULL;
++    MemoryDeviceInfoList **prev = &info_list;
++    MemoryDeviceInfoList *info;
++    ram_addr_t size = ram_size;
++
++    qmp_pc_dimm_device_list(qdev_get_machine(), &prev);
++    for (info = info_list; info; info = info->next) {
++        MemoryDeviceInfo *value = info->value;
++
++        if (value) {
++            switch (value->kind) {
++            case MEMORY_DEVICE_INFO_KIND_DIMM:
++                size += value->dimm->size;
++                break;
++            default:
++                break;
++            }
++        }
++    }
++    qapi_free_MemoryDeviceInfoList(info_list);
++
++    return size;
++}
++
+ static int pc_dimm_slot2bitmap(Object *obj, void *opaque)
+ {
+     unsigned long *bitmap = opaque;
+diff --git a/include/exec/cpu-common.h b/include/exec/cpu-common.h
+index 427b851..fcc3162 100644
+--- a/include/exec/cpu-common.h
++++ b/include/exec/cpu-common.h
+@@ -52,6 +52,7 @@ typedef uintptr_t ram_addr_t;
+ #endif
+ 
+ extern ram_addr_t ram_size;
++ram_addr_t get_current_ram_size(void);
+ 
+ /* memory API */
+ 
+diff --git a/stubs/qmp_pc_dimm_device_list.c b/stubs/qmp_pc_dimm_device_list.c
+index 5cb220c..b584bd8 100644
+--- a/stubs/qmp_pc_dimm_device_list.c
++++ b/stubs/qmp_pc_dimm_device_list.c
+@@ -5,3 +5,8 @@ int qmp_pc_dimm_device_list(Object *obj, void *opaque)
+ {
+    return 0;
+ }
++
++ram_addr_t get_current_ram_size(void)
++{
++    return ram_size;
++}

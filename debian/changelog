@@ -2,6 +2,8 @@ pve-qemu-kvm (2.2-8) unstable; urgency=low
 
   * update to v2.2.1
   
+  * fix ballooning with memory hotplug
+  
   * remove fix-mc146818rtc-wrong-subsection-name.patch (now upstream)
   
  -- Proxmox Support Team <support@proxmox.com>  Wed, 11 Mar 2015 07:02:14 +0100
