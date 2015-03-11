@@ -33,4 +33,3 @@ virtio-balloon-dimmfix1.patch
 virtio-balloon-dimmfix2.patch
 virtio-balloon-dimmfix3.patch
 add-qmp-get-link-status.patch
-fix-mc146818rtc-wrong-subsection-name.patch

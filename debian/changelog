@@ -1,6 +1,10 @@
 pve-qemu-kvm (2.2-8) unstable; urgency=medium
 
   * fix package dependencies for Debian Jessie
+
+  * update to v2.2.1
+
+  * remove fix-mc146818rtc-wrong-subsection-name.patch (now upstream)
   
   * fix ballooning with memory hotplug
     
