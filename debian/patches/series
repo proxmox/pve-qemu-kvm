@@ -30,4 +30,3 @@ backup-vma-allow-empty-backups.patch
 glusterfs-daemonize.patch
 gluster-backupserver.patch
 add-qmp-get-link-status.patch
-fix-mc146818rtc-wrong-subsection-name.patch
