@@ -1,0 +1,45 @@
+From 3ad2a905f10a4a9e7c7a385d64032a291eb6892b Mon Sep 17 00:00:00 2001
+From: Fam Zheng <famz@redhat.com>
+Date: Fri, 13 Mar 2015 15:55:54 +0800
+Subject: [PATCH] virtio-scsi: Fix assert in virtio_scsi_push_event
+
+Hotplugging a scsi-disk may trigger the assertion in qemu_sgl_concat.
+
+    qemu-system-x86_64: qemu/hw/scsi/virtio-scsi.c:115: qemu_sgl_concat:
+    Assertion `skip == 0' failed.
+
+This is introduced by commit 55783a55 (virtio-scsi: work around bug in
+old BIOSes) which didn't check out_num when accessing out_sg[0].iov_len
+(the same to in sg). For virtio_scsi_push_event, looking into out_sg
+doesn't make sense because 0 req_size is intended.
+
+Cc: qemu-stable@nongnu.org
+[Cc'ing qemu-stable because 55783a55 did it too]
+Signed-off-by: Fam Zheng <famz@redhat.com>
+Signed-off-by: Stefan Priebe <s.priebe@profihost.ag>
+---
+ hw/scsi/virtio-scsi.c |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/hw/scsi/virtio-scsi.c b/hw/scsi/virtio-scsi.c
+index a44c410..810c377 100644
+--- a/hw/scsi/virtio-scsi.c
++++ b/hw/scsi/virtio-scsi.c
+@@ -145,8 +145,12 @@ static int virtio_scsi_parse_req(VirtIOSCSIReq *req,
+      * TODO: always disable this workaround for virtio 1.0 devices.
+      */
+     if ((vdev->guest_features & (1 << VIRTIO_F_ANY_LAYOUT)) == 0) {
+-        req_size = req->elem.out_sg[0].iov_len;
+-        resp_size = req->elem.in_sg[0].iov_len;
++        if (req->elem.out_num) {
++            req_size = req->elem.out_sg[0].iov_len;
++        }
++        if (req->elem.in_num) {
++            resp_size = req->elem.in_sg[0].iov_len;
++        }
+     }
+ 
+     out_size = qemu_sgl_concat(req, req->elem.out_sg,
+-- 
+1.7.10.4
+
