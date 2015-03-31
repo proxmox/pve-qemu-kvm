@@ -196,7 +196,7 @@ index bc36cba..a740f04 100644
 +               vmar->zero_cluster_data,
 +               (double)(100.0*vmar->zero_cluster_data)/
 +               (vmar->clusters_read*VMA_CLUSTER_SIZE));
-+        printf("space reduction due to 4K zero bocks %.3g%%\n",
++        printf("space reduction due to 4K zero blocks %.3g%%\n",
 +               (double)(100.0*vmar->partial_zero_cluster_data) /
 +               (vmar->clusters_read*VMA_CLUSTER_SIZE-vmar->zero_cluster_data));
 +    }
