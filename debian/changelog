@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-9) unstable; urgency=low
+
+  * fix assert while resizing or hot plugging virtio scsi disks
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 31 Mar 2015 06:33:07 +0200
+
 pve-qemu-kvm (2.2-8) unstable; urgency=low
 
   * update to v2.2.1
