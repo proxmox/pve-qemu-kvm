@@ -14,3 +14,9 @@ Description: Full virtualization on x86 hardware
  Using KVM, one can run multiple virtual PCs, each running unmodified Linux or
  Windows images. Each virtual machine has private virtualized hardware: a
  network card, disk, graphics adapter, etc. 
+
+Package: pve-qemu-kvm-dbg
+Architecture: any
+Depends: pve-qemu-kvm
+Description: pve qemu debugging symbols
+
