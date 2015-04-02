@@ -17,6 +17,8 @@ Description: Full virtualization on x86 hardware
 
 Package: pve-qemu-kvm-dbg
 Architecture: any
-Depends: pve-qemu-kvm
+Section: debug
+Depends: pve-qemu-kvm (= ${binary:Version})
 Description: pve qemu debugging symbols
+ This package contains the debugging symbols for pve-qemu-kvm.
 
