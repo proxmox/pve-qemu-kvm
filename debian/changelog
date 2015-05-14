@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-10) unstable; urgency=low
+
+  * fix VENOM qemu security flaw (CVE-2015-3456)
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 14 May 2015 09:37:00 +0200
+
 pve-qemu-kvm (2.2-9) unstable; urgency=low
 
   * fix assert while resizing or hot plugging virtio scsi disks
