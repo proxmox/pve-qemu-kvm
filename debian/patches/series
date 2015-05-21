@@ -34,3 +34,4 @@ virtio-balloon-dimmfix2.patch
 virtio-balloon-dimmfix3.patch
 add-qmp-get-link-status.patch
 virtio-scsi_fix_assert.patch
+0001-friendlier-ai_flag-hints-for-ipv6-hosts.patch
