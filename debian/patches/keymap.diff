@@ -48,12 +48,3 @@ Index: new/ui/vnc.c
      trace_vnc_key_event_map(down, sym, keycode, code2name(keycode));
      do_key_event(vs, down, keycode, sym);
  }
-@@ -3046,7 +3068,7 @@
- char *vnc_display_local_addr(DisplayState *ds)
- {
-     VncDisplay *vs = vnc_display;
--    
-+
-     return vnc_socket_local_addr("%s:%s", vs->lsock);
- }
- 

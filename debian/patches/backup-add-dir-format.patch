@@ -47,9 +47,9 @@ Index: new/blockdev.c
      block_job_cb(bs, ret);
  
 @@ -2138,6 +2141,7 @@
-                     bool has_speed, int64_t speed, Error **errp)
  {
-     BlockDriverState *bs;
+     BlockBackend *blk;
+     BlockDriverState *bs = NULL;
 +    const char *backup_dir = NULL;
      Error *local_err = NULL;
      uuid_t uuid;

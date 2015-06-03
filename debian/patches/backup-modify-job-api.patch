@@ -77,18 +77,20 @@ Index: new/block/backup.c
  
      bdrv_add_before_write_notifier(bs, &before_write);
  
-@@ -359,7 +373,9 @@
+@@ -359,8 +373,10 @@
  
      hbitmap_free(job->bitmap);
  
 -    bdrv_iostatus_disable(target);
+-    bdrv_op_unblock_all(target, job->common.blocker);
 +    if (target) {
 +        bdrv_iostatus_disable(target);
++        bdrv_op_unblock_all(target, job->common.blocker);
 +    }
  
      data = g_malloc(sizeof(*data));
      data->ret = ret;
-@@ -370,13 +386,15 @@
+@@ -370,13 +386,15 @@ for backup_start
                    int64_t speed, MirrorSyncMode sync_mode,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,
@@ -104,10 +106,32 @@ Index: new/block/backup.c
 +    assert(target || dump_cb);
      assert(cb);
  
-     if ((on_source_error == BLOCKDEV_ON_ERROR_STOP ||
-@@ -399,10 +417,12 @@
+     if (bs == target) {
+@@ -419,7 +437,7 @@ in backup_start
          return;
      }
+ 
+-    if (!bdrv_is_inserted(target)) {
++    if (target && !bdrv_is_inserted(target)) {
+         error_setg(errp, "Device is not inserted: %s",
+                    bdrv_get_device_name(target));
+         return;
+@@ -429,7 +447,7 @@ in backup_start
+         return;
+     }
+ 
+-    if (bdrv_op_is_blocked(target, BLOCK_OP_TYPE_BACKUP_TARGET, errp)) {
++    if (target && bdrv_op_is_blocked(target, BLOCK_OP_TYPE_BACKUP_TARGET, errp)) {
+         return;
+     }
+ 
+@@ -397,12 +415,15 @@ in backup_start
+         return;
+     }
+ 
+-    bdrv_op_block_all(target, job->common.blocker);
++    if (target)
++        bdrv_op_block_all(target, job->common.blocker);
  
 +    job->dump_cb = dump_cb;
      job->on_source_error = on_source_error;
@@ -122,9 +146,18 @@ Index: new/blockdev.c
 ===================================================================
 --- new.orig/blockdev.c	2014-11-20 07:55:31.000000000 +0100
 +++ new/blockdev.c	2014-11-20 08:48:02.000000000 +0100
-@@ -2223,7 +2223,7 @@
+@@ -2223,7 +2223,7 @@ qmp_drive_backup
      bdrv_set_aio_context(target_bs, aio_context);
  
+     backup_start(bs, target_bs, speed, sync, on_source_error, on_target_error,
+-                 block_job_cb, bs, &local_err);
++                 NULL, block_job_cb, bs, false, &local_err);
+     if (local_err != NULL) {
+         bdrv_unref(target_bs);
+         error_propagate(errp, local_err);
+@@ -2284,7 +2284,7 @@ qmp_blockdev_backup
+     bdrv_ref(target_bs);
+     bdrv_set_aio_context(target_bs, aio_context);
      backup_start(bs, target_bs, speed, sync, on_source_error, on_target_error,
 -                 block_job_cb, bs, &local_err);
 +                 NULL, block_job_cb, bs, false, &local_err);
@@ -136,8 +169,8 @@ Index: new/include/block/block_int.h
 --- new.orig/include/block/block_int.h	2014-11-20 07:55:31.000000000 +0100
 +++ new/include/block/block_int.h	2014-11-20 08:52:59.000000000 +0100
 @@ -57,6 +57,9 @@
- #define BLOCK_OPT_REDUNDANCY        "redundancy"
- #define BLOCK_OPT_NOCOW             "nocow"
+ 
+ #define BLOCK_PROBE_BUF_SIZE        512
  
 +typedef int BackupDumpFunc(void *opaque, BlockDriverState *bs,
 +                           int64_t sector_num, int n_sectors, unsigned char *buf);

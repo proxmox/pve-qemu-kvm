@@ -25,19 +25,19 @@ Index: new/Makefile.objs
 ===================================================================
 --- new.orig/Makefile.objs	2014-11-20 09:13:01.000000000 +0100
 +++ new/Makefile.objs	2014-11-20 09:16:47.000000000 +0100
-@@ -56,6 +56,7 @@
+@@ -53,6 +53,7 @@
  common-obj-y += qemu-char.o #aio.o
- common-obj-y += block-migration.o
- common-obj-y += page_cache.o xbzrle.o
+ common-obj-y += page_cache.o
+ common-obj-y += qjson.o
 +common-obj-y += savevm-async.o
  
- common-obj-$(CONFIG_POSIX) += migration-exec.o migration-unix.o migration-fd.o
+ common-obj-$(CONFIG_SPICE) += spice-qemu-char.o
  
 Index: new/block.c
 ===================================================================
 --- new.orig/block.c	2014-11-20 09:13:01.000000000 +0100
 +++ new/block.c	2014-11-20 09:16:47.000000000 +0100
-@@ -2119,7 +2119,7 @@
+@@ -2202,7 +2202,7 @@
      bdrv_set_backing_hd(bs_top, bs_new);
  }
  
@@ -50,7 +50,7 @@ Index: new/hmp-commands.hx
 ===================================================================
 --- new.orig/hmp-commands.hx	2014-11-20 09:13:01.000000000 +0100
 +++ new/hmp-commands.hx	2014-11-20 09:16:47.000000000 +0100
-@@ -1799,6 +1799,8 @@
+@@ -1797,6 +1797,8 @@
  show current migration capabilities
  @item info migrate_cache_size
  show current migration XBZRLE cache size
@@ -99,7 +99,7 @@ Index: new/hmp.c
 ===================================================================
 --- new.orig/hmp.c	2014-11-20 09:13:01.000000000 +0100
 +++ new/hmp.c	2014-11-20 09:16:47.000000000 +0100
-@@ -1849,3 +1849,60 @@
+@@ -1849,6 +1849,63 @@
  
      qapi_free_MemoryDeviceInfoList(info_list);
  }
@@ -160,6 +160,9 @@ Index: new/hmp.c
 +        monitor_printf(mon, "Error: %s\n", info->error);
 +    }
 +}
+ 
+ void hmp_qom_list(Monitor *mon, const QDict *qdict)
+ {
 Index: new/hmp.h
 ===================================================================
 --- new.orig/hmp.h	2014-11-20 09:13:01.000000000 +0100
@@ -180,8 +183,8 @@ Index: new/hmp.h
 +void hmp_snapshot_drive(Monitor *mon, const QDict *qdict);
 +void hmp_delete_drive_snapshot(Monitor *mon, const QDict *qdict);
 +void hmp_savevm_end(Monitor *mon, const QDict *qdict);
- void hmp_send_key(Monitor *mon, const QDict *qdict);
- void hmp_screen_dump(Monitor *mon, const QDict *qdict);
+ void hmp_sendkey(Monitor *mon, const QDict *qdict);
+ void hmp_screendump(Monitor *mon, const QDict *qdict);
  void hmp_nbd_server_start(Monitor *mon, const QDict *qdict);
 Index: new/include/block/block.h
 ===================================================================
@@ -201,11 +204,11 @@ Index: new/include/sysemu/sysemu.h
 +++ new/include/sysemu/sysemu.h	2014-11-20 09:16:47.000000000 +0100
 @@ -76,16 +76,17 @@
  
- void do_savevm(Monitor *mon, const QDict *qdict);
+ void hmp_savevm(Monitor *mon, const QDict *qdict);
  int load_vmstate(const char *name);
 +int load_state_from_blockdev(const char *filename);
- void do_delvm(Monitor *mon, const QDict *qdict);
- void do_info_snapshots(Monitor *mon, const QDict *qdict);
+ void hmp_delvm(Monitor *mon, const QDict *qdict);
+ void hmp_info_snapshots(Monitor *mon, const QDict *qdict);
  
  void qemu_announce_self(void);
  
@@ -370,7 +373,7 @@ Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ new/savevm-async.c	2014-11-20 09:17:48.000000000 +0100
-@@ -0,0 +1,497 @@
+@@ -0,0 +1,503 @@
 +#include "qemu-common.h"
 +#include "qapi/qmp/qerror.h"
 +#include "sysemu/sysemu.h"
@@ -383,6 +386,7 @@ Index: new/savevm-async.c
 +#include "block/qapi.h"
 +#include "block/block.h"
 +#include "qemu/timer.h"
++#include "sysemu/block-backend.h"
 +
 +/* #define DEBUG_SAVEVM_STATE */
 +
@@ -695,6 +699,7 @@ Index: new/savevm-async.c
 +
 +void qmp_snapshot_drive(const char *device, const char *name, Error **errp)
 +{
++    BlockBackend *blk;
 +    BlockDriverState *bs;
 +    QEMUSnapshotInfo sn1, *sn = &sn1;
 +    int ret;
@@ -710,12 +715,13 @@ Index: new/savevm-async.c
 +        return;
 +    }
 +
-+    bs = bdrv_find(device);
-+    if (!bs) {
++    blk = blk_by_name(device);
++    if (!blk) {
 +        error_set(errp, QERR_DEVICE_NOT_FOUND, device);
 +        return;
 +    }
 +
++    bs = blk_bs(blk);
 +    if (!bdrv_is_inserted(bs)) {
 +        error_set(errp, QERR_DEVICE_HAS_NO_MEDIUM, device);
 +        return;
@@ -766,17 +772,20 @@ Index: new/savevm-async.c
 +void qmp_delete_drive_snapshot(const char *device, const char *name,
 +                               Error **errp)
 +{
++    BlockBackend *blk;
 +    BlockDriverState *bs;
 +    QEMUSnapshotInfo sn1, *sn = &sn1;
 +    Error *local_err = NULL;
 +
 +    int ret;
 +
-+    bs = bdrv_find(device);
-+    if (!bs) {
++    blk = blk_by_name(device);
++    if (!blk) {
 +        error_set(errp, QERR_DEVICE_NOT_FOUND, device);
 +        return;
 +    }
++
++    bs = blk_bs(blk);
 +    if (bdrv_is_read_only(bs)) {
 +        error_set(errp, QERR_DEVICE_IS_READ_ONLY, device);
 +        return;
@@ -895,16 +904,16 @@ Index: new/savevm.c
  
  /*
 @@ -690,7 +691,7 @@
-     return ret;
+     return !machine->suppress_vmdesc;
  }
  
 -void qemu_savevm_state_complete(QEMUFile *f)
 +int qemu_savevm_state_complete(QEMUFile *f)
  {
-     SaveStateEntry *se;
-     int ret;
+     QJSON *vmdesc;
+     int vmdesc_len;
 @@ -717,7 +718,7 @@
-         trace_savevm_section_end(se->idstr, se->section_id);
+         trace_savevm_section_end(se->idstr, se->section_id, ret);
          if (ret < 0) {
              qemu_file_set_error(f, ret);
 -            return;
@@ -913,8 +922,8 @@ Index: new/savevm.c
      }
  
 @@ -746,6 +747,7 @@
+     object_unref(OBJECT(vmdesc));
  
-     qemu_put_byte(f, QEMU_VM_EOF);
      qemu_fflush(f);
 +    return qemu_file_get_error(f);
  }
@@ -933,9 +942,9 @@ Index: new/vl.c
      const char *cpu_model;
      const char *vga_model = NULL;
 @@ -3457,6 +3458,9 @@
- 	    case QEMU_OPTION_loadvm:
- 		loadvm = optarg;
- 		break;
+             case QEMU_OPTION_loadvm:
+                 loadvm = optarg;
+                 break;
 +            case QEMU_OPTION_loadstate:
 +                loadstate = optarg;
 +                break;

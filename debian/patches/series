@@ -1,6 +1,5 @@
 fr-ca-keymap-corrections.diff
 adjust-path.diff
-fairsched.diff
 keymap.diff
 pve-auth.patch
 vencrypt-auth-plain.patch
@@ -29,9 +28,5 @@ disable-efi-enable-pxe-roms.patch
 backup-vma-allow-empty-backups.patch
 glusterfs-daemonize.patch
 gluster-backupserver.patch
-virtio-balloon-dimmfix1.patch
-virtio-balloon-dimmfix2.patch
-virtio-balloon-dimmfix3.patch
 add-qmp-get-link-status.patch
-virtio-scsi_fix_assert.patch
 0001-friendlier-ai_flag-hints-for-ipv6-hosts.patch

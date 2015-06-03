@@ -4,7 +4,7 @@ Index: new/hw/net/e1000.c
 +++ new/hw/net/e1000.c	2014-11-20 07:54:14.000000000 +0100
 @@ -1606,7 +1606,7 @@
  
-     k->init = pci_e1000_init;
+     k->realize = pci_e1000_realize;
      k->exit = pci_e1000_uninit;
 -    k->romfile = "efi-e1000.rom";
 +    k->romfile = "pxe-e1000.rom";
@@ -17,7 +17,7 @@ Index: new/hw/net/ne2000.c
 +++ new/hw/net/ne2000.c	2014-11-20 07:54:14.000000000 +0100
 @@ -773,7 +773,7 @@
  
-     k->init = pci_ne2000_init;
+     k->realize = pci_ne2000_realize;
      k->exit = pci_ne2000_exit;
 -    k->romfile = "efi-ne2k_pci.rom",
 +    k->romfile = "pxe-ne2k_pci.rom",
@@ -30,7 +30,7 @@ Index: new/hw/net/pcnet-pci.c
 +++ new/hw/net/pcnet-pci.c	2014-11-20 07:54:14.000000000 +0100
 @@ -367,7 +367,7 @@
  
-     k->init = pci_pcnet_init;
+     k->realize = pci_pcnet_realize;
      k->exit = pci_pcnet_uninit;
 -    k->romfile = "efi-pcnet.rom",
 +    k->romfile = "pxe-pcnet.rom",
@@ -43,7 +43,7 @@ Index: new/hw/net/rtl8139.c
 +++ new/hw/net/rtl8139.c	2014-11-20 07:54:14.000000000 +0100
 @@ -3562,7 +3562,7 @@
  
-     k->init = pci_rtl8139_init;
+     k->realize = pci_rtl8139_realize;
      k->exit = pci_rtl8139_uninit;
 -    k->romfile = "efi-rtl8139.rom";
 +    k->romfile = "pxe-rtl8139.rom";

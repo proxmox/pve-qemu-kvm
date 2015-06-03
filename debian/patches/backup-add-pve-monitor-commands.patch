@@ -10,7 +10,7 @@ Index: new/blockdev.c
  
  static const char *const if_name[IF_COUNT] = {
      [IF_NONE] = "none",
-@@ -1954,6 +1955,437 @@
+@@ -1954,6 +1955,439 @@
      bdrv_put_ref_bh_schedule(bs);
  }
  
@@ -196,7 +196,8 @@ Index: new/blockdev.c
 +                    bool has_devlist, const char *devlist,
 +                    bool has_speed, int64_t speed, Error **errp)
 +{
-+    BlockDriverState *bs;
++    BlockBackend *blk;
++    BlockDriverState *bs = NULL;
 +    Error *local_err = NULL;
 +    uuid_t uuid;
 +    VmaWriter *vmaw = NULL;
@@ -223,8 +224,9 @@ Index: new/blockdev.c
 +
 +        gchar **d = devs;
 +        while (d && *d) {
-+            bs = bdrv_find(*d);
-+            if (bs) {
++            blk = blk_by_name(*d);
++            if (blk) {
++                bs = blk_bs(blk);
 +                if (bdrv_is_read_only(bs)) {
 +                    error_set(errp, QERR_DEVICE_IS_READ_ONLY, *d);
 +                    goto err;

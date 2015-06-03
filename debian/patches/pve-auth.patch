@@ -1,8 +1,61 @@
+Index: new/qemu-options.hx
+===================================================================
+--- new.orig/qemu-options.hx	2014-11-20 06:45:06.000000000 +0100
++++ new/qemu-options.hx	2014-11-20 06:50:44.000000000 +0100
+@@ -411,6 +411,9 @@
+ @table @option
+ ETEXI
+ 
++DEF("id", HAS_ARG, QEMU_OPTION_id,
++    "-id n	     set the VMID\n", QEMU_ARCH_ALL)
++
+ DEF("fda", HAS_ARG, QEMU_OPTION_fda,
+     "-fda/-fdb file  use 'file' as floppy disk 0/1 image\n", QEMU_ARCH_ALL)
+ DEF("fdb", HAS_ARG, QEMU_OPTION_fdb, "", QEMU_ARCH_ALL)
+Index: new/vl.c
+===================================================================
+--- new.orig/vl.c	2014-11-20 06:45:06.000000000 +0100
++++ new/vl.c	2014-11-20 06:50:44.000000000 +0100
+@@ -2730,6 +2730,7 @@
+ int main(int argc, char **argv, char **envp)
+ {
+     int i;
++    long int vm_id_long = 0;
+     int snapshot, linux_boot;
+     const char *initrd_filename;
+     const char *kernel_filename, *kernel_cmdline;
+@@ -3477,6 +3478,14 @@
+                     exit(1);
+                 }
+                 break;
++            case QEMU_OPTION_id:
++                vm_id_long = strtol(optarg, (char **) &optarg, 10);
++                if (*optarg != 0 || vm_id_long < 100 || vm_id_long > INT_MAX) {
++                    fprintf(stderr, "Invalid ID\n");
++                    exit(1);
++                }
++                pve_auth_setup(vm_id_long);
++                break;
+             case QEMU_OPTION_vnc:
+ #ifdef CONFIG_VNC
+                 if (vnc_parse_func(optarg) == NULL) {
+Index: new/include/ui/console.h
+===================================================================
+--- new.orig/include/ui/console.h	2014-11-20 06:45:06.000000000 +0100
++++ new/include/ui/console.h	2014-11-20 06:50:55.000000000 +0100
+@@ -328,6 +328,7 @@
+ void cocoa_display_init(DisplayState *ds, int full_screen);
+ 
+ /* vnc.c */
++void pve_auth_setup(int vmid);
+ void vnc_display_init(const char *id);
+ void vnc_display_open(const char *id, Error **errp);
+ void vnc_display_add_client(const char *id, int csock, bool skipauth);
 Index: new/ui/vnc.c
 ===================================================================
 --- new.orig/ui/vnc.c	2014-11-20 06:50:51.000000000 +0100
 +++ new/ui/vnc.c	2014-11-20 06:50:55.000000000 +0100
-@@ -46,6 +46,125 @@
+@@ -48,6 +48,125 @@
  #include "vnc_keysym.h"
  #include "d3des.h"
  
@@ -125,32 +178,11 @@ Index: new/ui/vnc.c
 +	return -1;
 +}
 +
- static VncDisplay *vnc_display; /* needed for info vnc */
+ static QTAILQ_HEAD(, VncDisplay) vnc_displays =
+     QTAILQ_HEAD_INITIALIZER(vnc_displays);
  
- static int vnc_cursor_define(VncState *vs);
-@@ -3156,6 +3275,7 @@
-             tls = 1; /* Require TLS */
-         } else if (strncmp(options, "x509", 4) == 0) {
-             char *start, *end;
-+            tls = 1; /* Require TLS */
-             x509 = 1; /* Require x509 certificates */
-             if (strncmp(options, "x509verify", 10) == 0)
-                 vs->tls.x509verify = 1; /* ...and verify client certs */
-@@ -3176,8 +3296,10 @@
-                 }
-                 g_free(path);
-             } else {
--                error_setg(errp, "No certificate path provided");
--                goto fail;
-+		if (pve_tls_set_x509_creds_dir(vs) < 0) {
-+                    error_setg(errp, "No certificate path provided");
-+                    goto fail;
-+		} 
+@@ -3393,10 +3512,10 @@
              }
- #endif
- #if defined(CONFIG_VNC_TLS) || defined(CONFIG_VNC_SASL)
-@@ -3250,10 +3372,10 @@
-             vs->auth = VNC_AUTH_VENCRYPT;
              if (x509) {
                  VNC_DEBUG("Initializing VNC server with x509 password auth\n");
 -                vs->subauth = VNC_AUTH_VENCRYPT_X509VNC;
@@ -161,7 +193,23 @@ Index: new/ui/vnc.c
 +                vs->subauth = VNC_AUTH_VENCRYPT_TLSPLAIN;
              }
          } else {
- #endif /* CONFIG_VNC_TLS */
+             VNC_DEBUG("Initializing VNC server with password auth\n");
+@@ -3557,7 +3676,14 @@
+             vs->tls.x509verify = true;
+         }
+     }
+-    if (path) {
++    if (path && strcmp(path, "on") == 0) {
++        x509 = true;
++        tls = true;
++        if (pve_tls_set_x509_creds_dir(vs) < 0) {
++            error_setg(errp, "No certificate path provided");
++            goto fail;
++        }
++    } else if (path) {
+         x509 = true;
+         if (vnc_tls_set_x509_creds_dir(vs, path) < 0) {
+             error_setg(errp, "Failed to find x509 certificates/keys in %s",
 Index: new/ui/vnc-auth-vencrypt.c
 ===================================================================
 --- new.orig/ui/vnc-auth-vencrypt.c	2014-11-20 06:45:06.000000000 +0100
@@ -291,16 +339,16 @@ Index: new/ui/vnc.h
 ===================================================================
 --- new.orig/ui/vnc.h	2014-11-20 06:45:06.000000000 +0100
 +++ new/ui/vnc.h	2014-11-20 06:50:55.000000000 +0100
-@@ -282,6 +282,8 @@
-     char challenge[VNC_AUTH_CHALLENGE_SIZE];
- #ifdef CONFIG_VNC_TLS
+@@ -288,6 +288,8 @@
+     int auth;
      int subauth; /* Used by VeNCrypt */
+     char challenge[VNC_AUTH_CHALLENGE_SIZE];
 +    int username_len;
 +    int password_len;
+ #ifdef CONFIG_VNC_TLS
      VncStateTLS tls;
  #endif
- #ifdef CONFIG_VNC_SASL
-@@ -597,4 +599,6 @@
+@@ -603,4 +605,6 @@
  int vnc_zywrle_send_framebuffer_update(VncState *vs, int x, int y, int w, int h);
  void vnc_zrle_clear(VncState *vs);
  
@@ -338,7 +386,7 @@ Index: new/ui/vnc-tls.c
      rc = gnutls_kx_set_priority(s, x509 ? kx_x509 : kx_anon);
      if (rc != GNUTLS_E_SUCCESS) {
          return -1;
-@@ -462,6 +475,24 @@
+@@ -448,6 +460,24 @@
      return 0;
  }
  
@@ -367,7 +415,7 @@ Index: new/ui/vnc-tls.h
 ===================================================================
 --- new.orig/ui/vnc-tls.h	2014-11-20 06:45:06.000000000 +0100
 +++ new/ui/vnc-tls.h	2014-11-20 06:50:55.000000000 +0100
-@@ -68,6 +68,8 @@
+@@ -61,6 +61,8 @@
  
  int vnc_tls_validate_certificate(VncState *vs);
  
@@ -376,27 +424,3 @@ Index: new/ui/vnc-tls.h
  int vnc_tls_set_x509_creds_dir(VncDisplay *vd,
  			       const char *path);
  
-Index: new/vl.c
-===================================================================
---- new.orig/vl.c	2014-11-20 06:50:44.000000000 +0100
-+++ new/vl.c	2014-11-20 06:50:55.000000000 +0100
-@@ -3573,6 +3573,7 @@
- 		    fprintf(stderr, "Invalid ID\n");
- 		    exit(1);
- 		}
-+		pve_auth_setup(fairsched_id);
-                 break;
-             case QEMU_OPTION_cpuunits:
-                 cpuunits = atoi(optarg);
-Index: new/include/ui/console.h
-===================================================================
---- new.orig/include/ui/console.h	2014-11-20 06:45:06.000000000 +0100
-+++ new/include/ui/console.h	2014-11-20 06:50:55.000000000 +0100
-@@ -327,6 +327,7 @@
- void cocoa_display_init(DisplayState *ds, int full_screen);
- 
- /* vnc.c */
-+void pve_auth_setup(int vmid);
- void vnc_display_init(DisplayState *ds);
- void vnc_display_open(DisplayState *ds, const char *display, Error **errp);
- void vnc_display_add_client(DisplayState *ds, int csock, bool skipauth);
