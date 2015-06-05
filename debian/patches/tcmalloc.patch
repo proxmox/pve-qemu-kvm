@@ -1,0 +1,109 @@
+From patchwork Thu Mar 26 03:03:12 2015
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: configure: Add support for tcmalloc
+From: Fam Zheng <famz@redhat.com>
+X-Patchwork-Id: 454848
+Message-Id: <1427338992-27057-1-git-send-email-famz@redhat.com>
+To: qemu-devel@nongnu.org
+Cc: kwolf@redhat.com, Paolo Bonzini <pbonzini@redhat.com>,
+ Stefan Hajnoczi <stefanha@redhat.com>,
+ Peter Maydell <peter.maydell@linaro.org>
+Date: Thu, 26 Mar 2015 11:03:12 +0800
+
+This adds "--enable-tcmalloc" and "--disable-tcmalloc" to allow linking
+to libtcmalloc from gperftools.
+
+tcmalloc is a malloc implementation that works well with threads and is
+fast, so it is good for performance.
+
+It is disabled by default, because the MALLOC_PERTURB_ flag we use in
+tests doesn't work with tcmalloc. However we can enable tcmalloc
+specific heap checker and profilers later.
+
+An IOPS gain can be observed with virtio-blk-dataplane, other parts of
+QEMU will directly benefit from it as well:
+
+==========================================================
+                       glibc malloc
+----------------------------------------------------------
+rw         bs         iodepth    bw     iops       latency
+read       4k         1          150    38511      24
+----------------------------------------------------------
+
+==========================================================
+                         tcmalloc
+----------------------------------------------------------
+rw         bs         iodepth    bw     iops       latency
+read       4k         1          156    39969      23
+----------------------------------------------------------
+
+Signed-off-by: Fam Zheng <famz@redhat.com>
+---
+ configure | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/configure b/configure
+index 589798e..03ba305 100755
+--- a/configure
++++ b/configure
+@@ -336,6 +336,7 @@ libssh2=""
+ vhdx=""
+ quorum=""
+ numa=""
++tcmalloc="no"
+ 
+ # parse CC options first
+ for opt do
+@@ -1134,6 +1135,10 @@ for opt do
+   ;;
+   --enable-numa) numa="yes"
+   ;;
++  --disable-tcmalloc) tcmalloc="no"
++  ;;
++  --enable-tcmalloc) tcmalloc="yes"
++  ;;
+   *)
+       echo "ERROR: unknown option $opt"
+       echo "Try '$0 --help' for more information"
+@@ -1407,6 +1412,8 @@ Advanced options (experts only):
+   --enable-quorum          enable quorum block filter support
+   --disable-numa           disable libnuma support
+   --enable-numa            enable libnuma support
++  --disable-tcmalloc       disable tcmalloc support
++  --enable-numa            enable tcmalloc support
+ 
+ NOTE: The object files are built at the place where configure is launched
+ EOF
+@@ -3325,6 +3332,22 @@ EOF
+ fi
+ 
+ ##########################################
++# tcmalloc probe
++
++if test "$tcmalloc" == "yes" ; then
++  cat > $TMPC << EOF
++#include <stdlib.h>
++int main(void) { malloc(1); return 0; }
++EOF
++
++  if compile_prog "" "-ltcmalloc" ; then
++    LIBS="-ltcmalloc $LIBS"
++  else
++    feature_not_found "tcmalloc" "install gperftools devel"
++  fi
++fi
++
++##########################################
+ # signalfd probe
+ signalfd="no"
+ cat > $TMPC << EOF
+@@ -4435,6 +4458,7 @@ echo "lzo support       $lzo"
+ echo "snappy support    $snappy"
+ echo "bzip2 support     $bzip2"
+ echo "NUMA host support $numa"
++echo "tcmalloc support  $tcmalloc"
+ 
+ if test "$sdl_too_old" = "yes"; then
+ echo "-> Your SDL version is too old - please upgrade to have SDL support"
