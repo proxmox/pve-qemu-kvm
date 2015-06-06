@@ -82,7 +82,7 @@ index 589798e..03ba305 100755
  ##########################################
 +# tcmalloc probe
 +
-+if test "$tcmalloc" == "yes" ; then
++if test "$tcmalloc" = "yes" ; then
 +  cat > $TMPC << EOF
 +#include <stdlib.h>
 +int main(void) { malloc(1); return 0; }
