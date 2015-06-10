@@ -1,15 +1,15 @@
-Index: qemu-kvm-devel/vma.c
+Index: new/vma.c
 ===================================================================
---- qemu-kvm-devel.orig/vma.c
-+++ qemu-kvm-devel/vma.c
+--- new.orig/vma.c
++++ new/vma.c
 @@ -299,7 +299,13 @@ static int extract_content(int argc, cha
              }
  
              BlockDriverState *bs = bdrv_new();
 -            if (errp || bdrv_open(&bs, devfn, NULL, NULL, flags, NULL, &errp)) {
 +
-+	    char *tmp = g_strrstr(devfn, ".");
-+	    char *format = (tmp == NULL) ? "raw" : ++tmp;
++	    const char *tmp = g_strrstr(devfn, ".");
++	    const char *format = (tmp == NULL) ? "raw" : ++tmp;
 +
 + 	    BlockDriver *drv = bdrv_find_format(format);
 +
