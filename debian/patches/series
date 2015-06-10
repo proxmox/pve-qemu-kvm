@@ -31,3 +31,4 @@ gluster-backupserver.patch
 add-qmp-get-link-status.patch
 0001-friendlier-ai_flag-hints-for-ipv6-hosts.patch
 tcmalloc.patch
+add_block_driver_type_to_extract
