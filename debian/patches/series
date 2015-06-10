@@ -26,9 +26,9 @@ backup-do-not-use-bdrv-drain-all.patch
 internal-snapshot-async.patch
 disable-efi-enable-pxe-roms.patch
 backup-vma-allow-empty-backups.patch
+backup-vma-extract-add-block-driver-type.patch
 glusterfs-daemonize.patch
 gluster-backupserver.patch
 add-qmp-get-link-status.patch
 0001-friendlier-ai_flag-hints-for-ipv6-hosts.patch
 tcmalloc.patch
-add_block_driver_type_to_extract
