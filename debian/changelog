@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.3-4) unstable; urgency=medium
+
+  * remove tcmalloc
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 18 Jun 2015 14:06:28 +0200
+
 pve-qemu-kvm (2.3-3) unstable; urgency=medium
 
   * vma extract: add BlockDevice type to prevent warning
