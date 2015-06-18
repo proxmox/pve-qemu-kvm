@@ -1,0 +1,119 @@
+From 9c13522262d0acadeb3014f4cbc0a508c93fc629 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Thu, 18 Jun 2015 11:36:49 +0200
+Subject: [PATCH] vvfat: add a label option
+
+Till now the vvfat filesystem's label was hardcoded to be
+"QEMU VVFAT", now you can pass a file.label=labelname option
+to the -drive to change it.
+
+Signed-off-by: Wolfgang Bumiller <w.bumiller@proxmox.com>
+---
+ block/vvfat.c        | 28 ++++++++++++++++++++++++++--
+ qapi/block-core.json |  3 ++-
+ 2 files changed, 28 insertions(+), 3 deletions(-)
+
+diff --git a/block/vvfat.c b/block/vvfat.c
+index 9be632f..0ffd1b4 100644
+--- a/block/vvfat.c
++++ b/block/vvfat.c
+@@ -322,6 +322,7 @@ typedef struct BDRVVVFATState {
+ 
+     int fat_type; /* 16 or 32 */
+     array_t fat,directory,mapping;
++    char *volume_label;
+ 
+     unsigned int cluster_size;
+     unsigned int sectors_per_cluster;
+@@ -836,6 +837,7 @@ static int init_directories(BDRVVVFATState* s,
+     mapping_t* mapping;
+     unsigned int i;
+     unsigned int cluster;
++    size_t label_length;
+ 
+     memset(&(s->first_sectors[0]),0,0x40*0x200);
+ 
+@@ -859,7 +861,17 @@ static int init_directories(BDRVVVFATState* s,
+     {
+ 	direntry_t* entry=array_get_next(&(s->directory));
+ 	entry->attributes=0x28; /* archive | volume label */
+-        memcpy(entry->name, "QEMU VVFAT ", sizeof(entry->name));
++        if (!s->volume_label) {
++            memcpy(entry->name, "QEMU VVFAT ", sizeof(entry->name));
++        } else {
++            label_length = strlen(s->volume_label);
++            if (label_length > sizeof(entry->name)) {
++                error_setg(errp, "vvfat label cannot be longer than 11 bytes");
++                return -EINVAL;
++            }
++            memcpy(entry->name, s->volume_label, label_length);
++            memset(entry->name + label_length, ' ', sizeof(entry->name)-label_length);
++        }
+     }
+ 
+     /* Now build FAT, and write back information into directory */
+@@ -968,7 +980,12 @@ static int init_directories(BDRVVVFATState* s,
+     bootsector->u.fat16.signature=0x29;
+     bootsector->u.fat16.id=cpu_to_le32(0xfabe1afd);
+ 
+-    memcpy(bootsector->u.fat16.volume_label,"QEMU VVFAT ",11);
++    if (!s->volume_label) {
++        memcpy(bootsector->u.fat16.volume_label,"QEMU VVFAT ",11);
++    } else {
++        memcpy(bootsector->u.fat16.volume_label, s->volume_label, label_length);
++        memset(bootsector->u.fat16.volume_label + label_length, ' ', 11-label_length);
++    }
+     memcpy(bootsector->fat_type,(s->fat_type==12?"FAT12   ":s->fat_type==16?"FAT16   ":"FAT32   "),8);
+     bootsector->magic[0]=0x55; bootsector->magic[1]=0xaa;
+ 
+@@ -1008,6 +1025,11 @@ static QemuOptsList runtime_opts = {
+             .help = "Create a floppy rather than a hard disk image",
+         },
+         {
++            .name = "label",
++            .type = QEMU_OPT_STRING,
++            .help = "Use a partition label other than QEMU VVFAT",
++        },
++        {
+             .name = "rw",
+             .type = QEMU_OPT_BOOL,
+             .help = "Make the image writable",
+@@ -1095,6 +1117,7 @@ static int vvfat_open(BlockDriverState *bs, QDict *options, int flags,
+ 
+     s->fat_type = qemu_opt_get_number(opts, "fat-type", 0);
+     floppy = qemu_opt_get_bool(opts, "floppy", false);
++    s->volume_label = g_strdup(qemu_opt_get(opts, "label"));
+ 
+     if (floppy) {
+         /* 1.44MB or 2.88MB floppy.  2.88MB can be FAT12 (default) or FAT16. */
+@@ -2968,6 +2991,7 @@ static void vvfat_close(BlockDriverState *bs)
+     array_free(&(s->directory));
+     array_free(&(s->mapping));
+     g_free(s->cluster_buffer);
++    g_free(s->volume_label);
+ 
+     if (s->qcow) {
+         migrate_del_blocker(s->migration_blocker);
+diff --git a/qapi/block-core.json b/qapi/block-core.json
+index 7873084..8dd3f3f 100644
+--- a/qapi/block-core.json
++++ b/qapi/block-core.json
+@@ -1325,13 +1325,14 @@
+ # @fat-type:    #optional FAT type: 12, 16 or 32
+ # @floppy:      #optional whether to export a floppy image (true) or
+ #               partitioned hard disk (false; default)
++# @label:       #optional override default label
+ # @rw:          #optional whether to allow write operations (default: false)
+ #
+ # Since: 1.7
+ ##
+ { 'type': 'BlockdevOptionsVVFAT',
+   'data': { 'dir': 'str', '*fat-type': 'int', '*floppy': 'bool',
+-            '*rw': 'bool' } }
++            '*label': 'str', '*rw': 'bool' } }
+ 
+ ##
+ # @BlockdevOptionsGenericFormat
+-- 
+2.1.4
+

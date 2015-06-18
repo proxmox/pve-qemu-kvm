@@ -2,6 +2,8 @@ pve-qemu-kvm (2.3-4) unstable; urgency=medium
 
   * remove tcmalloc
 
+  * Added patch for vvfat's file.label option
+
  -- Proxmox Support Team <support@proxmox.com>  Thu, 18 Jun 2015 14:06:28 +0200
 
 pve-qemu-kvm (2.3-3) unstable; urgency=medium
