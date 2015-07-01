@@ -1,0 +1,28 @@
+From d1ca17e6bfcf8292b85474cc871e015088672df4 Mon Sep 17 00:00:00 2001
+From: Alexandre Derumier <aderumier@odiso.com>
+Date: Wed, 1 Jul 2015 05:07:06 +0200
+Subject: [PATCH] increase block_job_sleep_ns time to SLICE_TIME
+
+current value 0 is really too short to avoid qmp hangs
+
+Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
+---
+ block/mirror.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/block/mirror.c b/block/mirror.c
+index 0a05971..2711249 100644
+--- a/block/mirror.c
++++ b/block/mirror.c
+@@ -442,7 +442,7 @@ static void coroutine_fn mirror_run(void *opaque)
+ 
+             if (now - last_pause_ns > SLICE_TIME) {
+                 last_pause_ns = now;
+-                block_job_sleep_ns(&s->common, QEMU_CLOCK_REALTIME, 0);
++                block_job_sleep_ns(&s->common, QEMU_CLOCK_REALTIME, SLICE_TIME);
+             }
+ 
+             if (block_job_is_cancelled(&s->common)) {
+-- 
+2.1.4
+
