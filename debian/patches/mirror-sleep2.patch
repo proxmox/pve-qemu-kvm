@@ -19,7 +19,7 @@ index 0a05971..2711249 100644
              if (now - last_pause_ns > SLICE_TIME) {
                  last_pause_ns = now;
 -                block_job_sleep_ns(&s->common, QEMU_CLOCK_REALTIME, 0);
-+                block_job_sleep_ns(&s->common, QEMU_CLOCK_REALTIME, SLICE_TIME);
++                block_job_sleep_ns(&s->common, QEMU_CLOCK_REALTIME, SLICE_TIME/10);
              }
  
              if (block_job_is_cancelled(&s->common)) {
