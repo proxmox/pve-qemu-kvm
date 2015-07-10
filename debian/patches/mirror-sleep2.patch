@@ -1,28 +1,137 @@
-From d1ca17e6bfcf8292b85474cc871e015088672df4 Mon Sep 17 00:00:00 2001
-From: Alexandre Derumier <aderumier@odiso.com>
-Date: Wed, 1 Jul 2015 05:07:06 +0200
-Subject: [PATCH] increase block_job_sleep_ns time to SLICE_TIME
+Return-Path: qemu-devel-bounces+aderumier=odiso.com@nongnu.org
+Received: from mailpro.odiso.net (LHLO mailpro.odiso.net) (10.1.31.112) by
+ mailpro.odiso.net with LMTP; Thu, 9 Jul 2015 05:48:28 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+	by mailpro.odiso.net (Postfix) with ESMTP id E27A845C8E4B0
+	for <aderumier@oxygem.tv>; Thu,  9 Jul 2015 05:48:27 +0200 (CEST)
+X-Virus-Scanned: amavisd-new at mailpro.odiso.com
+X-Spam-Flag: NO
+X-Spam-Score: 0
+X-Spam-Level:
+X-Spam-Status: No, score=0 tagged_above=-10 required=4
+	tests=[HEADER_FROM_DIFFERENT_DOMAINS=0.001, SPF_PASS=-0.001]
+	autolearn=ham autolearn_force=no
+Received: from mailpro.odiso.net ([127.0.0.1])
+	by localhost (mailpro.odiso.net [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id dJJWUgwkqqGc for <aderumier@oxygem.tv>;
+	Thu,  9 Jul 2015 05:48:26 +0200 (CEST)
+Received: from lists.gnu.org (lists.gnu.org [208.118.235.17])
+	by mailpro.odiso.net (Postfix) with ESMTPS id 79D8C40592FF1
+	for <aderumier@odiso.com>; Thu,  9 Jul 2015 05:48:26 +0200 (CEST)
+Received: from localhost ([::1]:37746 helo=lists.gnu.org)
+	by lists.gnu.org with esmtp (Exim 4.71)
+	(envelope-from <qemu-devel-bounces+aderumier=odiso.com@nongnu.org>)
+	id 1ZD2oz-0007BD-RV
+	for aderumier@odiso.com; Wed, 08 Jul 2015 23:48:25 -0400
+Received: from eggs.gnu.org ([2001:4830:134:3::10]:55387)
+	by lists.gnu.org with esmtp (Exim 4.71)
+	(envelope-from <famz@redhat.com>) id 1ZD2oq-00078r-My
+	for qemu-devel@nongnu.org; Wed, 08 Jul 2015 23:48:17 -0400
+Received: from Debian-exim by eggs.gnu.org with spam-scanned (Exim 4.71)
+	(envelope-from <famz@redhat.com>) id 1ZD2op-0004hr-MC
+	for qemu-devel@nongnu.org; Wed, 08 Jul 2015 23:48:16 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:44555)
+	by eggs.gnu.org with esmtp (Exim 4.71)
+	(envelope-from <famz@redhat.com>)
+	id 1ZD2ol-0004g3-H0; Wed, 08 Jul 2015 23:48:11 -0400
+Received: from int-mx09.intmail.prod.int.phx2.redhat.com
+	(int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
+	by mx1.redhat.com (Postfix) with ESMTPS id 103F72B5EA0;
+	Thu,  9 Jul 2015 03:48:11 +0000 (UTC)
+Received: from ad.nay.redhat.com. (dhcp-15-42.nay.redhat.com [10.66.15.42])
+	by int-mx09.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP
+	id t693lwp6028288; Wed, 8 Jul 2015 23:48:08 -0400
+From: Fam Zheng <famz@redhat.com>
+To: qemu-devel@nongnu.org
+Date: Thu,  9 Jul 2015 11:47:58 +0800
+Message-Id: <1436413678-7114-4-git-send-email-famz@redhat.com>
+In-Reply-To: <1436413678-7114-1-git-send-email-famz@redhat.com>
+References: <1436413678-7114-1-git-send-email-famz@redhat.com>
+X-Scanned-By: MIMEDefang 2.68 on 10.5.11.22
+X-detected-operating-system: by eggs.gnu.org: GNU/Linux 3.x
+X-Received-From: 209.132.183.28
+Cc: Kevin Wolf <kwolf@redhat.com>, Jeff Cody <jcody@redhat.com>,
+	qemu-block@nongnu.org
+Subject: [Qemu-devel] [PATCH 3/3] mirror: Speed up bitmap initial scanning
+X-BeenThere: qemu-devel@nongnu.org
+X-Mailman-Version: 2.1.14
+Precedence: list
+List-Id: <qemu-devel.nongnu.org>
+List-Unsubscribe: <https://lists.nongnu.org/mailman/options/qemu-devel>,
+	<mailto:qemu-devel-request@nongnu.org?subject=unsubscribe>
+List-Archive: <http://lists.nongnu.org/archive/html/qemu-devel>
+List-Post: <mailto:qemu-devel@nongnu.org>
+List-Help: <mailto:qemu-devel-request@nongnu.org?subject=help>
+List-Subscribe: <https://lists.nongnu.org/mailman/listinfo/qemu-devel>,
+	<mailto:qemu-devel-request@nongnu.org?subject=subscribe>
+Errors-To: qemu-devel-bounces+aderumier=odiso.com@nongnu.org
+Sender: qemu-devel-bounces+aderumier=odiso.com@nongnu.org
 
-current value 0 is really too short to avoid qmp hangs
+Limiting to sectors_per_chunk for each bdrv_is_allocated_above is slow,
+because the underlying protocol driver would issue much more queries
+than necessary. We should coalesce the query.
 
-Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
+Signed-off-by: Fam Zheng <famz@redhat.com>
 ---
- block/mirror.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ block/mirror.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
 diff --git a/block/mirror.c b/block/mirror.c
-index 0a05971..2711249 100644
+index ca55578..e8cb592 100644
 --- a/block/mirror.c
 +++ b/block/mirror.c
-@@ -442,7 +442,7 @@ static void coroutine_fn mirror_run(void *opaque)
+@@ -371,7 +371,7 @@ static void coroutine_fn mirror_run(void *opaque)
+     MirrorBlockJob *s = opaque;
+     MirrorExitData *data;
+     BlockDriverState *bs = s->common.bs;
+-    int64_t sector_num, end, sectors_per_chunk, length;
++    int64_t sector_num, end, length;
+     uint64_t last_pause_ns;
+     BlockDriverInfo bdi;
+     char backing_filename[2]; /* we only need 2 characters because we are only
+@@ -425,7 +425,6 @@ static void coroutine_fn mirror_run(void *opaque)
+         goto immediate_exit;
+     }
+ 
+-    sectors_per_chunk = s->granularity >> BDRV_SECTOR_BITS;
+     mirror_free_init(s);
+ 
+     last_pause_ns = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
+@@ -433,7 +432,9 @@ static void coroutine_fn mirror_run(void *opaque)
+         /* First part, loop on the sectors and initialize the dirty bitmap.  */
+         BlockDriverState *base = s->base;
+         for (sector_num = 0; sector_num < end; ) {
+-            int64_t next = (sector_num | (sectors_per_chunk - 1)) + 1;
++            /* Just to make sure we are not exceeding int limit. */
++            int nb_sectors = MIN(INT_MAX >> BDRV_SECTOR_BITS,
++                                 end - sector_num);
+             int64_t now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
  
              if (now - last_pause_ns > SLICE_TIME) {
-                 last_pause_ns = now;
--                block_job_sleep_ns(&s->common, QEMU_CLOCK_REALTIME, 0);
-+                block_job_sleep_ns(&s->common, QEMU_CLOCK_REALTIME, SLICE_TIME/10);
-             }
- 
+@@ -444,9 +445,7 @@ static void coroutine_fn mirror_run(void *opaque)
              if (block_job_is_cancelled(&s->common)) {
+                 goto immediate_exit;
+             }
+-
+-            ret = bdrv_is_allocated_above(bs, base,
+-                                          sector_num, next - sector_num, &n);
++            ret = bdrv_is_allocated_above(bs, base, sector_num, nb_sectors, &n);
+ 
+             if (ret < 0) {
+                 goto immediate_exit;
+@@ -455,10 +454,8 @@ static void coroutine_fn mirror_run(void *opaque)
+             assert(n > 0);
+             if (ret == 1) {
+                 bdrv_set_dirty_bitmap(bs, s->dirty_bitmap, sector_num, n);
+-                sector_num = next;
+-            } else {
+-                sector_num += n;
+             }
++            sector_num += n;
+         }
+     }
+ 
 -- 
-2.1.4
+2.4.3
+
 
