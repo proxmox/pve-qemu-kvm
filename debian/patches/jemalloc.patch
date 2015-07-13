@@ -1,16 +1,95 @@
+From patchwork Fri Jun 19 10:56:58 2015
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: configure: Add support for jemalloc
+From: Alexandre DERUMIER <aderumier@odiso.com>
+X-Patchwork-Id: 486671
+Message-Id: <1434711418-20429-1-git-send-email-aderumier@odiso.com>
+To: qemu-devel@nongnu.org
+Cc: Alexandre Derumier <aderumier@odiso.com>
+Date: Fri, 19 Jun 2015 12:56:58 +0200
+
+This adds "--enable-jemalloc" and "--disable-jemalloc" to allow linking
+to jemalloc memory allocator.
+
+We have already tcmalloc support,
+but it seem to not working well with a lot of iothreads/disks.
+
+The main problem is that tcmalloc use a shared thread cache of 16MB
+by default.
+With more threads, this cache is shared, and some bad garbage collections
+can occur if the cache is too low.
+
+It's possible to tcmalloc cache increase it with a env var:
+TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=256MB
+
+With default 16MB, performances are  really bad with more than 2 disks.
+Increasing to 256MB, it's helping but still have problem with 16 disks/iothreads.
+
+Jemalloc don't have performance problem with default configuration.
+
+Here the benchmark results in iops of 1 qemu vm randread 4K iodepth=32,
+with rbd block backend (librbd is doing a lot of memory allocation),
+1 iothread by disk
+
+glibc malloc
+------------
+
+1 disk      29052
+2 disks     55878
+4 disks     127899
+8 disks     240566
+15 disks    269976
+
+jemalloc
+--------
+
+1 disk      41278
+2 disks     75781
+4 disks     195351
+8 disks     294241
+15 disks    298199
+
+tcmalloc 2.2.1 default 16M cache
+--------------------------------
+
+1 disk   37911
+2 disks  67698
+4 disks  41076
+8 disks  43312
+15 disks 37569
+
+tcmalloc : 256M cache
+---------------------------
+
+1 disk     33914
+2 disks    58839
+4 disks    148205
+8 disks    213298
+15 disks   218383
+
+Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
+Reviewed-by: Fam Zheng <famz@redhat.com>
+---
+ configure | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/configure b/configure
+index 222694f..2fe1e05 100755
 --- a/configure
 +++ b/configure
-@@ -336,6 +336,7 @@ libssh2=""
+@@ -338,6 +338,7 @@ vhdx=""
  vhdx=""
- quorum=""
  numa=""
+ tcmalloc="no"
 +jemalloc="no"
  
  # parse CC options first
  for opt do
-@@ -1134,6 +1135,10 @@ for opt do
+@@ -1149,6 +1150,10 @@ for opt do
    ;;
-   --enable-numa) numa="yes"
+   --enable-tcmalloc) tcmalloc="yes"
    ;;
 +  --disable-jemalloc) jemalloc="no"
 +  ;;
@@ -19,16 +98,19 @@
    *)
        echo "ERROR: unknown option $opt"
        echo "Try '$0 --help' for more information"
-@@ -1407,6 +1412,8 @@ Advanced options (experts only):
-   --enable-quorum          enable quorum block filter support
-   --disable-numa           disable libnuma support
-   --enable-numa            enable libnuma support
-+  --disable-jemalloc       disable jemalloc support
-+  --enable-numa            enable jemalloc support
+@@ -3345,6 +3352,11 @@ EOF
+   fi
+ fi
  
- NOTE: The object files are built at the place where configure is launched
- EOF
-@@ -3325,6 +3332,22 @@ EOF
++if test "$tcmalloc" = "yes" && test "$jemalloc" = "yes" ; then
++    echo "ERROR: tcmalloc && jemalloc can't be used at the same time"
++    exit 1
++fi
++
+ ##########################################
+ # tcmalloc probe
+ 
+@@ -3362,6 +3374,22 @@ EOF
  fi
  
  ##########################################
@@ -51,10 +133,10 @@
  # signalfd probe
  signalfd="no"
  cat > $TMPC << EOF
-@@ -4435,6 +4458,7 @@ echo "lzo support       $lzo"
- echo "snappy support    $snappy"
+@@ -4573,6 +4591,7 @@ echo "snappy support    $snappy"
  echo "bzip2 support     $bzip2"
  echo "NUMA host support $numa"
+ echo "tcmalloc support  $tcmalloc"
 +echo "jemalloc support  $jemalloc"
  
  if test "$sdl_too_old" = "yes"; then
