@@ -10,7 +10,7 @@ Index: new/blockdev.c
  
  static const char *const if_name[IF_COUNT] = {
      [IF_NONE] = "none",
-@@ -1954,6 +1955,439 @@
+@@ -1954,6 +1955,440 @@
      bdrv_put_ref_bh_schedule(bs);
  }
  
@@ -190,7 +190,7 @@ Index: new/blockdev.c
 +    pvebackup_cleanup();
 +}
 +
-+char *qmp_backup(const char *backup_file, bool has_format,
++UuidInfo *qmp_backup(const char *backup_file, bool has_format,
 +                    BackupFormat format,
 +                    bool has_config_file, const char *config_file,
 +                    bool has_devlist, const char *devlist,
@@ -228,18 +228,19 @@ Index: new/blockdev.c
 +            if (blk) {
 +                bs = blk_bs(blk);
 +                if (bdrv_is_read_only(bs)) {
-+                    error_set(errp, QERR_DEVICE_IS_READ_ONLY, *d);
++                    error_setg(errp, "Node '%s' is read only", *d);
 +                    goto err;
 +                }
 +                if (!bdrv_is_inserted(bs)) {
-+                    error_set(errp, QERR_DEVICE_HAS_NO_MEDIUM, *d);
++                    error_setg(errp, QERR_DEVICE_HAS_NO_MEDIUM, *d);
 +                    goto err;
 +                }
 +                PVEBackupDevInfo *di = g_new0(PVEBackupDevInfo, 1);
 +                di->bs = bs;
 +                di_list = g_list_append(di_list, di);
 +            } else {
-+                error_set(errp, QERR_DEVICE_NOT_FOUND, *d);
++                error_set(errp, ERROR_CLASS_DEVICE_NOT_FOUND,
++                          "Device '%s' not found", *d);
 +                goto err;
 +            }
 +            d++;

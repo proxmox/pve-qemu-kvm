@@ -376,9 +376,10 @@ Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ new/savevm-async.c	2014-11-20 09:17:48.000000000 +0100
-@@ -0,0 +1,503 @@
+@@ -0,0 +1,506 @@
 +#include "qemu-common.h"
 +#include "qapi/qmp/qerror.h"
++#include "qemu/error-report.h"
 +#include "sysemu/sysemu.h"
 +#include "qmp-commands.h"
 +#include "qemu-options.h"
@@ -720,23 +721,24 @@ Index: new/savevm-async.c
 +
 +    blk = blk_by_name(device);
 +    if (!blk) {
-+        error_set(errp, QERR_DEVICE_NOT_FOUND, device);
++        error_set(errp, ERROR_CLASS_DEVICE_NOT_FOUND,
++                  "Device '%s' not found", device);
 +        return;
 +    }
 +
 +    bs = blk_bs(blk);
 +    if (!bdrv_is_inserted(bs)) {
-+        error_set(errp, QERR_DEVICE_HAS_NO_MEDIUM, device);
++        error_setg(errp, QERR_DEVICE_HAS_NO_MEDIUM, device);
 +        return;
 +    }
 +
 +    if (bdrv_is_read_only(bs)) {
-+        error_set(errp, QERR_DEVICE_IS_READ_ONLY, device);
++        error_setg(errp, "Node '%s' is read only", device);
 +        return;
 +    }
 +
 +    if (!bdrv_can_snapshot(bs)) {
-+        error_set(errp, QERR_UNSUPPORTED);
++        error_setg(errp, QERR_UNSUPPORTED);
 +        return;
 +    }
 +
@@ -784,18 +786,19 @@ Index: new/savevm-async.c
 +
 +    blk = blk_by_name(device);
 +    if (!blk) {
-+        error_set(errp, QERR_DEVICE_NOT_FOUND, device);
++        error_set(errp, ERROR_CLASS_DEVICE_NOT_FOUND,
++                  "Device '%s' not found", device);
 +        return;
 +    }
 +
 +    bs = blk_bs(blk);
 +    if (bdrv_is_read_only(bs)) {
-+        error_set(errp, QERR_DEVICE_IS_READ_ONLY, device);
++        error_setg(errp, "Node '%s' is read only", device);
 +        return;
 +    }
 +
 +    if (!bdrv_can_snapshot(bs)) {
-+        error_set(errp, QERR_UNSUPPORTED);
++        error_setg(errp, QERR_UNSUPPORTED);
 +        return;
 +    }
 +

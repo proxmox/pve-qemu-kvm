@@ -38,7 +38,7 @@ Index: new/net/net.c
 ===================================================================
 --- new.orig/net/net.c	2014-12-10 10:24:39.790496356 +0100
 +++ new/net/net.c	2014-12-11 09:37:55.971321170 +0100
-@@ -1141,6 +1141,32 @@
+@@ -1141,6 +1141,33 @@
      }
  }
  
@@ -54,8 +54,9 @@ Index: new/net/net.c
 +                                          MAX_QUEUE_NUM);
 +
 +    if (queues == 0) {
-+        error_set(errp, QERR_DEVICE_NOT_FOUND, name);
-+	return (int64_t) -1;
++        error_set(errp, ERROR_CLASS_DEVICE_NOT_FOUND,
++                  "Device '%s' not found", name);
++        return (int64_t) -1;
 +    }
 +
 +    nc = ncs[0];
