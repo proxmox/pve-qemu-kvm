@@ -1,21 +1,24 @@
+Index: new/scripts/qapi.py
+===================================================================
+--- new.orig/scripts/qapi.py	2015-07-13 10:00:00.000000000 +0100
++++ new/scripts/qapi.py	2015-07-13 15:50:00.000000000 +0100
+@@ -37,6 +37,8 @@
+ 
+ # Whitelist of commands allowed to return a non-dictionary
+ returns_whitelist = [
++    'get_link_status',
++
+     # From QMP:
+     'human-monitor-command',
+     'query-migrate-cache-size',
 Index: new/qapi-schema.json
 ===================================================================
 --- new.orig/qapi-schema.json	2014-12-10 09:15:50.890262765 +0100
 +++ new/qapi-schema.json	2014-12-11 09:20:31.072561486 +0100
-@@ -1366,6 +1366,31 @@
+@@ -1366,6 +1366,21 @@
  ##
  { 'command': 'set_link', 'data': {'name': 'str', 'up': 'bool'} }
  
-+##
-+# @LinkStatus:
-+#
-+# Nic LinkStatus information.
-+#
-+# @status: the status of the nic
-+#
-+##
-+{ 'struct': 'LinkStatus', 'data': {'status': 'int'} } 
-+
 +##
 +# @get_link_status
 +#
@@ -29,7 +32,7 @@ Index: new/qapi-schema.json
 +#
 +# Notes: this is an Proxmox VE extension and not offical part of Qemu.
 +##
-+{ 'command': 'get_link_status', 'data': {'name': 'str'}, 'returns': 'LinkStatus'}
++{ 'command': 'get_link_status', 'data': {'name': 'str'}, 'returns': 'int'}
 +
  ##
  # @balloon:
@@ -97,7 +100,7 @@ Index: new/qmp-commands.hx
 +
 +Example:
 +
-+-> { "execute": "set_link", "arguments": { "name": "e1000.0" } }
++-> { "execute": "get_link_status", "arguments": { "name": "e1000.0" } }
 +<- { "return": {1} }
 +
 +EQMP
