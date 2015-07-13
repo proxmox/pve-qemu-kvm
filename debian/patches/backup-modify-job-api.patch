@@ -2,7 +2,7 @@ Index: new/block/backup.c
 ===================================================================
 --- new.orig/block/backup.c	2014-11-20 07:55:31.000000000 +0100
 +++ new/block/backup.c	2014-11-20 08:56:23.000000000 +0100
-@@ -39,6 +39,7 @@
+@@ -42,6 +42,7 @@
      BdrvDirtyBitmap *sync_bitmap;
      MirrorSyncMode sync_mode;
      RateLimit limit;
@@ -10,7 +10,7 @@ Index: new/block/backup.c
      BlockdevOnError on_source_error;
      BlockdevOnError on_target_error;
      CoRwlock flush_rwlock;
-@@ -136,14 +137,21 @@
+@@ -139,14 +140,21 @@
              goto out;
          }
  
@@ -38,7 +38,7 @@ Index: new/block/backup.c
          }
          if (ret < 0) {
              trace_backup_do_cow_write_fail(job, start, ret);
-@@ -205,7 +213,9 @@
+@@ -208,7 +216,9 @@
  {
      BackupBlockJob *s = container_of(job, BackupBlockJob, common);
  
@@ -49,7 +49,7 @@ Index: new/block/backup.c
  }
  
  static const BlockJobDriver backup_job_driver = {
-@@ -221,9 +231,11 @@
+@@ -224,9 +234,11 @@
      if (read) {
          return block_job_error_action(&job->common, job->common.bs,
                                        job->on_source_error, true, error);
@@ -62,7 +62,7 @@ Index: new/block/backup.c
      }
  }
  
-@@ -264,9 +276,11 @@
+@@ -351,9 +363,11 @@
  
      job->bitmap = hbitmap_alloc(end, 0);
  
@@ -77,7 +77,7 @@ Index: new/block/backup.c
  
      bdrv_add_before_write_notifier(bs, &before_write);
  
-@@ -359,8 +373,10 @@
+@@ -443,8 +461,10 @@
      }
      hbitmap_free(job->bitmap);
  
@@ -90,7 +90,7 @@ Index: new/block/backup.c
  
      data = g_malloc(sizeof(*data));
      data->ret = ret;
-@@ -370,13 +386,15 @@ for backup_start
+@@ -456,13 +472,15 @@ for backup_start
                    BdrvDirtyBitmap *sync_bitmap,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,
@@ -107,7 +107,7 @@ Index: new/block/backup.c
      assert(cb);
  
      if (bs == target) {
-@@ -419,7 +437,7 @@ in backup_start
+@@ -483,7 +501,7 @@ in backup_start
          return;
      }
  
@@ -116,7 +116,7 @@ Index: new/block/backup.c
          error_setg(errp, "Device is not inserted: %s",
                     bdrv_get_device_name(target));
          return;
-@@ -429,7 +447,7 @@ in backup_start
+@@ -493,7 +511,7 @@ in backup_start
          return;
      }
  
@@ -125,7 +125,7 @@ Index: new/block/backup.c
          return;
      }
  
-@@ -397,14 +415,17 @@ in backup_start
+@@ -529,14 +547,17 @@ in backup_start
          goto error;
      }
  
@@ -148,7 +148,7 @@ Index: new/blockdev.c
 ===================================================================
 --- new.orig/blockdev.c	2014-11-20 07:55:31.000000000 +0100
 +++ new/blockdev.c	2014-11-20 08:48:02.000000000 +0100
-@@ -2223,8 +2223,8 @@ qmp_drive_backup
+@@ -2571,8 +2571,8 @@ qmp_drive_backup
      }
  
      backup_start(bs, target_bs, speed, sync, bmap,
@@ -159,7 +159,7 @@ Index: new/blockdev.c
      if (local_err != NULL) {
          bdrv_unref(target_bs);
          error_propagate(errp, local_err);
-@@ -2284,7 +2284,7 @@ qmp_blockdev_backup
+@@ -2633,7 +2633,7 @@ qmp_blockdev_backup
      bdrv_ref(target_bs);
      bdrv_set_aio_context(target_bs, aio_context);
      backup_start(bs, target_bs, speed, sync, NULL, on_source_error,
@@ -172,7 +172,7 @@ Index: new/include/block/block_int.h
 ===================================================================
 --- new.orig/include/block/block_int.h	2014-11-20 07:55:31.000000000 +0100
 +++ new/include/block/block_int.h	2014-11-20 08:52:59.000000000 +0100
-@@ -57,6 +57,9 @@
+@@ -59,6 +59,9 @@
  
  #define BLOCK_PROBE_BUF_SIZE        512
  
@@ -182,7 +182,7 @@ Index: new/include/block/block_int.h
  typedef struct BdrvTrackedRequest {
      BlockDriverState *bs;
      int64_t offset;
-@@ -583,7 +586,9 @@
+@@ -651,7 +654,9 @@
                    BdrvDirtyBitmap *sync_bitmap,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,

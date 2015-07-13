@@ -2,7 +2,7 @@ Index: new/blockdev.c
 ===================================================================
 --- new.orig/blockdev.c	2014-11-20 07:36:12.000000000 +0100
 +++ new/blockdev.c	2014-11-20 07:47:31.000000000 +0100
-@@ -46,6 +46,7 @@
+@@ -49,6 +49,7 @@
  #include "qmp-commands.h"
  #include "trace.h"
  #include "sysemu/arch_init.h"
@@ -10,7 +10,7 @@ Index: new/blockdev.c
  
  static const char *const if_name[IF_COUNT] = {
      [IF_NONE] = "none",
-@@ -1954,6 +1955,440 @@
+@@ -2276,6 +2277,443 @@
      bdrv_put_ref_bh_schedule(bs);
  }
  
@@ -204,6 +204,7 @@ Index: new/blockdev.c
 +    gchar **devs = NULL;
 +    GList *di_list = NULL;
 +    GList *l;
++    UuidInfo *uuid_info;
 +
 +    if (backup_state.di_list) {
 +        error_set(errp, ERROR_CLASS_GENERIC_ERROR,
@@ -365,7 +366,7 @@ Index: new/blockdev.c
 +        PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
 +        l = g_list_next(l);
 +
-+        backup_start(di->bs, NULL, speed, MIRROR_SYNC_MODE_FULL,
++        backup_start(di->bs, NULL, speed, MIRROR_SYNC_MODE_FULL, NULL,
 +                     BLOCKDEV_ON_ERROR_REPORT, BLOCKDEV_ON_ERROR_REPORT,
 +                     pvebackup_dump_cb, pvebackup_complete_cb, di,
 +                     true, &local_err);
@@ -379,7 +380,9 @@ Index: new/blockdev.c
 +        pvebackup_run_next_job(); // run one job
 +    }
 +
-+    return g_strdup(backup_state.uuid_str);
++    uuid_info = g_malloc0(sizeof(*uuid_info));
++    uuid_info->UUID = g_strdup(backup_state.uuid_str);
++    return uuid_info;
 +
 +err:
 +
@@ -455,7 +458,7 @@ Index: new/hmp-commands.hx
 ===================================================================
 --- new.orig/hmp-commands.hx	2014-11-20 06:45:05.000000000 +0100
 +++ new/hmp-commands.hx	2014-11-20 07:47:31.000000000 +0100
-@@ -88,6 +88,35 @@
+@@ -87,6 +87,35 @@
  Copy data from a backing file into a block device.
  ETEXI
  
@@ -491,7 +494,7 @@ Index: new/hmp-commands.hx
      {
          .name       = "block_job_set_speed",
          .args_type  = "device:B,speed:o",
-@@ -1760,6 +1789,8 @@
+@@ -1768,6 +1797,8 @@
  show CPU statistics
  @item info usernet
  show user network stack connection states
@@ -504,7 +507,7 @@ Index: new/hmp.c
 ===================================================================
 --- new.orig/hmp.c	2014-11-20 07:26:23.000000000 +0100
 +++ new/hmp.c	2014-11-20 07:47:31.000000000 +0100
-@@ -137,6 +137,44 @@
+@@ -145,6 +145,44 @@
      qapi_free_MouseInfoList(mice_list);
  }
  
@@ -549,7 +552,7 @@ Index: new/hmp.c
  void hmp_info_migrate(Monitor *mon, const QDict *qdict)
  {
      MigrationInfo *info;
-@@ -1212,6 +1250,29 @@
+@@ -1407,6 +1445,29 @@
  
      hmp_handle_error(mon, &error);
  }
@@ -583,7 +586,7 @@ Index: new/hmp.h
 ===================================================================
 --- new.orig/hmp.h	2014-11-20 06:45:05.000000000 +0100
 +++ new/hmp.h	2014-11-20 07:47:31.000000000 +0100
-@@ -29,6 +29,7 @@
+@@ -30,6 +30,7 @@
  void hmp_info_migrate_capabilities(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_parameters(Monitor *mon, const QDict *qdict);
  void hmp_info_migrate_cache_size(Monitor *mon, const QDict *qdict);
@@ -591,7 +594,7 @@ Index: new/hmp.h
  void hmp_info_cpus(Monitor *mon, const QDict *qdict);
  void hmp_info_block(Monitor *mon, const QDict *qdict);
  void hmp_info_blockstats(Monitor *mon, const QDict *qdict);
-@@ -70,6 +71,8 @@
+@@ -74,6 +75,8 @@
  void hmp_change(Monitor *mon, const QDict *qdict);
  void hmp_block_set_io_throttle(Monitor *mon, const QDict *qdict);
  void hmp_block_stream(Monitor *mon, const QDict *qdict);
@@ -604,7 +607,7 @@ Index: new/monitor.c
 ===================================================================
 --- new.orig/monitor.c	2014-11-20 06:45:06.000000000 +0100
 +++ new/monitor.c	2014-11-20 07:47:31.000000000 +0100
-@@ -2848,6 +2848,13 @@
+@@ -2759,6 +2759,13 @@
      },
  #endif
      {
@@ -722,7 +725,7 @@ Index: new/qmp-commands.hx
 ===================================================================
 --- new.orig/qmp-commands.hx	2014-11-20 07:26:23.000000000 +0100
 +++ new/qmp-commands.hx	2014-11-20 07:47:31.000000000 +0100
-@@ -1097,6 +1097,24 @@
+@@ -1203,6 +1203,24 @@
  EQMP
  
      {

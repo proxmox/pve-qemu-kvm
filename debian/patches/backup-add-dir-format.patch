@@ -15,7 +15,7 @@ Index: new/blockdev.c
 ===================================================================
 --- new.orig/blockdev.c	2014-11-20 08:59:29.000000000 +0100
 +++ new/blockdev.c	2014-11-20 09:04:05.000000000 +0100
-@@ -1979,6 +1979,8 @@
+@@ -2301,6 +2301,8 @@
      uint8_t dev_id;
      //bool started;
      bool completed;
@@ -24,7 +24,7 @@ Index: new/blockdev.c
  } PVEBackupDevInfo;
  
  static void pvebackup_run_next_job(void);
-@@ -2047,8 +2049,6 @@
+@@ -2369,8 +2371,6 @@
  {
      PVEBackupDevInfo *di = opaque;
  
@@ -33,7 +33,7 @@ Index: new/blockdev.c
      di->completed = true;
  
      if (ret < 0 && !backup_state.error) {
-@@ -2059,8 +2059,11 @@
+@@ -2381,8 +2381,11 @@
      BlockDriverState *bs = di->bs;
  
      di->bs = NULL;
@@ -46,7 +46,7 @@ Index: new/blockdev.c
  
      block_job_cb(bs, ret);
  
-@@ -2138,6 +2141,7 @@
+@@ -2461,6 +2464,7 @@
  {
      BlockBackend *blk;
      BlockDriverState *bs = NULL;
@@ -54,7 +54,7 @@ Index: new/blockdev.c
      Error *local_err = NULL;
      uuid_t uuid;
      VmaWriter *vmaw = NULL;
-@@ -2154,11 +2158,6 @@
+@@ -2478,11 +2482,6 @@
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -66,7 +66,7 @@ Index: new/blockdev.c
      if (has_devlist) {
          devs = g_strsplit_set(devlist, ",;:", -1);
  
-@@ -2225,27 +2224,63 @@
+@@ -2551,27 +2550,63 @@
  
      uuid_generate(uuid);
  
@@ -146,7 +146,7 @@ Index: new/blockdev.c
      }
  
      /* add configuration file to archive */
-@@ -2258,12 +2293,27 @@
+@@ -2584,12 +2619,27 @@
              goto err;
          }
  
@@ -179,12 +179,12 @@ Index: new/blockdev.c
          g_free(cdata);
      }
  
-@@ -2303,10 +2353,11 @@
+@@ -2629,10 +2679,11 @@
          PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
          l = g_list_next(l);
  
--        backup_start(di->bs, NULL, speed, MIRROR_SYNC_MODE_FULL,
-+        backup_start(di->bs, di->target, speed, MIRROR_SYNC_MODE_FULL,
+-        backup_start(di->bs, NULL, speed, MIRROR_SYNC_MODE_FULL, NULL,
++        backup_start(di->bs, di->target, speed, MIRROR_SYNC_MODE_FULL, NULL,
                       BLOCKDEV_ON_ERROR_REPORT, BLOCKDEV_ON_ERROR_REPORT,
                       pvebackup_dump_cb, pvebackup_complete_cb, di,
                       true, &local_err);
@@ -192,7 +192,7 @@ Index: new/blockdev.c
          if (local_err != NULL) {
              error_setg(&backup_state.error, "backup_job_create failed");
              pvebackup_cancel(NULL);
-@@ -2323,8 +2374,17 @@
+@@ -2651,8 +2702,17 @@
  
      l = di_list;
      while (l) {
@@ -211,7 +211,7 @@ Index: new/blockdev.c
      }
      g_list_free(di_list);
  
-@@ -2338,6 +2398,10 @@
+@@ -2666,6 +2726,10 @@
          unlink(backup_file);
      }
  
@@ -226,7 +226,7 @@ Index: new/hmp-commands.hx
 ===================================================================
 --- new.orig/hmp-commands.hx	2014-11-20 08:59:29.000000000 +0100
 +++ new/hmp-commands.hx	2014-11-20 09:03:23.000000000 +0100
-@@ -90,9 +90,11 @@
+@@ -89,9 +89,11 @@
  
     {
          .name       = "backup",
@@ -245,7 +245,7 @@ Index: new/hmp.c
 ===================================================================
 --- new.orig/hmp.c	2014-11-20 08:59:29.000000000 +0100
 +++ new/hmp.c	2014-11-20 09:03:23.000000000 +0100
-@@ -1264,11 +1264,13 @@
+@@ -1459,11 +1459,13 @@
  {
      Error *error = NULL;
  
