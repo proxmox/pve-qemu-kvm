@@ -21,7 +21,7 @@ diff --git a/block/mirror.c b/block/mirror.c
 index 4056164..0a05971 100644
 --- a/block/mirror.c
 +++ b/block/mirror.c
-@@ -432,11 +432,23 @@ static void coroutine_fn mirror_run(void *opaque)
+@@ -444,11 +444,23 @@ static void coroutine_fn mirror_run(void *opaque)
      sectors_per_chunk = s->granularity >> BDRV_SECTOR_BITS;
      mirror_free_init(s);
  
@@ -48,7 +48,7 @@ index 4056164..0a05971 100644
 @@ -455,7 +467,6 @@ static void coroutine_fn mirror_run(void *opaque)
      }
  
-     bdrv_dirty_iter_init(bs, s->dirty_bitmap, &s->hbi);
+     bdrv_dirty_iter_init(s->dirty_bitmap, &s->hbi);
 -    last_pause_ns = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
      for (;;) {
          uint64_t delay_ns = 0;

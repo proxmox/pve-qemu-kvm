@@ -80,7 +80,7 @@ diff --git a/block/mirror.c b/block/mirror.c
 index ca55578..e8cb592 100644
 --- a/block/mirror.c
 +++ b/block/mirror.c
-@@ -371,7 +371,7 @@ static void coroutine_fn mirror_run(void *opaque)
+@@ -387,7 +387,7 @@ static void coroutine_fn mirror_run(void *opaque)
      MirrorBlockJob *s = opaque;
      MirrorExitData *data;
      BlockDriverState *bs = s->common.bs;
@@ -89,7 +89,7 @@ index ca55578..e8cb592 100644
      uint64_t last_pause_ns;
      BlockDriverInfo bdi;
      char backing_filename[2]; /* we only need 2 characters because we are only
-@@ -425,7 +425,6 @@ static void coroutine_fn mirror_run(void *opaque)
+@@ -441,7 +441,6 @@ static void coroutine_fn mirror_run(void *opaque)
          goto immediate_exit;
      }
  
@@ -97,7 +97,7 @@ index ca55578..e8cb592 100644
      mirror_free_init(s);
  
      last_pause_ns = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
-@@ -433,7 +432,9 @@ static void coroutine_fn mirror_run(void *opaque)
+@@ -449,7 +448,9 @@ static void coroutine_fn mirror_run(void *opaque)
          /* First part, loop on the sectors and initialize the dirty bitmap.  */
          BlockDriverState *base = s->base;
          for (sector_num = 0; sector_num < end; ) {
@@ -108,7 +108,7 @@ index ca55578..e8cb592 100644
              int64_t now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
  
              if (now - last_pause_ns > SLICE_TIME) {
-@@ -444,9 +445,7 @@ static void coroutine_fn mirror_run(void *opaque)
+@@ -460,9 +461,7 @@ static void coroutine_fn mirror_run(void *opaque)
              if (block_job_is_cancelled(&s->common)) {
                  goto immediate_exit;
              }
@@ -119,10 +119,10 @@ index ca55578..e8cb592 100644
  
              if (ret < 0) {
                  goto immediate_exit;
-@@ -455,10 +454,8 @@ static void coroutine_fn mirror_run(void *opaque)
+@@ -471,10 +470,8 @@ static void coroutine_fn mirror_run(void *opaque)
              assert(n > 0);
              if (ret == 1) {
-                 bdrv_set_dirty_bitmap(bs, s->dirty_bitmap, sector_num, n);
+                 bdrv_set_dirty_bitmap(s->dirty_bitmap, sector_num, n);
 -                sector_num = next;
 -            } else {
 -                sector_num += n;
