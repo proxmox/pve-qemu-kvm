@@ -650,7 +650,7 @@ Index: new/qapi-schema.json
 +# @uuid: #optional uuid for this backup job
 +#
 +##
-+{ 'type': 'BackupStatus',
++{ 'struct': 'BackupStatus',
 +  'data': {'*status': 'str', '*errmsg': 'str', '*total': 'int',
 +           '*transferred': 'int', '*zero-bytes': 'int',
 +           '*start-time': 'int', '*end-time': 'int',
@@ -690,7 +690,7 @@ Index: new/qapi-schema.json
 +                                    '*format': 'BackupFormat',
 +                                    '*config-file': 'str',
 +                                    '*devlist': 'str', '*speed': 'int' },
-+  'returns': 'str' }
++  'returns': 'UuidInfo' }
 +
 +##
 +# @query-backup

@@ -268,7 +268,7 @@ Index: new/qapi-schema.json
 +#
 +# Since: 1.3
 +##
-+{ 'type': 'SaveVMInfo',
++{ 'struct': 'SaveVMInfo',
 +  'data': {'*status': 'str', '*error': 'str',
 +           '*total-time': 'int', '*bytes': 'int'} }
 +
