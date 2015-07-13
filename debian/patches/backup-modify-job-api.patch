@@ -96,7 +96,7 @@ Index: new/block/backup.c
                    BlockdevOnError on_target_error,
 +                  BackupDumpFunc *dump_cb,
                    BlockCompletionFunc *cb, void *opaque,
-+                  bool paused,
++                  int pause_count,
                    Error **errp)
  {
      int64_t len;
@@ -140,7 +140,7 @@ Index: new/block/backup.c
      job->sync_mode = sync_mode;
      job->sync_bitmap = sync_mode == MIRROR_SYNC_MODE_INCREMENTAL ?
                         sync_bitmap : NULL;
-+    job->common.paused = paused;
++    job->common.pause_count = pause_count;
      job->common.len = len;
      job->common.co = qemu_coroutine_create(backup_run);
      qemu_coroutine_enter(job->common.co, job);
@@ -155,7 +155,7 @@ Index: new/blockdev.c
 -                 on_source_error, on_target_error,
 -                 block_job_cb, bs, &local_err);
 +                 on_source_error, on_target_error, NULL,
-+                 block_job_cb, bs, false, &local_err);
++                 block_job_cb, bs, 0, &local_err);
      if (local_err != NULL) {
          bdrv_unref(target_bs);
          error_propagate(errp, local_err);
@@ -164,7 +164,7 @@ Index: new/blockdev.c
      bdrv_set_aio_context(target_bs, aio_context);
      backup_start(bs, target_bs, speed, sync, NULL, on_source_error,
 -                 on_target_error, block_job_cb, bs, &local_err);
-+                 on_target_error, NULL, block_job_cb, bs, false, &local_err);
++                 on_target_error, NULL, block_job_cb, bs, 0, &local_err);
      if (local_err != NULL) {
          bdrv_unref(target_bs);
          error_propagate(errp, local_err);
@@ -188,7 +188,7 @@ Index: new/include/block/block_int.h
                    BlockdevOnError on_target_error,
 +                  BackupDumpFunc *dump_cb,
                    BlockCompletionFunc *cb, void *opaque,
-+                  bool paused,
++                  int pause_count,
                    Error **errp);
  
  void blk_dev_change_media_cb(BlockBackend *blk, bool load);
