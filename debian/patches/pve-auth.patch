@@ -37,8 +37,8 @@ Index: new/vl.c
 +                pve_auth_setup(vm_id_long);
 +                break;
              case QEMU_OPTION_vnc:
+             {
  #ifdef CONFIG_VNC
-                 if (vnc_parse_func(optarg) == NULL) {
 Index: new/include/ui/console.h
 ===================================================================
 --- new.orig/include/ui/console.h	2014-11-20 06:45:06.000000000 +0100
@@ -57,7 +57,7 @@ Index: new/ui/vnc.c
 +++ new/ui/vnc.c	2014-11-20 06:50:55.000000000 +0100
 @@ -48,6 +48,125 @@
  #include "vnc_keysym.h"
- #include "d3des.h"
+ #include "crypto/cipher.h"
  
 +static int pve_vmid = 0;
 +

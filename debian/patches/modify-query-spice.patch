@@ -35,7 +35,7 @@ Index: new/qapi-schema.json
 +#
  # Since: 0.14.0
  ##
- { 'type': 'SpiceInfo',
+ { 'struct': 'SpiceInfo',
    'data': {'enabled': 'bool', 'migrated': 'bool', '*host': 'str', '*port': 'int',
             '*tls-port': 'int', '*auth': 'str', '*compiled-version': 'str',
 +           '*ticket': 'str',

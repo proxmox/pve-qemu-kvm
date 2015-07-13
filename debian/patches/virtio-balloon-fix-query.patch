@@ -87,13 +87,7 @@ Index: new/qapi-schema.json
 ===================================================================
 --- new.orig/qapi-schema.json	2014-11-20 06:45:06.000000000 +0100
 +++ new/qapi-schema.json	2014-11-20 07:26:23.000000000 +0100
-@@ -983,15 +983,34 @@
- 
- ##
- # @BalloonInfo:
--#
-+# 
- # Information about the guest balloon device.
+@@ -983,10 +983,29 @@
  #
  # @actual: the number of bytes the balloon currently contains
  #
@@ -116,8 +110,8 @@ Index: new/qapi-schema.json
 +# 
 +# Since: 0.14.0
  ##
--{ 'type': 'BalloonInfo', 'data': {'actual': 'int' } }
-+{ 'type': 'BalloonInfo',
+-{ 'struct': 'BalloonInfo', 'data': {'actual': 'int' } }
++{ 'struct': 'BalloonInfo',
 +  'data': {'actual': 'int', '*last_update': 'int', '*mem_swapped_in': 'int',
 +           '*mem_swapped_out': 'int', '*major_page_faults': 'int',
 +           '*minor_page_faults': 'int', '*free_mem': 'int',
