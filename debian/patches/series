@@ -31,5 +31,3 @@ glusterfs-daemonize.patch
 gluster-backupserver.patch
 add-qmp-get-link-status.patch
 jemalloc.patch
-mirror-sleep.patch
-mirror-sleep2.patch
