@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-11) unstable; urgency=low
+
+  * fix CVE-2015-5154
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 28 Jul 2015 07:08:39 +0200
+
 pve-qemu-kvm (2.2-10) unstable; urgency=low
 
   * fix VENOM qemu security flaw (CVE-2015-3456)
