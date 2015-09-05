@@ -1,3 +1,12 @@
+pve-qemu-kvm (2.4-4) unstable; urgency=medium
+
+  * fix q35 pci passthrough (revert commit b8eb5512)
+
+  * add depend on libjpeg62-turbo to avoid problems when
+    updating from wheezy.
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 05 Sep 2015 10:15:08 +0200
+
 pve-qemu-kvm (2.4-3) unstable; urgency=medium
 
   * update to v2.4.0 final
