@@ -376,7 +376,7 @@ Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ new/savevm-async.c	2014-11-20 09:17:48.000000000 +0100
-@@ -0,0 +1,506 @@
+@@ -0,0 +1,515 @@
 +#include "qemu-common.h"
 +#include "qapi/qmp/qerror.h"
 +#include "qemu/error-report.h"
@@ -554,6 +554,7 @@ Index: new/savevm-async.c
 +    snap_state.state = SAVE_STATE_ACTIVE;
 +
 +    qemu_mutex_unlock_iothread();
++    qemu_savevm_state_header(snap_state.file);
 +    ret = qemu_savevm_state_begin(snap_state.file, &params);
 +    qemu_mutex_lock_iothread();
 +
@@ -844,7 +845,13 @@ Index: new/savevm-async.c
 +    Error *blocker = NULL;
 +
 +    QEMUFile *f;
-+    int ret = -1;
++    int ret;
++
++    ret = global_state_store();
++    if (ret) {
++        error_report("Error saving global state");
++        goto the_end;
++    }
 +
 +    bs = bdrv_new();
 +    ret = bdrv_open(&bs, filename, NULL, NULL, BDRV_O_CACHE_WB, drv, &local_err);
@@ -865,9 +872,11 @@ Index: new/savevm-async.c
 +    }
 +
 +    qemu_system_reset(VMRESET_SILENT);
++    migration_incoming_state_new(f);
 +    ret = qemu_loadvm_state(f);
 +
 +    qemu_fclose(f);
++    migration_incoming_state_destroy();
 +    if (ret < 0) {
 +        error_report("Error %d while loading VM state", ret);
 +        goto the_end;
