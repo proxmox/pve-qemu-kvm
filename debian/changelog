@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-6) unstable; urgency=medium
+
+  * fix snapshot/rollback of running vm
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 15 Sep 2015 09:07:32 +0200
+
 pve-qemu-kvm (2.4-5) unstable; urgency=medium
 
   * vma create: correctly create empty (config only) archives 
