@@ -376,7 +376,7 @@ Index: new/savevm-async.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ new/savevm-async.c	2014-11-20 09:17:48.000000000 +0100
-@@ -0,0 +1,515 @@
+@@ -0,0 +1,518 @@
 +#include "qemu-common.h"
 +#include "qapi/qmp/qerror.h"
 +#include "qemu/error-report.h"
@@ -542,6 +542,17 @@ Index: new/savevm-async.c
 +    return ret;
 +}
 +
++static int store_and_stop(void) {
++    if (global_state_store()) {
++        save_snapshot_error("Error saving global state");
++        return 1;
++    }
++    if (runstate_is_running()) {
++        vm_stop(RUN_STATE_SAVE_VM);
++    }
++    return 0;
++}
++
 +static void process_savevm_co(void *opaque)
 +{
 +    int ret;
@@ -577,9 +588,8 @@ Index: new/savevm-async.c
 +                DPRINTF("savevm inerate pending size %lu ret %d\n", pending_size, ret);
 +        } else {
 +            DPRINTF("done iterating\n");
-+            if (runstate_is_running()) {
-+                vm_stop(RUN_STATE_SAVE_VM);
-+            }
++            if (store_and_stop())
++                break;
 +            DPRINTF("savevm inerate finished\n");
 +            qemu_savevm_state_complete(snap_state.file);
 +            DPRINTF("save complete\n");
@@ -593,9 +603,8 @@ Index: new/savevm-async.c
 +        maxlen = bdrv_getlength(snap_state.bs) - 30*1024*1024;
 +        if ((pending_size < 100000) ||
 +            ((snap_state.bs_pos + pending_size) >= maxlen)) {
-+            if (runstate_is_running()) {
-+                vm_stop(RUN_STATE_SAVE_VM);
-+            }
++            if (store_and_stop())
++                break;
 +        }
 +    }
 +
@@ -846,12 +855,6 @@ Index: new/savevm-async.c
 +
 +    QEMUFile *f;
 +    int ret;
-+
-+    ret = global_state_store();
-+    if (ret) {
-+        error_report("Error saving global state");
-+        goto the_end;
-+    }
 +
 +    bs = bdrv_new();
 +    ret = bdrv_open(&bs, filename, NULL, NULL, BDRV_O_CACHE_WB, drv, &local_err);
