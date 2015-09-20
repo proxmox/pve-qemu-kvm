@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-7) unstable; urgency=medium
+
+  * savevm-async: move global_state_store to the end
+
+ -- Proxmox Support Team <support@proxmox.com>  Sun, 20 Sep 2015 10:08:02 +0200
+
 pve-qemu-kvm (2.4-6) unstable; urgency=medium
 
   * fix snapshot/rollback of running vm
