@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-8) unstable; urgency=medium
+
+  * update qemu to 2.4.0.1 
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 23 Sep 2015 06:40:27 +0200
+
 pve-qemu-kvm (2.4-7) unstable; urgency=medium
 
   * savevm-async: move global_state_store to the end
