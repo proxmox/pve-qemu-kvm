@@ -1,0 +1,61 @@
+From patchwork Thu Oct  1 19:05:28 2015
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [PULL,
+ 1/1] block: mirror - fix full sync mode when target does not support
+ zero init
+From: Jeff Cody <jcody@redhat.com>
+X-Patchwork-Id: 525278
+Message-Id: <1443726328-29484-2-git-send-email-jcody@redhat.com>
+To: qemu-block@nongnu.org
+Cc: peter.maydell@linaro.org, jcody@redhat.com, qemu-devel@nongnu.org
+Date: Thu,  1 Oct 2015 15:05:28 -0400
+
+During mirror, if the target device does not support zero init, a
+mirror may result in a corrupted image for sync="full" mode.
+
+This is due to how the initial dirty bitmap is set up prior to copying
+data - we did not mark sectors as dirty that are unallocated.  This
+means those unallocated sectors are skipped over on the target, and for
+a device without zero init, invalid data may reside in those holes.
+
+If both of the following conditions are true, then we will explicitly
+mark all sectors as dirty:
+
+    1.) sync = "full"
+    2.) bdrv_has_zero_init(target) == false
+
+If the target does support zero init, but a target image is passed in
+with data already present (i.e. an "existing" image), it is assumed the
+data present in the existing image is valid data for those sectors.
+
+Reviewed-by: Paolo Bonzini <pbonzini@redhat.com>
+Message-id: 91ed4bc5bda7e2b09eb508b07c83f4071fe0b3c9.1443705220.git.jcody@redhat.com
+Signed-off-by: Jeff Cody <jcody@redhat.com>
+---
+ block/mirror.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/block/mirror.c b/block/mirror.c
+index a258926..87928ab 100644
+--- a/block/mirror.c
++++ b/block/mirror.c
+@@ -455,6 +455,8 @@ static void coroutine_fn mirror_run(void *opaque)
+     if (!s->is_none_mode) {
+         /* First part, loop on the sectors and initialize the dirty bitmap.  */
+         BlockDriverState *base = s->base;
++        bool mark_all_dirty = s->base == NULL && !bdrv_has_zero_init(s->target);
++
+         for (sector_num = 0; sector_num < end; ) {
+             /* Just to make sure we are not exceeding int limit. */
+             int nb_sectors = MIN(INT_MAX >> BDRV_SECTOR_BITS,
+@@ -477,7 +479,7 @@ static void coroutine_fn mirror_run(void *opaque)
+             }
+ 
+             assert(n > 0);
+-            if (ret == 1) {
++            if (ret == 1 || mark_all_dirty) {
+                 bdrv_set_dirty_bitmap(s->dirty_bitmap, sector_num, n);
+             }
+             sector_num += n;

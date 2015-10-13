@@ -33,3 +33,4 @@ add-qmp-get-link-status.patch
 jemalloc.patch
 mirror-fix-coroutine-reentrance.patch
 0001-smm_available-false.patch
+mirror-fix-zero-init.patch
