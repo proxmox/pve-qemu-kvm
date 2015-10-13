@@ -1,3 +1,10 @@
+pve-qemu-kvm (2.4-10) unstable; urgency=medium
+
+  * pve-qemu-kvm : block: mirror - fix full sync mode when target
+    does not support zeroes init
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 13 Oct 2015 17:06:22 +0200
+
 pve-qemu-kvm (2.4-9) unstable; urgency=medium
 
   * qemu :disable smm support
