@@ -38,3 +38,4 @@ virtio-balloon-dimmfix3.patch
 add-qmp-get-link-status.patch
 virtio-scsi_fix_assert.patch
 0001-fdc-force-the-fifo-access-to-be-in-bounds-of-the-all.patch
+net-add-checks-to-validate-ring-buffer-pointers.patch
