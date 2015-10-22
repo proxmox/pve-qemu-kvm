@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-11) unstable; urgency=medium
+
+  * update ipxe binaries, re-enable efi pxe ROMs
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 22 Oct 2015 08:47:07 +0200
+
 pve-qemu-kvm (2.4-10) unstable; urgency=medium
 
   * pve-qemu-kvm : block: mirror - fix full sync mode when target
