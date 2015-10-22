@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-12) unstable; urgency=low
+
+  * added ne2000 patch
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 22 Oct 2015 12:24:22 +0200
+
 pve-qemu-kvm (2.2-11) unstable; urgency=low
 
   * fix CVE-2015-5154
