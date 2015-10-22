@@ -24,7 +24,7 @@ backup-vma-remove-async-queue.patch
 backup-run-flush-inside-coroutine.patch
 backup-do-not-use-bdrv-drain-all.patch
 internal-snapshot-async.patch
-disable-efi-enable-pxe-roms.patch
+#disable-efi-enable-pxe-roms.patch
 backup-vma-allow-empty-backups.patch
 backup-vma-extract-add-block-driver-type.patch
 glusterfs-daemonize.patch
