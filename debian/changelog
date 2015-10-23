@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-12) unstable; urgency=medium
+
+  * define QEMU_PKGVERSION
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 23 Oct 2015 09:40:37 +0200
+
 pve-qemu-kvm (2.4-11) unstable; urgency=medium
 
   * update ipxe binaries, re-enable efi pxe ROMs
