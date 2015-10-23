@@ -33,6 +33,8 @@ ${DEBS} kvm: ${KVMSRC}
 	tar xf ${KVMSRC} 
 	cp -a debian ${KVMDIR}/debian
 	echo "git clone git://git.proxmox.com/git/pve-qemu-kvm.git\\ngit checkout ${GITVERSION}" > ${KVMDIR}/debian/SOURCE
+	# set package version
+	sed -i 's/^pkgversion="".*/pkgversion="${KVMPACKAGE}_${KVMVER}-${KVMPKGREL}"/' ${KVMDIR}/configure
 	cd ${KVMDIR}; dpkg-buildpackage -b -rfakeroot -us -uc
 	lintian ${DEBS} || true
 
