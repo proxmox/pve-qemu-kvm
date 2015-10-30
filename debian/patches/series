@@ -39,3 +39,5 @@ add-qmp-get-link-status.patch
 virtio-scsi_fix_assert.patch
 0001-fdc-force-the-fifo-access-to-be-in-bounds-of-the-all.patch
 net-add-checks-to-validate-ring-buffer-pointers.patch
+CVE-2015-1779-incrementally-decode-websocket-frames.patch
+CVE-2015-1779-limit-size-of-HTTP-headers-from-websockets-clients.patch
