@@ -1,3 +1,11 @@
+pve-qemu-kvm (2.4-13) unstable; urgency=medium
+
+  * update qemu to 2.4.1
+
+  * remove patch mirror-fix-coroutine-reentrance.patch (now upstream)
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 06 Nov 2015 09:47:21 +0100
+
 pve-qemu-kvm (2.4-12) unstable; urgency=medium
 
   * define QEMU_PKGVERSION
