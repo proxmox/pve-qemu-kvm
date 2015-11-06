@@ -23,9 +23,7 @@ download:
 	rm -rf ${KVMDIR} ${KVMSRC}
 	#git clone git://git.qemu-project.org/qemu.git -b stable-2.4 ${KVMDIR} 
 	git clone git://git.qemu-project.org/qemu.git ${KVMDIR} 
-	cd ${KVMDIR}; git checkout v2.4.0.1; git revert --no-edit b8eb5512fd8a115f164edbbe897cdf8884920ccb
-	# update ipxe binaries
-	cd ${KVMDIR}; git cherry-pick f4798320144245da66128edb840bd940fd287d28
+	cd ${KVMDIR}; git checkout v2.4.1; git revert --no-edit b8eb5512fd8a115f164edbbe897cdf8884920ccb
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
 ${DEBS} kvm: ${KVMSRC}
