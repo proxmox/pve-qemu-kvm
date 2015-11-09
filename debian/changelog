@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-14) unstable; urgency=medium
+
+  * savevm async : setup raw format by default fo vmstate file
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 09 Nov 2015 06:26:53 +0100
+
 pve-qemu-kvm (2.4-13) unstable; urgency=medium
 
   * update qemu to 2.4.1
