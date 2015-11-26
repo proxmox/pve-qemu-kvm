@@ -27,7 +27,52 @@ Index: qemu-kvm-dev/blockdev.c
 ===================================================================
 --- qemu-kvm-dev.orig/blockdev.c
 +++ qemu-kvm-dev/blockdev.c
-@@ -2483,6 +2483,7 @@ static void pvebackup_run_next_job(void)
+@@ -2457,6 +2457,44 @@ void qmp_backup_cancel(Error **errp)
+     }
+ }
+ 
++static int config_to_vma(const char *file, BackupFormat format,
++			 const char *backup_dir, VmaWriter *vmaw,
++			 Error **errp)
++{
++        char *cdata = NULL;
++        gsize clen = 0;
++        GError *err = NULL;
++        if (!g_file_get_contents(file, &cdata, &clen, &err)) {
++            error_setg(errp, "unable to read file '%s'", file);
++            return 1;
++        }
++
++        char *basename = g_path_get_basename(file);
++
++        if (format == BACKUP_FORMAT_VMA) {
++            if (vma_writer_add_config(vmaw, basename, cdata, clen) != 0) {
++	      error_setg(errp, "unable to add %s config data to vma archive", file);
++                g_free(cdata);
++                g_free(basename);
++                return 1;
++            }
++        } else if (format == BACKUP_FORMAT_DIR) {
++            char config_path[PATH_MAX];
++            snprintf(config_path, PATH_MAX, "%s/%s", backup_dir, basename);
++            if (!g_file_set_contents(config_path, cdata, clen, &err)) {
++	      error_setg(errp, "unable to write config file '%s'", config_path);
++                g_free(cdata);
++                g_free(basename);
++                return 1;
++            }
++        }
++
++        g_free(basename);
++        g_free(cdata);
++
++	return 0;
++}
++
+ static void pvebackup_run_next_job(void)
+ {
+     GList *l = backup_state.di_list;
+@@ -2483,6 +2521,7 @@ static void pvebackup_run_next_job(void)
  UuidInfo *qmp_backup(const char *backup_file, bool has_format,
                      BackupFormat format,
                      bool has_config_file, const char *config_file,
@@ -35,42 +80,50 @@ Index: qemu-kvm-dev/blockdev.c
                      bool has_devlist, const char *devlist,
                      bool has_speed, int64_t speed, Error **errp)
  {
-@@ -2667,6 +2668,39 @@ UuidInfo *qmp_backup(const char *backup_
-         g_free(cdata);
+@@ -2635,38 +2674,17 @@ UuidInfo *qmp_backup(const char *backup_
+ 
+     /* add configuration file to archive */
+     if (has_config_file) {
+-        char *cdata = NULL;
+-        gsize clen = 0;
+-        GError *err = NULL;
+-        if (!g_file_get_contents(config_file, &cdata, &clen, &err)) {
+-            error_setg(errp, "unable to read file '%s'", config_file);
+-            goto err;
+-        }
+-
+-        char *basename = g_path_get_basename(config_file);
+-
+-        if (format == BACKUP_FORMAT_VMA) {
+-            if (vma_writer_add_config(vmaw, basename, cdata, clen) != 0) {
+-                error_setg(errp, "unable to add config data to vma archive");
+-                g_free(cdata);
+-                g_free(basename);
+-                goto err;
+-            }
+-        } else if (format == BACKUP_FORMAT_DIR) {
+-            char config_path[PATH_MAX];
+-            snprintf(config_path, PATH_MAX, "%s/%s", backup_dir, basename);
+-            if (!g_file_set_contents(config_path, cdata, clen, &err)) {
+-                error_setg(errp, "unable to write config file '%s'", config_path);
+-                g_free(cdata);
+-                g_free(basename);
+-                goto err;
+-            }
+-        }
+-
+-        g_free(basename);
+-        g_free(cdata);
++      if(config_to_vma(config_file, format, backup_dir, vmaw, errp) != 0) {
++	goto err;
++      }
      }
  
 +    /* add firewall file to archive */
 +    if (has_firewall_file) {
-+        char *cdata = NULL;
-+        gsize clen = 0;
-+        GError *err = NULL;
-+        if (!g_file_get_contents(firewall_file, &cdata, &clen, &err)) {
-+            error_setg(errp, "unable to read file '%s'", firewall_file);
-+            goto err;
-+        }
-+
-+        char *basename = g_path_get_basename(firewall_file);
-+
-+        if (format == BACKUP_FORMAT_VMA) {
-+            if (vma_writer_add_config(vmaw, basename, cdata, clen) != 0) {
-+                error_setg(errp, "unable to add firewall config data to vma archive");
-+                g_free(cdata);
-+                g_free(basename);
-+                goto err;
-+            }
-+        } else if (format == BACKUP_FORMAT_DIR) {
-+            char config_path[PATH_MAX];
-+            snprintf(config_path, PATH_MAX, "%s/%s", backup_dir, basename);
-+            if (!g_file_set_contents(config_path, cdata, clen, &err)) {
-+                error_setg(errp, "unable to write firewall config file '%s'", config_path);
-+                g_free(cdata);
-+                g_free(basename);
-+                goto err;
-+            }
-+        }
-+
-+        g_free(basename);
-+        g_free(cdata);
++      if(config_to_vma(firewall_file, format, backup_dir, vmaw, errp) != 0) {
++	goto err;
++      }
 +    }
      /* initialize global backup_state now */
  
