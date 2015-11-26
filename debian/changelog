@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-15) unstable; urgency=medium
+
+  * add ovmf uefi roms
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 26 Nov 2015 07:56:51 +0100
+
 pve-qemu-kvm (2.4-14) unstable; urgency=medium
 
   * savevm async : setup raw format by default fo vmstate file
