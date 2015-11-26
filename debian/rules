@@ -84,8 +84,8 @@ install: build
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifdown $(destdir)/etc/kvm/kvm-ifdown
 
 	#install ovmf uefi rom
-	install -D -m 0755 $(CURDIR)/debian/OVMF-pure-efi.fd $(destdir)/usr/share/kvm/OVMF-pure-efi.fd
-	install -D -m 0755 $(CURDIR)/debian/OVMF_VARS-pure-efi.fd $(destdir)/usr/share/kvm/OVMF_VARS-pure-efi.fd
+	install -D -m 0644 $(CURDIR)/debian/OVMF-pure-efi.fd $(destdir)/usr/share/kvm/OVMF-pure-efi.fd
+	install -D -m 0644 $(CURDIR)/debian/OVMF_VARS-pure-efi.fd $(destdir)/usr/share/kvm/OVMF_VARS-pure-efi.fd
 
 	# we do not need openbios files (sparc/ppc)
 	rm -rf $(destdir)/usr/share/kvm/openbios-*
