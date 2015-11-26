@@ -34,3 +34,4 @@ jemalloc.patch
 0001-smm_available-false.patch
 mirror-fix-zero-init.patch
 fix-emulator-version-string.patch
+add_firewall_to_vma.patch

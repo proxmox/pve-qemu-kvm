@@ -1,0 +1,90 @@
+Index: qemu-kvm-dev/qapi-schema.json
+===================================================================
+--- qemu-kvm-dev.orig/qapi-schema.json
++++ qemu-kvm-dev/qapi-schema.json
+@@ -416,6 +416,7 @@
+ { 'command': 'backup', 'data': { 'backup-file': 'str',
+                                     '*format': 'BackupFormat',
+                                     '*config-file': 'str',
++                                    '*firewall-file': 'str',
+                                     '*devlist': 'str', '*speed': 'int' },
+   'returns': 'UuidInfo' }
+ 
+Index: qemu-kvm-dev/qmp-commands.hx
+===================================================================
+--- qemu-kvm-dev.orig/qmp-commands.hx
++++ qemu-kvm-dev/qmp-commands.hx
+@@ -1204,7 +1204,7 @@ EQMP
+ 
+     {
+         .name       = "backup",
+-        .args_type  = "backup-file:s,format:s?,config-file:F?,speed:o?,devlist:s?",
++        .args_type  = "backup-file:s,format:s?,config-file:F?,firewall-file:F?,speed:o?,devlist:s?",
+         .mhandler.cmd_new = qmp_marshal_input_backup,
+     },
+ 
+Index: qemu-kvm-dev/blockdev.c
+===================================================================
+--- qemu-kvm-dev.orig/blockdev.c
++++ qemu-kvm-dev/blockdev.c
+@@ -2483,6 +2483,7 @@ static void pvebackup_run_next_job(void)
+ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+                     BackupFormat format,
+                     bool has_config_file, const char *config_file,
++		    bool has_firewall_file, const char *firewall_file,
+                     bool has_devlist, const char *devlist,
+                     bool has_speed, int64_t speed, Error **errp)
+ {
+@@ -2667,6 +2668,39 @@ UuidInfo *qmp_backup(const char *backup_
+         g_free(cdata);
+     }
+ 
++    /* add firewall file to archive */
++    if (has_firewall_file) {
++        char *cdata = NULL;
++        gsize clen = 0;
++        GError *err = NULL;
++        if (!g_file_get_contents(firewall_file, &cdata, &clen, &err)) {
++            error_setg(errp, "unable to read file '%s'", firewall_file);
++            goto err;
++        }
++
++        char *basename = g_path_get_basename(firewall_file);
++
++        if (format == BACKUP_FORMAT_VMA) {
++            if (vma_writer_add_config(vmaw, basename, cdata, clen) != 0) {
++                error_setg(errp, "unable to add firewall config data to vma archive");
++                g_free(cdata);
++                g_free(basename);
++                goto err;
++            }
++        } else if (format == BACKUP_FORMAT_DIR) {
++            char config_path[PATH_MAX];
++            snprintf(config_path, PATH_MAX, "%s/%s", backup_dir, basename);
++            if (!g_file_set_contents(config_path, cdata, clen, &err)) {
++                error_setg(errp, "unable to write firewall config file '%s'", config_path);
++                g_free(cdata);
++                g_free(basename);
++                goto err;
++            }
++        }
++
++        g_free(basename);
++        g_free(cdata);
++    }
+     /* initialize global backup_state now */
+ 
+     backup_state.cancel = false;
+Index: qemu-kvm-dev/hmp.c
+===================================================================
+--- qemu-kvm-dev.orig/hmp.c
++++ qemu-kvm-dev/hmp.c
+@@ -1465,7 +1465,7 @@ void hmp_backup(Monitor *mon, const QDic
+     int64_t speed = qdict_get_try_int(qdict, "speed", 0);
+ 
+     qmp_backup(backup_file, true, dir ? BACKUP_FORMAT_DIR : BACKUP_FORMAT_VMA,
+-               false, NULL, !!devlist,
++               false, NULL, false, NULL, !!devlist,
+                devlist, qdict_haskey(qdict, "speed"), speed, &error);
+ 
+     hmp_handle_error(mon, &error);
