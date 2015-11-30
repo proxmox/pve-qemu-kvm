@@ -35,3 +35,5 @@ jemalloc.patch
 mirror-fix-zero-init.patch
 fix-emulator-version-string.patch
 add_firewall_to_vma.patch
+0001-net-pcnet-add-check-to-validate-receive-data-size-CV.patch
+0002-pcnet-fix-rx-buffer-overflow-CVE-2015-7512.patch
