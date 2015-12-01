@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-16) unstable; urgency=medium
+
+  * added fixes for CVE-2015-7504 and CVE-2015-7512
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 01 Dec 2015 09:51:44 +0100
+
 pve-qemu-kvm (2.4-15) unstable; urgency=medium
 
   * add ovmf uefi roms
