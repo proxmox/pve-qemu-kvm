@@ -41,3 +41,4 @@ virtio-scsi_fix_assert.patch
 net-add-checks-to-validate-ring-buffer-pointers.patch
 CVE-2015-1779-incrementally-decode-websocket-frames.patch
 CVE-2015-1779-limit-size-of-HTTP-headers-from-websockets-clients.patch
+0001-ui-vnc-avoid-floating-point-exception.patch
