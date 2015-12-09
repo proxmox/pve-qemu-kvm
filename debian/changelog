@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-14) unstable; urgency=low
+
+  * fix CVE-2015-8504
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 09 Dec 2015 12:37:47 +0100
+
 pve-qemu-kvm (2.2-13) unstable; urgency=low
 
   * fix CVE-2015-1779
