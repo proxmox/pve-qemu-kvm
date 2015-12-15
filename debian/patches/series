@@ -38,3 +38,6 @@ add_firewall_to_vma.patch
 0001-net-pcnet-add-check-to-validate-receive-data-size-CV.patch
 0002-pcnet-fix-rx-buffer-overflow-CVE-2015-7512.patch
 0001-ui-vnc-avoid-floating-point-exception.patch
+CVE-2015-7549-msix-pba-write-ro.patch
+CVE-2015-8558-ehci_make_idt_processing_more_robust.patch
+vmxnet3-host-memory-leakage.patch
