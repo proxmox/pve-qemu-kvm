@@ -1,3 +1,21 @@
+pve-qemu-kvm (2.2-15) unstable; urgency=low
+
+  * CVE-2015-8613 scsi: initialise info object with appropriate size
+
+  * CVE-2015-8619 hmp: avoid redundant null termination of buffer
+
+  * CVE-2015-8666 acpi: fix buffer overrun on migration
+
+  * CVE-2015-8743 net: ne2000: fix bounds check in ioport operations
+
+  * CVE-2015-8744 net/vmxnet3: Refine l2 header validation
+
+  * CVE-2015-8745 vmxnet3: Support reading IMR registers on bar0
+
+  * fixes for CVEs 2015-7549, 2015-8858 and for vmxnet3
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 07 Jan 2016 12:17:13 +0100
+
 pve-qemu-kvm (2.2-14) unstable; urgency=low
 
   * fix CVE-2015-8504
