@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.4-20) unstable; urgency=medium
+
+  * Removing wrong CVE-2015-8619
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 08 Jan 2016 12:43:24 +0100
+
 pve-qemu-kvm (2.4-19) unstable; urgency=medium
 
   * fix CVE-2015-8613 scsi: initialise info object with appropriate size
