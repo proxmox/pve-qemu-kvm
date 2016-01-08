@@ -46,7 +46,6 @@ CVE-2015-7549-msix-pba-write-ro.patch
 CVE-2015-8558-ehci_make_idt_processing_more_robust.patch
 vmxnet3-host-memory-leakage.patch
 CVE-2015-8613-scsi-initialize-info-object.patch
-CVE-2015-8619-hmp-oob-write.patch
 CVE-2015-8666-acpi-fix-buffer-overrun-on-migration.patch
 CVE-2015-8743-ne2000-ioport-bounds-check.patch
 CVE-2015-8744-vmxnet3-refine-l2-header-validation.patch
