@@ -1,5 +1,7 @@
 pve-qemu-kvm (2.4-21) unstable; urgency=medium
 
+  * add correct fix for  CVE-2015-8619
+
   * close #849: iproute is a transitional package for iproute2
 
  -- Proxmox Support Team <support@proxmox.com>  Mon, 11 Jan 2016 15:23:23 +0100
