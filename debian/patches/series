@@ -50,3 +50,4 @@ CVE-2015-8666-acpi-fix-buffer-overrun-on-migration.patch
 CVE-2015-8743-ne2000-ioport-bounds-check.patch
 CVE-2015-8744-vmxnet3-refine-l2-header-validation.patch
 CVE-2015-8745-vmxnet3-support-reading-imr-registers.patch
+CVE-2015-8619-hmp-sendkey-oob-fix.patch
