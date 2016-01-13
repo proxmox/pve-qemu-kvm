@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-18) unstable; urgency=low
+
+  * fix CVE-2016-1714 - fw_cfg oob r/w access
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 13 Jan 2016 10:58:09 +0100
+
 pve-qemu-kvm (2.2-17) unstable; urgency=low
 
   * hmp: fix sendkey out of bounds write (CVE-2015-8619)
