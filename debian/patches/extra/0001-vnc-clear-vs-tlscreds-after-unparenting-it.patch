@@ -1,0 +1,38 @@
+From ec10377932f10e47ce103f16ad469d182ab64321 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Tue, 12 Jan 2016 11:03:04 +0100
+Subject: [PATCH] vnc: clear vs->tlscreds after unparenting it
+
+This pointer should be cleared in vnc_display_close()
+otherwise a use-after-free can happen when when using the
+old style 'x509' and 'tls' options rather than a persistent
+tls-creds -object, by issuing monitor commands to change
+the vnc server like so:
+
+Start with: -vnc unix:test.socket,x509,tls
+Then use the following monitor command:
+  change vnc unix:test.socket
+
+After this the pointer is still set but invalid and a crash
+can be triggered for instance by issuing the same command a
+second time which will try to object_unparent() the same
+pointer again.
+---
+ ui/vnc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ui/vnc.c b/ui/vnc.c
+index 09756cd..35843b5 100644
+--- a/ui/vnc.c
++++ b/ui/vnc.c
+@@ -3134,6 +3134,7 @@ static void vnc_display_close(VncDisplay *vs)
+     vs->subauth = VNC_AUTH_INVALID;
+     if (vs->tlscreds) {
+         object_unparent(OBJECT(vs->tlscreds));
++        vs->tlscreds = NULL;
+     }
+     g_free(vs->tlsaclname);
+     vs->tlsaclname = NULL;
+-- 
+2.1.4
+
