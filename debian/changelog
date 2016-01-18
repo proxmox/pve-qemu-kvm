@@ -1,3 +1,11 @@
+pve-qemu-kvm (2.5-1) unstable; urgency=medium
+
+  * update qemu to 2.5.0
+
+  * removed upstream CVE fixes
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 08 Jan 2016 12:43:24 +0100
+
 pve-qemu-kvm (2.4-21) unstable; urgency=medium
 
   * add correct fix for  CVE-2015-8619
