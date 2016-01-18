@@ -1,0 +1,33 @@
+From 712f8526b54566361c9d1e4cc81a40714f29a26f Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Thu, 10 Dec 2015 14:25:01 +0100
+Subject: [PATCH 32/41] vma-writer: aio_set_fd_handler update
+
+passing 'false' as new is_external parameter to
+aio_set_fd_handler as per commit
+dca21e23ba: aio: Add "is_external" flag for event handlers
+
+For-patch: introduce new vma archive format
+---
+ vma-writer.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/vma-writer.c b/vma-writer.c
+index 5cc4564..f5a7abd 100644
+--- a/vma-writer.c
++++ b/vma-writer.c
+@@ -231,9 +231,9 @@ vma_queue_write(VmaWriter *vmaw, const void *buf, size_t bytes)
+     vmaw->co_writer = qemu_coroutine_self();
+ 
+     while (done < bytes) {
+-        aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, NULL, vma_co_continue_write, vmaw);
++        aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, false, NULL, vma_co_continue_write, vmaw);
+         qemu_coroutine_yield();
+-        aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, NULL, NULL, NULL);
++        aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, false, NULL, NULL, NULL);
+         if (vmaw->status < 0) {
+             DPRINTF("vma_queue_write detected canceled backup\n");
+             done = -1;
+-- 
+2.1.4
+

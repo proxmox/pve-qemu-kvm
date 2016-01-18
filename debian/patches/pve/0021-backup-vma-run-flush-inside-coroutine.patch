@@ -1,0 +1,56 @@
+From fe57d97e87fd49b03ce11d381f88fed546ea674d Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Wed, 9 Dec 2015 15:40:42 +0100
+Subject: [PATCH 21/41] backup: vma: run flush inside coroutine
+
+---
+ blockdev.c   | 10 +++++++++-
+ vma-writer.c |  4 ++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index c36888d..8df70cb 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -2980,6 +2980,13 @@ static void pvebackup_cleanup(void)
+     }
+ }
+ 
++static void coroutine_fn backup_close_vma_stream(void *opaque)
++{
++    PVEBackupDevInfo *di = opaque;
++
++    vma_writer_close_stream(backup_state.vmaw, di->dev_id);
++}
++
+ static void pvebackup_complete_cb(void *opaque, int ret)
+ {
+     PVEBackupDevInfo *di = opaque;
+@@ -2997,7 +3004,8 @@ static void pvebackup_complete_cb(void *opaque, int ret)
+     di->target = NULL;
+ 
+     if (backup_state.vmaw) {
+-        vma_writer_close_stream(backup_state.vmaw, di->dev_id);
++        Coroutine *co = qemu_coroutine_create(backup_close_vma_stream);
++        qemu_coroutine_enter(co, di);
+     }
+ 
+     block_job_cb(bs, ret);
+diff --git a/vma-writer.c b/vma-writer.c
+index 2558fe1..3c77e98 100644
+--- a/vma-writer.c
++++ b/vma-writer.c
+@@ -706,6 +706,10 @@ int vma_writer_close(VmaWriter *vmaw, Error **errp)
+ 
+     int i;
+ 
++    while (vmaw->co_writer) {
++        aio_poll(qemu_get_aio_context(), true);
++    }
++
+     assert(vmaw->co_writer == NULL);
+ 
+     if (vmaw->cmd) {
+-- 
+2.1.4
+

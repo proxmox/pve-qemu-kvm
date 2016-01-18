@@ -1,0 +1,127 @@
+From 7b58868a321a38585c20a6eecdaa52d2a85e8385 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Wed, 9 Dec 2015 16:33:25 +0100
+Subject: [PATCH 27/41] gluster: possiblity to specify a secondary server
+
+---
+ block/gluster.c | 40 +++++++++++++++++++++++++++++++---------
+ 1 file changed, 31 insertions(+), 9 deletions(-)
+
+diff --git a/block/gluster.c b/block/gluster.c
+index e3c0dbc..8946e82 100644
+--- a/block/gluster.c
++++ b/block/gluster.c
+@@ -26,6 +26,7 @@ typedef struct BDRVGlusterState {
+ 
+ typedef struct GlusterConf {
+     char *server;
++    char *backupserver;
+     int port;
+     char *volname;
+     char *image;
+@@ -36,6 +37,7 @@ static void qemu_gluster_gconf_free(GlusterConf *gconf)
+ {
+     if (gconf) {
+         g_free(gconf->server);
++        g_free(gconf->backupserver);
+         g_free(gconf->volname);
+         g_free(gconf->image);
+         g_free(gconf->transport);
+@@ -69,7 +71,7 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
+ }
+ 
+ /*
+- * file=gluster[+transport]://[server[:port]]/volname/image[?socket=...]
++ * file=gluster[+transport]://[server[:port]]/volname/image[?socket=...|?s2=...]
+  *
+  * 'gluster' is the protocol.
+  *
+@@ -85,6 +87,8 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
+  * The 'socket' field needs to be populated with the path to unix domain
+  * socket.
+  *
++ * 's2' can be used to specifies a second volfile server.
++ *
+  * 'port' is the port number on which glusterd is listening. This is optional
+  * and if not specified, QEMU will send 0 which will make gluster to use the
+  * default port. If the transport type is unix, then 'port' should not be
+@@ -97,6 +101,7 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
+  * Examples:
+  *
+  * file=gluster://1.2.3.4/testvol/a.img
++ * file=gluster://1.2.3.4/testvol/a.img?s2=1.2.3.5
+  * file=gluster+tcp://1.2.3.4/testvol/a.img
+  * file=gluster+tcp://1.2.3.4:24007/testvol/dir/a.img
+  * file=gluster+tcp://[1:2:3:4:5:6:7:8]/testvol/dir/a.img
+@@ -111,6 +116,8 @@ static int qemu_gluster_parseuri(GlusterConf *gconf, const char *filename)
+     QueryParams *qp = NULL;
+     bool is_unix = false;
+     int ret = 0;
++    int i;
++    char *socket = NULL;
+ 
+     uri = uri_parse(filename);
+     if (!uri) {
+@@ -138,21 +145,28 @@ static int qemu_gluster_parseuri(GlusterConf *gconf, const char *filename)
+     }
+ 
+     qp = query_params_parse(uri->query);
+-    if (qp->n > 1 || (is_unix && !qp->n) || (!is_unix && qp->n)) {
++    for (i = 0; i < qp->n; i++) {
++        if (!is_unix && strcmp(qp->p[i].name, "s2") == 0) {
++            gconf->backupserver = g_strdup(qp->p[i].value);
++        } else if (is_unix && strcmp(qp->p[i].name, "socket") == 0) {
++            socket = qp->p[i].value;
++        } else {
++            ret = -EINVAL;
++            goto out;
++        }
++    }
++
++    if (is_unix && !socket) {
+         ret = -EINVAL;
+         goto out;
+     }
+ 
+     if (is_unix) {
+-        if (uri->server || uri->port) {
++        if (!socket || uri->server || uri->port) {
+             ret = -EINVAL;
+             goto out;
+         }
+-        if (strcmp(qp->p[0].name, "socket")) {
+-            ret = -EINVAL;
+-            goto out;
+-        }
+-        gconf->server = g_strdup(qp->p[0].value);
++        gconf->server = g_strdup(socket);
+     } else {
+         gconf->server = g_strdup(uri->server ? uri->server : "localhost");
+         gconf->port = uri->port;
+@@ -176,7 +190,7 @@ static struct glfs *qemu_gluster_init(GlusterConf *gconf, const char *filename,
+     ret = qemu_gluster_parseuri(gconf, filename);
+     if (ret < 0) {
+         error_setg(errp, "Usage: file=gluster[+transport]://[server[:port]]/"
+-                   "volname/image[?socket=...]");
++                   "volname/image[?socket=...|?s2=...]");
+         errno = -ret;
+         goto out;
+     }
+@@ -192,6 +206,14 @@ static struct glfs *qemu_gluster_init(GlusterConf *gconf, const char *filename,
+         goto out;
+     }
+ 
++    if (gconf->backupserver) {
++        ret = glfs_set_volfile_server(glfs, gconf->transport, gconf->backupserver,
++                                      gconf->port);
++        if (ret < 0) {
++            goto out;
++        }
++    }
++
+     /*
+      * TODO: Use GF_LOG_ERROR instead of hard code value of 4 here when
+      * GlusterFS makes GF_LOG_* macros available to libgfapi users.
+-- 
+2.1.4
+

@@ -1,0 +1,43 @@
+From 6c9fa84fe9a676616fc9bdbf148c255c79f37f99 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Thu, 10 Dec 2015 15:19:42 +0100
+Subject: [PATCH 37/41] qapi: qmp_marshal_* renames for pve monitor commands
+
+As per 7fad30f0:
+qapi: Rename qmp_marshal_input_FOO() to qmp_marshal_FOO()
+
+For-patch: backup: add pve monitor commands
+---
+ qmp-commands.hx | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/qmp-commands.hx b/qmp-commands.hx
+index de07f54..478de38 100644
+--- a/qmp-commands.hx
++++ b/qmp-commands.hx
+@@ -1256,19 +1256,19 @@ EQMP
+     {
+         .name       = "backup",
+         .args_type  = "backup-file:s,format:s?,config-file:F?,firewall-file:F?,speed:o?,devlist:s?",
+-        .mhandler.cmd_new = qmp_marshal_input_backup,
++        .mhandler.cmd_new = qmp_marshal_backup,
+     },
+ 
+     {
+         .name       = "backup-cancel",
+         .args_type  = "",
+-        .mhandler.cmd_new = qmp_marshal_input_backup_cancel,
++        .mhandler.cmd_new = qmp_marshal_backup_cancel,
+     },
+ 
+     {
+         .name       = "query-backup",
+         .args_type  = "",
+-        .mhandler.cmd_new = qmp_marshal_input_query_backup,
++        .mhandler.cmd_new = qmp_marshal_query_backup,
+     },
+ 
+     {
+-- 
+2.1.4
+

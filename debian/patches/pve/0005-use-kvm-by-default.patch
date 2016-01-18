@@ -1,0 +1,27 @@
+From d6e2e550fee6c0c3468585c4885237a080468ecf Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Wed, 9 Dec 2015 14:27:05 +0100
+Subject: [PATCH 05/41] use kvm by default
+
+---
+ accel.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/accel.c b/accel.c
+index 74e41da..66e2e58 100644
+--- a/accel.c
++++ b/accel.c
+@@ -87,8 +87,8 @@ int configure_accelerator(MachineState *ms)
+ 
+     p = qemu_opt_get(qemu_get_machine_opts(), "accel");
+     if (p == NULL) {
+-        /* Use the default "accelerator", tcg */
+-        p = "tcg";
++        /* Use the default "accelerator", kvm */
++        p = "kvm";
+     }
+ 
+     while (!accel_initialised && *p != '\0') {
+-- 
+2.1.4
+

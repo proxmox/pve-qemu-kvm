@@ -1,0 +1,57 @@
+From 610ba269757b48a75efce7a05cfd2bc4d9016da7 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Thu, 10 Dec 2015 15:21:10 +0100
+Subject: [PATCH 38/41] qapi: qmp_mashal_* renames for async snapshot
+
+As per 7fad30f0:
+qapi: Rename qmp_marshal_input_FOO() to qmp_marshal_FOO()
+
+For-patch: internal snapshot async
+---
+ qmp-commands.hx | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/qmp-commands.hx b/qmp-commands.hx
+index 478de38..129e1b3 100644
+--- a/qmp-commands.hx
++++ b/qmp-commands.hx
+@@ -4700,31 +4700,31 @@ EQMP
+     {
+         .name       = "savevm-start",
+         .args_type  = "statefile:s?",
+-        .mhandler.cmd_new = qmp_marshal_input_savevm_start,
++        .mhandler.cmd_new = qmp_marshal_savevm_start,
+     },
+ 
+     {
+         .name       = "snapshot-drive",
+         .args_type  = "device:s,name:s",
+-        .mhandler.cmd_new = qmp_marshal_input_snapshot_drive,
++        .mhandler.cmd_new = qmp_marshal_snapshot_drive,
+     },
+ 
+     {
+         .name       = "delete-drive-snapshot",
+         .args_type  = "device:s,name:s",
+-        .mhandler.cmd_new = qmp_marshal_input_delete_drive_snapshot,
++        .mhandler.cmd_new = qmp_marshal_delete_drive_snapshot,
+     },
+ 
+     {
+         .name       = "savevm-end",
+         .args_type  = "",
+-        .mhandler.cmd_new = qmp_marshal_input_savevm_end,
++        .mhandler.cmd_new = qmp_marshal_savevm_end,
+     },
+ 
+     {
+         .name       = "query-savevm",
+         .args_type  = "",
+-        .mhandler.cmd_new = qmp_marshal_input_query_savevm,
++        .mhandler.cmd_new = qmp_marshal_query_savevm,
+     },
+ 
+     {
+-- 
+2.1.4
+

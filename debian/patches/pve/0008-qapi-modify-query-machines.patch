@@ -1,0 +1,52 @@
+From f3aa6523c91f0259f7168a8bbcf978b2e42168f7 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Wed, 9 Dec 2015 14:31:18 +0100
+Subject: [PATCH 08/41] qapi: modify query machines
+
+provide '*is-current' in MachineInfo struct
+---
+ qapi-schema.json | 4 +++-
+ vl.c             | 5 +++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/qapi-schema.json b/qapi-schema.json
+index 9f54ebf..3ac59c5 100644
+--- a/qapi-schema.json
++++ b/qapi-schema.json
+@@ -2790,6 +2790,8 @@
+ #
+ # @default: #optional whether the machine is default
+ #
++# @current: #optional whether this machine is currently used
++#
+ # @cpu-max: maximum number of CPUs supported by the machine type
+ #           (since 1.5.0)
+ #
+@@ -2797,7 +2799,7 @@
+ ##
+ { 'struct': 'MachineInfo',
+   'data': { 'name': 'str', '*alias': 'str',
+-            '*is-default': 'bool', 'cpu-max': 'int' } }
++            '*is-default': 'bool', '*is-current': 'bool', 'cpu-max': 'int' } }
+ 
+ ##
+ # @query-machines:
+diff --git a/vl.c b/vl.c
+index 4211ff1..77c734e 100644
+--- a/vl.c
++++ b/vl.c
+@@ -1523,6 +1523,11 @@ MachineInfoList *qmp_query_machines(Error **errp)
+         info->name = g_strdup(mc->name);
+         info->cpu_max = !mc->max_cpus ? 1 : mc->max_cpus;
+ 
++        if (strcmp(mc->name, MACHINE_GET_CLASS(current_machine)->name) == 0) {
++            info->has_is_current = true;
++            info->is_current = true;
++        }
++
+         entry = g_malloc0(sizeof(*entry));
+         entry->value = info;
+         entry->next = mach_list;
+-- 
+2.1.4
+
