@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-2) unstable; urgency=medium
+
+  * recompile for test environment
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 20 Jan 2016 08:37:49 +0100
+
 pve-qemu-kvm (2.5-1) unstable; urgency=medium
 
   * update qemu to 2.5.0
