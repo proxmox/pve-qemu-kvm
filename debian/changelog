@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-3) unstable; urgency=medium
+
+  * Fix CVE-2016-1981
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 22 Jan 2016 09:09:27 +0100
+
 pve-qemu-kvm (2.5-2) unstable; urgency=medium
 
   * recompile for test environment
