@@ -47,3 +47,4 @@ extra/vmxnet3-host-memory-leakage.patch
 extra/CVE-2015-8619-hmp-sendkey-oob-fix.patch
 extra/0001-vnc-clear-vs-tlscreds-after-unparenting-it.patch
 extra/CVE-2016-1922-i386-avoid-null-pointer-dereference.patch
+extra/CVE-2016-1981-e1000-eliminate-infinite-loop.patch
