@@ -1,0 +1,24 @@
+From 7844d4dd830c71ecfd437556251ecef96352e1e7 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Mon, 8 Feb 2016 08:23:34 +0100
+Subject: [PATCH 42/44] vma-writer: don't bail out on zero-length files
+
+---
+ vma-writer.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/vma-writer.c b/vma-writer.c
+index f5a7abd..3cde204 100644
+--- a/vma-writer.c
++++ b/vma-writer.c
+@@ -136,7 +136,6 @@ int vma_writer_add_config(VmaWriter *vmaw, const char *name, gpointer data,
+     assert(vmaw->config_count < VMA_MAX_CONFIGS);
+     assert(name);
+     assert(data);
+-    assert(len);
+ 
+     gchar *basename = g_path_get_basename(name);
+     uint32_t name_ptr = allocate_header_string(vmaw, basename);
+-- 
+2.1.4
+
