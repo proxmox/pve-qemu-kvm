@@ -54,3 +54,8 @@ CVE-2015-8619-hmp-sendkey-oob-fix.patch
 CVE-2016-1714-fw_cfg-add-check-to-validate-current-entry.patch
 CVE-2016-1922-i386-avoid-null-pointer-dereference.patch
 CVE-2016-1981-e1000-eliminate-infinite-loop.patch
+CVE-2016-1568-ide-ahci-reset-ncq-object.patch
+CVE-2015-3209-pcnet-oob.patch
+CVE-2015-7504-pcnet-validate-size.patch
+CVE-2015-7512-pcnet-rx-buffer-overflow.patch
+CVE-2015-7295-virtio-introduce-virtqueue_unmap_sg.patch
