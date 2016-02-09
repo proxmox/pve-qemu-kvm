@@ -1,3 +1,17 @@
+pve-qemu-kvm (2.2-21) unstable; urgency=low
+
+  * fix CVE-2016-1568: ide: ahci: reset ncq object to unused on error
+
+  * fix CVE-2015-3209: pcnet: force the buffer access to be in bounds during tx
+
+  * fix CVE-2015-7504: net: pcnet: add check to validate receive data size
+
+  * fix CVE-2015-7512: pcnet: fix rx buffer overflow
+
+  * fix CVE-2015-7295
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 09 Feb 2016 17:34:00 +0100
+
 pve-qemu-kvm (2.2-20) unstable; urgency=low
 
   * Fix CVE-2016-1981
