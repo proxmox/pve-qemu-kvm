@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-6) unstable; urgency=medium
+
+  * Fix CVE-2016-2392 and CVE-2016-2391
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 18 Feb 2016 09:44:37 +0100
+
 pve-qemu-kvm (2.5-5) unstable; urgency=medium
 
   * Fix #885: vma-writer: don't bail out on zero length files
