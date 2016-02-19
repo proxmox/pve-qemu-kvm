@@ -1,0 +1,159 @@
+From patchwork Thu Feb 18 19:31:00 2016
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+Subject: fw_cfg: unbreak migration compatibility for 2.4 and earlier machines
+From: Laszlo Ersek <lersek@redhat.com>
+X-Patchwork-Id: 584876
+Message-Id: <1455823860-22268-1-git-send-email-lersek@redhat.com>
+To: qemu-devel@nongnu.org
+Cc: =?UTF-8?q?Marc=20Mar=ED?= <markmb@redhat.com>,
+ Gerd Hoffmann <kraxel@redhat.com>,
+ Alexandre DERUMIER <aderumier@odiso.com>, qemu-stable@nongnu.org
+Date: Thu, 18 Feb 2016 20:31:00 +0100
+
+When I reviewed Marc's fw_cfg DMA patches, I completely missed that the
+way we set dma_enabled would break migration.
+
+Gerd explained the right way (see reference below): dma_enabled should be
+set to true by default, and only true->false transitions should be
+possible:
+
+- when the user requests that with
+
+    -global fw_cfg_mem.dma_enabled=off
+
+  or
+
+   -global fw_cfg_io.dma_enabled=off
+
+  as appropriate for the platform,
+
+- when HW_COMPAT_2_4 dictates it,
+
+- when board code initializes fw_cfg without requesting DMA support.
+
+Cc: Marc Marí <markmb@redhat.com>
+Cc: Gerd Hoffmann <kraxel@redhat.com>
+Cc: Alexandre DERUMIER <aderumier@odiso.com>
+Cc: qemu-stable@nongnu.org
+Ref: http://thread.gmane.org/gmane.comp.emulators.qemu/390272/focus=391042
+Ref: https://bugs.launchpad.net/qemu/+bug/1536487
+Suggested-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Laszlo Ersek <lersek@redhat.com>
+---
+
+Notes:
+    Tested the following cases with gdb, using qemu-system-x86_64, setting a
+    breakpoint on (s->dma_enabled) in fw_cfg_init_io_dma():
+    
+    * no special params (DMA enabled)
+    * -global fw_cfg_io.dma_enabled=off (DMA disabled)
+    * -M pc-i440fx-2.4 (DMA disabled), similarly with 2.3 and Q35 too
+    
+    Also tested the memory mapped case in practice, using
+    qemu-system-aarch64 -M virt, -kernel / -initrd / -append, with guest
+    UEFI:
+    * no special params (DMA enabled)
+    * -global fw_cfg_mem.dma_enabled=off (DMA disabled)
+    
+    Not tested:
+    * actual migration
+    * when board code doesn't request DMA support
+    
+    Testing feedback from people who use migration would be nice.
+
+ include/hw/compat.h |  8 ++++++++
+ hw/nvram/fw_cfg.c   | 20 ++++++++++++--------
+ 2 files changed, 20 insertions(+), 8 deletions(-)
+
+diff --git a/include/hw/compat.h b/include/hw/compat.h
+index 2ebe739fcb5c..a5dbbf8984b1 100644
+index d0b1c4f..b7973db 100644
+--- a/include/hw/compat.h
++++ b/include/hw/compat.h
+@@ -18,6 +18,14 @@
+             .driver   = "virtio-pci",\
+             .property = "migrate-extra",\
+             .value    = "off",\
++        },{\
++            .driver   = "fw_cfg_mem",\
++            .property = "dma_enabled",\
++            .value    = "off",\
++        },{\
++            .driver   = "fw_cfg_io",\
++            .property = "dma_enabled",\
++            .value    = "off",\
+         },
+ 
+ #define HW_COMPAT_2_3 \
+diff --git a/hw/nvram/fw_cfg.c b/hw/nvram/fw_cfg.c
+index 79c5742b3362..f3acb47bd4dc 100644
+--- a/hw/nvram/fw_cfg.c
++++ b/hw/nvram/fw_cfg.c
+@@ -778,17 +778,19 @@ FWCfgState *fw_cfg_init_io_dma(uint32_t iobase, uint32_t dma_iobase,
+     DeviceState *dev;
+     FWCfgState *s;
+     uint32_t version = FW_CFG_VERSION;
+-    bool dma_enabled = dma_iobase && dma_as;
++    bool dma_requested = dma_iobase && dma_as;
+ 
+     dev = qdev_create(NULL, TYPE_FW_CFG_IO);
+     qdev_prop_set_uint32(dev, "iobase", iobase);
+     qdev_prop_set_uint32(dev, "dma_iobase", dma_iobase);
+-    qdev_prop_set_bit(dev, "dma_enabled", dma_enabled);
++    if (!dma_requested) {
++        qdev_prop_set_bit(dev, "dma_enabled", false);
++    }
+ 
+     fw_cfg_init1(dev);
+     s = FW_CFG(dev);
+ 
+-    if (dma_enabled) {
++    if (s->dma_enabled) {
+         /* 64 bits for the address field */
+         s->dma_as = dma_as;
+         s->dma_addr = 0;
+@@ -814,11 +816,13 @@ FWCfgState *fw_cfg_init_mem_wide(hwaddr ctl_addr,
+     SysBusDevice *sbd;
+     FWCfgState *s;
+     uint32_t version = FW_CFG_VERSION;
+-    bool dma_enabled = dma_addr && dma_as;
++    bool dma_requested = dma_addr && dma_as;
+ 
+     dev = qdev_create(NULL, TYPE_FW_CFG_MEM);
+     qdev_prop_set_uint32(dev, "data_width", data_width);
+-    qdev_prop_set_bit(dev, "dma_enabled", dma_enabled);
++    if (!dma_requested) {
++        qdev_prop_set_bit(dev, "dma_enabled", false);
++    }
+ 
+     fw_cfg_init1(dev);
+ 
+@@ -828,7 +832,7 @@ FWCfgState *fw_cfg_init_mem_wide(hwaddr ctl_addr,
+ 
+     s = FW_CFG(dev);
+ 
+-    if (dma_enabled) {
++    if (s->dma_enabled) {
+         s->dma_as = dma_as;
+         s->dma_addr = 0;
+         sysbus_mmio_map(sbd, 2, dma_addr);
+@@ -873,7 +877,7 @@ static Property fw_cfg_io_properties[] = {
+     DEFINE_PROP_UINT32("iobase", FWCfgIoState, iobase, -1),
+     DEFINE_PROP_UINT32("dma_iobase", FWCfgIoState, dma_iobase, -1),
+     DEFINE_PROP_BOOL("dma_enabled", FWCfgIoState, parent_obj.dma_enabled,
+-                     false),
++                     true),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+ 
+@@ -913,7 +917,7 @@ static const TypeInfo fw_cfg_io_info = {
+ static Property fw_cfg_mem_properties[] = {
+     DEFINE_PROP_UINT32("data_width", FWCfgMemState, data_width, -1),
+     DEFINE_PROP_BOOL("dma_enabled", FWCfgMemState, parent_obj.dma_enabled,
+-                     false),
++                     true),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+ 
