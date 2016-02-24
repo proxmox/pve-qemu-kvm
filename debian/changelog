@@ -1,3 +1,11 @@
+pve-qemu-kvm (2.5-8) unstable; urgency=medium
+
+  * Fix CVE-2016-2538
+
+  * vma: better driver guessing for bdrv_open
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 24 Feb 2016 16:28:37 +0100
+
 pve-qemu-kvm (2.5-7) unstable; urgency=medium
 
   * add fw_cfg-unbreak-migration-compatibility-for-2.4 patch
