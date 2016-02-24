@@ -1,0 +1,42 @@
+From 97fe08940a43098fb033950ea8c46716a7476439 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Tue, 23 Feb 2016 15:48:41 +0100
+Subject: [PATCH] vma: better driver guessing for bdrv_open
+
+Only use 'raw' when the file actually ends with .raw and
+no protocol has been specified. With protocol pass the
+BDRV_O_PROTOCOL flag to tell bdrv_fill_options() to take it
+into account.
+---
+ vma.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/vma.c b/vma.c
+index cc48013..1c4103f 100644
+--- a/vma.c
++++ b/vma.c
+@@ -301,10 +301,17 @@ static int extract_content(int argc, char **argv)
+ 
+             BlockDriverState *bs = bdrv_new();
+ 
+-	    const char *tmp = g_strrstr(devfn, ".");
+-	    const char *format = (tmp == NULL) ? "raw" : ++tmp;
+-	    QDict *options = qdict_new();
+-	    qdict_put(options, "driver", qstring_from_str(format));
++	    size_t devlen = strlen(devfn);
++	    bool protocol = path_has_protocol(devfn);
++	    QDict *options = NULL;
++	    if (devlen > 4 && strcmp(devfn+devlen-4, ".raw") == 0 && !protocol) {
++		/* explicit raw format */
++		options = qdict_new();
++		qdict_put(options, "driver", qstring_from_str("raw"));
++	    } else if (protocol) {
++		/* tell bdrv_open to honor the protocol */
++		flags |= BDRV_O_PROTOCOL;
++	    }
+ 
+ 	    if (errp || bdrv_open(&bs, devfn, NULL, options, flags, &errp)) {
+                 g_error("can't open file %s - %s", devfn,
+-- 
+2.1.4
+
