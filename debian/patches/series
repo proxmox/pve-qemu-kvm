@@ -55,3 +55,4 @@ extra/CVE-2016-2198-ehci-null-pointer.patch
 extra/CVE-2016-2391-usb-ohci-avoid-multiple-eof-timers.patch
 extra/CVE-2016-2392-check-USB-configuration-descriptor-object.patch
 extra/fw_cfg-unbreak-migration-compatibility-for-2.4.patch
+extra/CVE-2016-2538-usb-check-RNDIS-message-length.patch
