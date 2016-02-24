@@ -61,3 +61,4 @@ CVE-2015-7512-pcnet-rx-buffer-overflow.patch
 CVE-2015-7295-virtio-introduce-virtqueue_unmap_sg.patch
 CVE-2016-2391-usb-ohci-avoid-multiple-eof-timers.patch
 CVE-2016-2392-check-USB-configuration-descriptor-object.patch
+CVE-2016-2538-usb-check-RNDIS-message-length.patch
