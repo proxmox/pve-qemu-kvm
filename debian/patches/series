@@ -62,3 +62,7 @@ CVE-2015-7295-virtio-introduce-virtqueue_unmap_sg.patch
 CVE-2016-2391-usb-ohci-avoid-multiple-eof-timers.patch
 CVE-2016-2392-check-USB-configuration-descriptor-object.patch
 CVE-2016-2538-usb-check-RNDIS-message-length.patch
+CVE-2015-8817-exec-Respect-as_tranlsate_internal-length-clamp.patch
+0002-exec-do-not-clamp-accesses-to-MMIO-regions.patch
+CVE-2015-8818-exec-skip-MMIO-regions-correctly-in-cpu_physical_mem.patch
+0004-exec-clamp-accesses-against-the-MemoryRegionSection.patch

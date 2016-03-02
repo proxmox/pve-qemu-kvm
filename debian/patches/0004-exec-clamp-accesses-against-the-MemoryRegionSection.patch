@@ -1,0 +1,39 @@
+From 4b5d6bca704a8fba4d00e28ac7678639c1434a95 Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Wed, 17 Jun 2015 10:36:54 +0200
+Subject: [PATCH 4/4] exec: clamp accesses against the MemoryRegionSection
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Because the clamping was done against the MemoryRegion,
+address_space_rw was effectively broken if a write spanned
+multiple sections that are not linear in underlying memory
+(with the memory not being under an IOMMU).
+
+This is visible with the MIPS rc4030 IOMMU, which is implemented
+as a series of alias memory regions that point to the actual RAM.
+
+Tested-by: Hervé Poussineau <hpoussin@reactos.org>
+Tested-by: Mark Cave-Ayland <mark.cave-ayland@ilande.co.uk>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+---
+ exec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/exec.c b/exec.c
+index 80c9d79..2d7b62f 100644
+--- a/exec.c
++++ b/exec.c
+@@ -354,7 +354,7 @@ address_space_translate_internal(AddressSpaceDispatch *d, hwaddr addr, hwaddr *x
+      * the caller really has to do the clamping through memory_access_size.
+      */
+     if (memory_region_is_ram(mr)) {
+-        diff = int128_sub(mr->size, int128_make64(addr));
++        diff = int128_sub(section->size, int128_make64(addr));
+         *plen = int128_get64(int128_min(diff, int128_make64(*plen)));
+     }
+     return section;
+-- 
+2.1.4
+
