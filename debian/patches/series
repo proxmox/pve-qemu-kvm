@@ -66,3 +66,10 @@ CVE-2015-8817-exec-Respect-as_tranlsate_internal-length-clamp.patch
 0002-exec-do-not-clamp-accesses-to-MMIO-regions.patch
 CVE-2015-8818-exec-skip-MMIO-regions-correctly-in-cpu_physical_mem.patch
 0004-exec-clamp-accesses-against-the-MemoryRegionSection.patch
+CVE-2016-2841-net-ne2000-check-ring-buffer-control-registers.patch
+CVE-2016-2857-net-check-packet-payload-length.patch
+0001-rng-remove-the-unused-request-cancellation-code.patch
+0002-rng-move-request-queue-from-RngEgd-to-RngBackend.patch
+0003-rng-move-request-queue-cleanup-from-RngEgd-to-RngBac.patch
+0005-virtio-rng-ask-for-more-data-if-queue-is-not-fully-d.patch
+CVE-2016-2858-0004-rng-add-request-queue-support-to-rng-random.patch
