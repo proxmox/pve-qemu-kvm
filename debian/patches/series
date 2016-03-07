@@ -56,3 +56,10 @@ extra/CVE-2016-2391-usb-ohci-avoid-multiple-eof-timers.patch
 extra/CVE-2016-2392-check-USB-configuration-descriptor-object.patch
 extra/fw_cfg-unbreak-migration-compatibility-for-2.4.patch
 extra/CVE-2016-2538-usb-check-RNDIS-message-length.patch
+extra/CVE-2016-2841-net-ne2000-check-ring-buffer-control-registers.patch
+extra/CVE-2016-2857-net-check-packet-payload-length.patch
+extra/0001-rng-remove-the-unused-request-cancellation-code.patch
+extra/0002-rng-move-request-queue-from-RngEgd-to-RngBackend.patch
+extra/0003-rng-move-request-queue-cleanup-from-RngEgd-to-RngBac.patch
+extra/CVE-2016-2858-0004-rng-add-request-queue-support-to-rng-random.patch
+extra/0005-virtio-rng-ask-for-more-data-if-queue-is-not-fully-d.patch
