@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.2-25) unstable; urgency=low
+
+  * Fix CVE-2016-2841, CVE-2016-2857, CVE-2016-2858
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 07 Mar 2016 17:14:14 +0100
+
 pve-qemu-kvm (2.2-24) unstable; urgency=low
 
   * Fix CVE-2015-8817 and CVE-2015-8818
