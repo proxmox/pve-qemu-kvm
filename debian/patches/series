@@ -41,6 +41,7 @@ pve/0040-vnc-make-x509-imply-tls-again.patch
 pve/0041-PVE-VNC-authentication.patch
 pve/0042-vma-writer-don-t-bail-out-on-zero-length-files.patch
 pve/0043-vma-better-driver-guessing-for-bdrv_open.patch
+pve/0044-block-add-zeroinit.patch
 extra/CVE-2015-8558-ehci_make_idt_processing_more_robust.patch
 extra/CVE-2015-8613-scsi-initialize-info-object.patch
 extra/CVE-2015-8701-net-rocker-off-by-one.patch
