@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-10) unstable; urgency=medium
+
+  * add the zeroinit block driver filter
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 21 Mar 2016 09:47:53 +0100
+
 pve-qemu-kvm (2.5-9) unstable; urgency=medium
 
   * Fix CVE-2016-2841, CVE-2016-2857, CVE-2016-2858
