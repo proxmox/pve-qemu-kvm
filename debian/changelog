@@ -2,6 +2,8 @@ pve-qemu-kvm (2.5-11) unstable; urgency=medium
 
   * update to qemu 2.5.1
 
+  * target-i386: do not read/write MSR_TSC_AUX from KVM if CPUID
+
  -- Proxmox Support Team <support@proxmox.com>  Fri, 01 Apr 2016 10:09:54 +0200
 
 pve-qemu-kvm (2.5-10) unstable; urgency=medium
