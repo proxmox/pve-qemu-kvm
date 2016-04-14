@@ -1,0 +1,32 @@
+From 45fcb0d1c15d7be4915404cd0e6e1ce380e6cd1f Mon Sep 17 00:00:00 2001
+From: Prasad J Pandit <pjp@fedoraproject.org>
+Date: Thu, 7 Apr 2016 12:50:08 +0530
+Subject: [PATCH] i386: kvmvapic: initialise imm32 variable
+
+When processing Task Priorty Register(TPR) access, it could leak
+automatic stack variable 'imm32' in patch_instruction().
+Initialise the variable to avoid it.
+
+Reported by: Donghai Zdh <donghai.zdh@alibaba-inc.com>
+
+Signed-off-by: Prasad J Pandit <pjp@fedoraproject.org>
+---
+ hw/i386/kvmvapic.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hw/i386/kvmvapic.c b/hw/i386/kvmvapic.c
+index f0922da..97f3646 100644
+--- a/hw/i386/kvmvapic.c
++++ b/hw/i386/kvmvapic.c
+@@ -393,7 +393,7 @@ static void patch_instruction(VAPICROMState *s, X86CPU *cpu, target_ulong ip)
+     CPUX86State *env = &cpu->env;
+     VAPICHandlers *handlers;
+     uint8_t opcode[2];
+-    uint32_t imm32;
++    uint32_t imm32 = 0;
+     target_ulong current_pc = 0;
+     target_ulong current_cs_base = 0;
+     int current_flags = 0;
+-- 
+2.1.4
+
