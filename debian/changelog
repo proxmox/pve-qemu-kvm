@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-14) unstable; urgency=medium
+
+  * Fix CVE-2016-4037
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 26 Apr 2016 15:43:48 +0200
+
 pve-qemu-kvm (2.5-13) unstable; urgency=medium
 
   * fix 'i386: leakage of stack memory to guest in kvmvapic.c'

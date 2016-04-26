@@ -1,8 +1,8 @@
-RELEASE=4.1
+RELEASE=4.2
 
 # also update debian/changelog
 KVMVER=2.5
-KVMPKGREL=13
+KVMPKGREL=14
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm
