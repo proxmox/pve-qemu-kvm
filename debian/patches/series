@@ -42,7 +42,7 @@ pve/0041-PVE-VNC-authentication.patch
 pve/0042-vma-writer-don-t-bail-out-on-zero-length-files.patch
 pve/0043-vma-better-driver-guessing-for-bdrv_open.patch
 pve/0044-block-add-zeroinit.patch
-pve/0045-vma-also-guess-raw-for-dev-paths.patch
+pve/0045-vma-add-format-option-to-device-mapping.patch
 extra/0001-vnc-clear-vs-tlscreds-after-unparenting-it.patch
 extra/CVE-2016-2198-ehci-null-pointer.patch
 extra/CVE-2016-2391-usb-ohci-avoid-multiple-eof-timers.patch
