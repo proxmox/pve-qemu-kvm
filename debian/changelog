@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-15) unstable; urgency=medium
+
+  * Fix #932: passing BDRV_O_PROTOCOL breaks qcow2 on gluster
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 29 Apr 2016 08:55:53 +0200
+
 pve-qemu-kvm (2.5-14) unstable; urgency=medium
 
   * Fix CVE-2016-4037
