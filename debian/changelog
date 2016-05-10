@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-16) unstable; urgency=medium
+
+  * update to qemu 2.5.1.1
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 10 May 2016 09:53:30 +0200
+
 pve-qemu-kvm (2.5-15) unstable; urgency=medium
 
   * Fix #932: passing BDRV_O_PROTOCOL breaks qcow2 on gluster

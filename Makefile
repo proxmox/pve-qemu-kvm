@@ -2,7 +2,7 @@ RELEASE=4.2
 
 # also update debian/changelog
 KVMVER=2.5
-KVMPKGREL=15
+KVMPKGREL=16
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm
@@ -24,7 +24,7 @@ download:
 	#git clone git://git.qemu-project.org/qemu.git -b stable-2.4 ${KVMDIR} 
 	git clone git://git.qemu-project.org/qemu.git ${KVMDIR}
 	# see https://bugs.launchpad.net/qemu/+bug/1488363?comments=all
-	cd ${KVMDIR}; git checkout v2.5.1; git revert --no-edit b8eb5512fd8a115f164edbbe897cdf8884920ccb
+	cd ${KVMDIR}; git checkout v2.5.1.1; git revert --no-edit b8eb5512fd8a115f164edbbe897cdf8884920ccb
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
 ${DEBS} kvm: ${KVMSRC}
