@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-17) unstable; urgency=medium
+
+  * add fix for freezing win7 with VGA #991
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 17 May 2016 12:51:10 +0200
+
 pve-qemu-kvm (2.5-16) unstable; urgency=medium
 
   * update to qemu 2.5.1.1
