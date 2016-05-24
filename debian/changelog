@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.5-18) unstable; urgency=medium
+
+  * Fix CVE-2016-4952
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 24 May 2016 17:15:00 +0200
+
 pve-qemu-kvm (2.5-17) unstable; urgency=medium
 
   * add fix for freezing win7 with VGA #991
