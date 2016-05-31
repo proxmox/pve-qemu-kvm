@@ -55,3 +55,11 @@ extra/0001-target-i386-do-not-read-write-MSR_TSC_AUX-from-KVM-i.patch
 extra/0001-i386-kvmvapic-initialise-imm32-variable.patch
 extra/0001-vga-add-sr_vbe-register-set.patch
 extra/CVE-2016-4952-scsi-pvscsi-check-command-descriptor-ring-buffer-siz.patch
+extra/CVE-2016-5105-scsi-megasas-initialise-local-configuration-data-buf.patch
+extra/CVE-2016-5106-scsi-megasas-use-appropriate-property-buffer-size.patch
+extra/CVE-2016-5107-scsi-megasas-check-read_queue_head-index-value.patch
+extra/CVE-2016-5126-block-iscsi-avoid-potential-overflow-of-acb-task-cdb.patch
+extra/0004-vmsvga-move-fifo-sanity-checks-to-vmsvga_fifo_length.patch
+extra/0005-vmsvga-add-more-fifo-checks.patch
+extra/0006-vmsvga-shadow-fifo-registers.patch
+extra/0007-vmsvga-don-t-process-more-than-1024-fifo-commands-at.patch

@@ -1,0 +1,71 @@
+From 4aa79a8818711d475bd79b906cd7d060d4e8a441 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 30 May 2016 09:09:18 +0200
+Subject: [PATCH 4/9] vmsvga: move fifo sanity checks to vmsvga_fifo_length
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Sanity checks are applied when the fifo is enabled by the guest
+(SVGA_REG_CONFIG_DONE write).  Which doesn't help much if the guest
+changes the fifo registers afterwards.  Move the checks to
+vmsvga_fifo_length so they are done each time qemu is about to read
+from the fifo.
+
+Fixes: CVE-2016-4454
+Cc: P J P <ppandit@redhat.com>
+Reported-by: 李强 <liqiang6-s@360.cn>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/display/vmware_vga.c | 28 +++++++++++++++-------------
+ 1 file changed, 15 insertions(+), 13 deletions(-)
+
+diff --git a/hw/display/vmware_vga.c b/hw/display/vmware_vga.c
+index 9354037..3ce1717 100644
+--- a/hw/display/vmware_vga.c
++++ b/hw/display/vmware_vga.c
+@@ -553,6 +553,21 @@ static inline int vmsvga_fifo_length(struct vmsvga_state_s *s)
+     if (!s->config || !s->enable) {
+         return 0;
+     }
++
++    /* Check range and alignment.  */
++    if ((CMD(min) | CMD(max) | CMD(next_cmd) | CMD(stop)) & 3) {
++        return 0;
++    }
++    if (CMD(min) < (uint8_t *) s->cmd->fifo - (uint8_t *) s->fifo) {
++        return 0;
++    }
++    if (CMD(max) > SVGA_FIFO_SIZE) {
++        return 0;
++    }
++    if (CMD(max) < CMD(min) + 10 * 1024) {
++        return 0;
++    }
++
+     num = CMD(next_cmd) - CMD(stop);
+     if (num < 0) {
+         num += CMD(max) - CMD(min);
+@@ -1003,19 +1018,6 @@ static void vmsvga_value_write(void *opaque, uint32_t address, uint32_t value)
+     case SVGA_REG_CONFIG_DONE:
+         if (value) {
+             s->fifo = (uint32_t *) s->fifo_ptr;
+-            /* Check range and alignment.  */
+-            if ((CMD(min) | CMD(max) | CMD(next_cmd) | CMD(stop)) & 3) {
+-                break;
+-            }
+-            if (CMD(min) < (uint8_t *) s->cmd->fifo - (uint8_t *) s->fifo) {
+-                break;
+-            }
+-            if (CMD(max) > SVGA_FIFO_SIZE) {
+-                break;
+-            }
+-            if (CMD(max) < CMD(min) + 10 * 1024) {
+-                break;
+-            }
+             vga_dirty_log_stop(&s->vga);
+         }
+         s->config = !!value;
+-- 
+2.1.4
+
