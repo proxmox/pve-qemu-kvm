@@ -1,3 +1,21 @@
+pve-qemu-kvm (2.5-19) unstable; urgency=medium
+
+  * fix CVE-2016-5105: scsi: megasas: initialise local configuration data
+    buffer
+
+  * fix CVE-2016-5106: scsi: megasas: use appropriate property buffer size
+
+  * fix fix CVE-2016-5107: scsi: megasas: check 'read_queue_head' index value
+
+  * fix fix CVE-2016-5126: block/iscsi: avoid potential overflow of
+    acb->task->cdb
+
+  * fix CVE-2016-4454: vmsvga: move fifo sanity checks to vmsvga_fifo_length
+ 
+  * fix CVE-2016-4453: vmsvga: don't process more than 1024 fifo commands at
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 31 May 2016 18:04:31 +0200
+
 pve-qemu-kvm (2.5-18) unstable; urgency=medium
 
   * Fix CVE-2016-4952
