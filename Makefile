@@ -24,7 +24,9 @@ download:
 	git clone --depth=1 git://git.qemu-project.org/qemu.git -b v2.6.0 ${KVMDIR}
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
-${DEBS} kvm: ${KVMSRC}
+.PHONY: deb
+deb ${DEBS} kvm: ${KVMSRC}
+	rm -f *.deb
 	rm -rf ${KVMDIR}
 	tar xf ${KVMSRC} 
 	cp -a debian ${KVMDIR}/debian
