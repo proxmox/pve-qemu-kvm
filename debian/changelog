@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.6-1) unstable; urgency=medium
+
+  * update to qemu 2.6.0
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 01 Jul 2016 10:00:31 +0200
+
 pve-qemu-kvm (2.5-19) unstable; urgency=medium
 
   * fix CVE-2016-5105: scsi: megasas: initialise local configuration data

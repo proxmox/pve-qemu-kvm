@@ -1,7 +1,7 @@
 From 04b6468a295871877b55fe792c566839e2afe29c Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
-Subject: [PATCH 11/41] introduce new vma archive format
+Subject: [PATCH 11/54] introduce new vma archive format
 
 This is a very simple archive format, see docs/specs/vma_spec.txt
 
@@ -32,13 +32,13 @@ index 930ac27..6cedc40 100644
  
  config-host.h: config-host.h-timestamp
  config-host.h-timestamp: config-host.mak
-@@ -235,6 +235,7 @@ qemu-img.o: qemu-img-cmds.h
- qemu-img$(EXESUF): qemu-img.o $(block-obj-y) $(crypto-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
- qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) $(crypto-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
- qemu-io$(EXESUF): qemu-io.o $(block-obj-y) $(crypto-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
-+vma$(EXESUF): vma.o vma-reader.o $(block-obj-y) $(crypto-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
+@@ -237,6 +237,7 @@ qemu-img.o: qemu-img-cmds.h
+ qemu-img$(EXESUF): qemu-img.o $(block-obj-y) $(crypto-obj-y) $(io-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
+ qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) $(crypto-obj-y) $(io-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
+ qemu-io$(EXESUF): qemu-io.o $(block-obj-y) $(crypto-obj-y) $(io-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
++vma$(EXESUF): vma.o vma-reader.o $(block-obj-y) $(crypto-obj-y) $(io-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
  
- qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o
+ qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o libqemuutil.a libqemustub.a
  
 diff --git a/Makefile.objs b/Makefile.objs
 index 77be052..97d2bcc 100644

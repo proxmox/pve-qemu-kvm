@@ -1,7 +1,7 @@
 From 12fbca3c45d694c89e84fb9522e9855b2b8a9952 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:18:46 +0100
-Subject: [PATCH 04/41] qemu-img: return success on info without snapshots
+Subject: [PATCH 04/54] qemu-img: return success on info without snapshots
 
 ---
  qemu-img.c | 3 ++-
@@ -13,7 +13,7 @@ index 033011c..e0637f2 100644
 +++ b/qemu-img.c
 @@ -2112,7 +2112,8 @@ static int img_info(int argc, char **argv)
  
-     list = collect_image_info_list(filename, fmt, chain);
+     list = collect_image_info_list(image_opts, filename, fmt, chain);
      if (!list) {
 -        return 1;
 + 	// return success if snapshot does not exists

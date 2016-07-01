@@ -17,15 +17,15 @@ diff --git a/blockdev.c b/blockdev.c
 index 1796eaf..a346c55 100644
 --- a/blockdev.c
 +++ b/blockdev.c
-@@ -49,6 +49,7 @@
- #include "qmp-commands.h"
- #include "trace.h"
+@@ -52,6 +52,7 @@
  #include "sysemu/arch_init.h"
+ #include "qemu/cutils.h"
+ #include "qemu/help_option.h"
 +#include "vma.h"
  
- static const char *const if_name[IF_COUNT] = {
-     [IF_NONE] = "none",
-@@ -2875,6 +2876,443 @@ static void block_job_cb(void *opaque, int ret)
+ static QTAILQ_HEAD(, BlockDriverState) monitor_bdrv_states =
+     QTAILQ_HEAD_INITIALIZER(monitor_bdrv_states);
+@@ -2986,6 +2987,443 @@ static void block_job_cb(void *opaque, int ret)
      }
  }
  

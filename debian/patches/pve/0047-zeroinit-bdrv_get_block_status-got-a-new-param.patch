@@ -1,0 +1,30 @@
+From e6be17e4378f4aa0860baa316ff90e10d0b70a68 Mon Sep 17 00:00:00 2001
+From: Thomas Lamprecht <t.lamprecht@proxmox.com>
+Date: Wed, 6 Apr 2016 14:15:58 +0200
+Subject: [PATCH 47/52] zeroinit: bdrv_get_block_status got a new param
+
+see: 67a0fd2a9bca204d2b39f910a97c7137636a0715
+---
+ block/zeroinit.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/block/zeroinit.c b/block/zeroinit.c
+index eb77657..ad52847 100644
+--- a/block/zeroinit.c
++++ b/block/zeroinit.c
+@@ -160,9 +160,10 @@ static int zeroinit_has_zero_init(BlockDriverState *bs)
+ 
+ static int64_t coroutine_fn zeroinit_co_get_block_status(BlockDriverState *bs,
+                                                          int64_t sector_num,
+-                                                         int nb_sectors, int *pnum)
++                                                         int nb_sectors, int *pnum,
++                                                         BlockDriverState **file)
+ {
+-    return bdrv_get_block_status(bs->file->bs, sector_num, nb_sectors, pnum);
++    return bdrv_get_block_status(bs->file->bs, sector_num, nb_sectors, pnum, file);
+ }
+ 
+ static coroutine_fn BlockAIOCB *zeroinit_aio_discard(BlockDriverState *bs,
+-- 
+2.1.4
+

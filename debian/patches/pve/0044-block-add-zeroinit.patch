@@ -18,7 +18,7 @@ index 58ef2ef..5bb55b0 100644
  block-obj-$(CONFIG_VHDX) += vhdx.o vhdx-endian.o vhdx-log.o
  block-obj-y += quorum.o
 +block-obj-y += zeroinit.o
- block-obj-y += parallels.o blkdebug.o blkverify.o
+ block-obj-y += parallels.o blkdebug.o blkverify.o blkreplay.o
  block-obj-y += block-backend.o snapshot.o qapi.o
  block-obj-$(CONFIG_WIN32) += raw-win32.o win32-aio.o
 diff --git a/block/zeroinit.c b/block/zeroinit.c

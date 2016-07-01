@@ -1,21 +1,21 @@
 From 19a3e72ea86fb723d7facba1f07d7ae99520e461 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Mon, 11 Jan 2016 10:40:31 +0100
-Subject: [PATCH 41/41] PVE VNC authentication
+Subject: [PATCH 41/54] PVE VNC authentication
 
 ---
- crypto/tlscreds.c         |  32 +++++++++
+ crypto/tlscreds.c         |  47 +++++++++++
  crypto/tlscredspriv.h     |   2 +
  crypto/tlscredsx509.c     |  13 ++--
  crypto/tlssession.c       |   1 +
  include/crypto/tlscreds.h |   1 +
  include/ui/console.h      |   1 +
  qemu-options.hx           |   3 +
- ui/vnc-auth-vencrypt.c    | 173 +++++++++++++++++++++++++++++++++++++++-------
- ui/vnc.c                  | 140 ++++++++++++++++++++++++++++++++++++-
- ui/vnc.h                  |   4 ++
+ ui/vnc-auth-vencrypt.c    | 194 ++++++++++++++++++++++++++++++++++++++--------
+ ui/vnc.c                  | 140 ++++++++++++++++++++++++++++++++-
+ ui/vnc.h                  |   4 +
  vl.c                      |   9 +++
- 11 files changed, 344 insertions(+), 35 deletions(-)
+ 11 files changed, 375 insertions(+), 40 deletions(-)
 
 diff --git a/crypto/tlscreds.c b/crypto/tlscreds.c
 index e7d9c1c..27e5c78 100644
@@ -55,23 +55,33 @@ index e7d9c1c..27e5c78 100644
  qcrypto_tls_creds_prop_set_dir(Object *obj,
                                 const char *value,
                                 Error **errp G_GNUC_UNUSED)
-@@ -203,11 +230,16 @@ qcrypto_tls_creds_init(Object *obj)
+@@ -225,6 +252,26 @@ qcrypto_tls_creds_init(Object *obj)
      QCryptoTLSCreds *creds = QCRYPTO_TLS_CREDS(obj);
  
      creds->verifyPeer = true;
 +    creds->pve = false;
- 
-     object_property_add_bool(obj, "verify-peer",
-                              qcrypto_tls_creds_prop_get_verify,
-                              qcrypto_tls_creds_prop_set_verify,
-                              NULL);
++
++    object_property_add_bool(obj, "verify-peer",
++                             qcrypto_tls_creds_prop_get_verify,
++                             qcrypto_tls_creds_prop_set_verify,
++                             NULL);
 +    object_property_add_bool(obj, "pve",
 +                             qcrypto_tls_creds_prop_get_pve,
 +                             qcrypto_tls_creds_prop_set_pve,
 +                             NULL);
-     object_property_add_str(obj, "dir",
-                             qcrypto_tls_creds_prop_get_dir,
-                             qcrypto_tls_creds_prop_set_dir,
++    object_property_add_str(obj, "dir",
++                            qcrypto_tls_creds_prop_get_dir,
++                            qcrypto_tls_creds_prop_set_dir,
++                            NULL);
++    object_property_add_enum(obj, "endpoint",
++                             "QCryptoTLSCredsEndpoint",
++                             QCryptoTLSCredsEndpoint_lookup,
++                             qcrypto_tls_creds_prop_get_endpoint,
++                             qcrypto_tls_creds_prop_set_endpoint,
++                             NULL);
+ }
+ 
+ 
 diff --git a/crypto/tlscredspriv.h b/crypto/tlscredspriv.h
 index 9222be4..3a34279 100644
 --- a/crypto/tlscredspriv.h
@@ -137,10 +147,10 @@ diff --git a/crypto/tlssession.c b/crypto/tlssession.c
 index 3735529..a7ed50a 100644
 --- a/crypto/tlssession.c
 +++ b/crypto/tlssession.c
-@@ -21,6 +21,7 @@
- #include "crypto/tlssession.h"
+@@ -23,6 +23,7 @@
  #include "crypto/tlscredsanon.h"
  #include "crypto/tlscredsx509.h"
+ #include "qapi/error.h"
 +#include "crypto/tlscredspriv.h"
  #include "qemu/acl.h"
  #include "trace.h"
@@ -187,9 +197,9 @@ diff --git a/ui/vnc-auth-vencrypt.c b/ui/vnc-auth-vencrypt.c
 index 44ac2fa..480a1ee 100644
 --- a/ui/vnc-auth-vencrypt.c
 +++ b/ui/vnc-auth-vencrypt.c
-@@ -26,6 +26,107 @@
- 
+@@ -28,6 +28,107 @@
  #include "vnc.h"
+ #include "qapi/error.h"
  #include "qemu/main-loop.h"
 +#include "qemu/sockets.h"
 +
@@ -313,7 +323,7 @@ index 44ac2fa..480a1ee 100644
      case VNC_AUTH_VENCRYPT_TLSVNC:
      case VNC_AUTH_VENCRYPT_X509VNC:
         VNC_DEBUG("Start TLS auth VNC\n");
-@@ -118,39 +230,47 @@ static int protocol_client_vencrypt_auth(VncState *vs, uint8_t *data, size_t len
+@@ -87,44 +199,63 @@ static int protocol_client_vencrypt_auth(VncState *vs, uint8_t *data, size_t len
  {
      int auth = read_u32(data, 0);
  
@@ -325,21 +335,14 @@ index 44ac2fa..480a1ee 100644
          vnc_client_error(vs);
      } else {
 -        Error *err = NULL;
+-        QIOChannelTLS *tls;
 -        VNC_DEBUG("Accepting auth %d, setting up TLS for handshake\n", auth);
 -        vnc_write_u8(vs, 1); /* Accept auth */
 -        vnc_flush(vs);
- 
--        vs->tls = qcrypto_tls_session_new(vs->vd->tlscreds,
--                                          NULL,
--                                          vs->vd->tlsaclname,
--                                          QCRYPTO_TLS_CREDS_ENDPOINT_SERVER,
--                                          &err);
--        if (!vs->tls) {
--            VNC_DEBUG("Failed to setup TLS %s\n",
--                      error_get_pretty(err));
--            error_free(err);
--            vnc_client_error(vs);
--            return 0;
+-
+-        if (vs->ioc_tag) {
+-            g_source_remove(vs->ioc_tag);
+-            vs->ioc_tag = 0;
 +        if (auth == VNC_AUTH_VENCRYPT_PLAIN) {
 +            vs->subauth = auth;
 +            start_auth_vencrypt_subauth(vs);
@@ -347,45 +350,73 @@ index 44ac2fa..480a1ee 100644
 +        else
 +        {
 +            Error *err = NULL;
++            QIOChannelTLS *tls;
 +            VNC_DEBUG("Accepting auth %d, setting up TLS for handshake\n", auth);
 +            vnc_write_u8(vs, 1); /* Accept auth */
 +            vnc_flush(vs);
-+
-+            vs->tls = qcrypto_tls_session_new(vs->vd->tlscreds,
-+                                              NULL,
-+                                              vs->vd->tlsaclname,
-+                                              QCRYPTO_TLS_CREDS_ENDPOINT_SERVER,
-+                                              &err);
-+            if (!vs->tls) {
-+                VNC_DEBUG("Failed to setup TLS %s\n",
-+                          error_get_pretty(err));
+ 
+-        tls = qio_channel_tls_new_server(
+-            vs->ioc,
+-            vs->vd->tlscreds,
+-            vs->vd->tlsaclname,
+-            &err);
+-        if (!tls) {
+-            VNC_DEBUG("Failed to setup TLS %s\n", error_get_pretty(err));
+-            error_free(err);
+-            vnc_client_error(vs);
+-            return 0;
+-        }
++            if (vs->ioc_tag) {
++                g_source_remove(vs->ioc_tag);
++                vs->ioc_tag = 0;
++            }
+ 
+-        VNC_DEBUG("Start TLS VeNCrypt handshake process\n");
+-        object_unref(OBJECT(vs->ioc));
+-        vs->ioc = QIO_CHANNEL(tls);
+-        vs->tls = qio_channel_tls_get_session(tls);
++            tls = qio_channel_tls_new_server(
++                vs->ioc,
++                vs->vd->tlscreds,
++                vs->vd->tlsaclname,
++                &err);
++            if (!tls) {
++                VNC_DEBUG("Failed to setup TLS %s\n", error_get_pretty(err));
 +                error_free(err);
 +                vnc_client_error(vs);
 +                return 0;
++                vs->tls = qcrypto_tls_session_new(vs->vd->tlscreds,
++                                                  NULL,
++                                                  vs->vd->tlsaclname,
++                                                  QCRYPTO_TLS_CREDS_ENDPOINT_SERVER,
++                                                  &err);
++                if (!vs->tls) {
++                    VNC_DEBUG("Failed to setup TLS %s\n",
++                              error_get_pretty(err));
++                    error_free(err);
++                    vnc_client_error(vs);
++                    return 0;
++                }
 +            }
  
--        qcrypto_tls_session_set_callbacks(vs->tls,
--                                          vnc_tls_push,
--                                          vnc_tls_pull,
--                                          vs);
-+            qcrypto_tls_session_set_callbacks(vs->tls,
-+                                              vnc_tls_push,
-+                                              vnc_tls_pull,
-+                                              vs);
- 
--        VNC_DEBUG("Start TLS VeNCrypt handshake process\n");
--        if (vnc_start_vencrypt_handshake(vs) < 0) {
--            VNC_DEBUG("Failed to start TLS handshake\n");
--            return 0;
+-        qio_channel_tls_handshake(tls,
+-                                  vnc_tls_handshake_done,
+-                                  vs,
+-                                  NULL);
 +            VNC_DEBUG("Start TLS VeNCrypt handshake process\n");
-+            if (vnc_start_vencrypt_handshake(vs) < 0) {
-+                VNC_DEBUG("Failed to start TLS handshake\n");
-+                return 0;
-+            }
-         }
++            object_unref(OBJECT(vs->ioc));
++            vs->ioc = QIO_CHANNEL(tls);
++            vs->tls = qio_channel_tls_get_session(tls);
++
++            qio_channel_tls_handshake(tls,
++                                      vnc_tls_handshake_done,
++                                      vs,
++                                      NULL);
++        }
      }
      return 0;
-@@ -165,10 +285,11 @@ static int protocol_client_vencrypt_init(VncState *vs, uint8_t *data, size_t len
+ }
+@@ -138,10 +269,11 @@ static int protocol_client_vencrypt_init(VncState *vs, uint8_t *data, size_t len
          vnc_flush(vs);
          vnc_client_error(vs);
      } else {
@@ -610,7 +641,7 @@ index 2863f58..1c4fee2 100644
      char challenge[VNC_AUTH_CHALLENGE_SIZE];
 +    int username_len;
 +    int password_len;
-     QCryptoTLSSession *tls;
+     QCryptoTLSSession *tls; /* Borrowed pointer from channel, don't free */
  #ifdef CONFIG_VNC_SASL
      VncStateSASL sasl;
 @@ -578,4 +580,6 @@ int vnc_zrle_send_framebuffer_update(VncState *vs, int x, int y, int w, int h);
