@@ -1,0 +1,34 @@
+From 3f89d6f1f3ba9b316e3f17c78c8c6f06a8f9c974 Mon Sep 17 00:00:00 2001
+From: Wolfgang Bumiller <w.bumiller@proxmox.com>
+Date: Mon, 4 Jul 2016 15:02:26 +0200
+Subject: [PATCH] Revert "target-i386: disable LINT0 after reset"
+
+This reverts commit b8eb5512fd8a115f164edbbe897cdf8884920ccb.
+---
+see https://bugs.launchpad.net/qemu/+bug/1488363?comments=all
+ hw/intc/apic_common.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/hw/intc/apic_common.c b/hw/intc/apic_common.c
+index ad959c4..0264a88 100644
+--- a/hw/intc/apic_common.c
++++ b/hw/intc/apic_common.c
+@@ -242,6 +242,15 @@ static void apic_reset_common(DeviceState *dev)
+     info->vapic_base_update(s);
+ 
+     apic_init_reset(dev);
++
++    if (bsp) {
++        /*
++         * LINT0 delivery mode on CPU #0 is set to ExtInt at initialization
++         * time typically by BIOS, so PIC interrupt can be delivered to the
++         * processor when local APIC is enabled.
++         */
++        s->lvt[APIC_LVT_LINT0] = 0x700;
++    }
+ }
+ 
+ /* This function is only used for old state version 1 and 2 */
+-- 
+2.1.4
+

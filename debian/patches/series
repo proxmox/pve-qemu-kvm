@@ -51,6 +51,8 @@ pve/0050-fix-possible-unitialised-return-value.patch
 pve/0051-net-NET_CLIENT_OPTIONS_KIND_MAX-changed.patch
 pve/0052-vnc-refactor-to-QIOChannelSocket.patch
 pve/0053-vma-use-BlockBackend-on-extract.patch
+#see https://bugs.launchpad.net/qemu/+bug/1488363?comments=all
+extra/0001-Revert-target-i386-disable-LINT0-after-reset.patch
 extra/0001-i386-kvmvapic-initialise-imm32-variable.patch
 extra/0001-vga-add-sr_vbe-register-set.patch
 extra/CVE-2016-4952-scsi-pvscsi-check-command-descriptor-ring-buffer-siz.patch
