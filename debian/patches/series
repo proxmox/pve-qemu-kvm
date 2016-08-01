@@ -68,3 +68,4 @@ extra/CVE-2016-5126-block-iscsi-avoid-potential-overflow-of-acb-task-cdb.patch
 extra/0001-vga-add-sr_vbe-register-set.patch
 extra/0001-scsi-esp-make-cmdbuf-big-enough-for-maximum-CDB-size.patch
 extra/0002-scsi-esp-fix-migration.patch
+extra/CVE-2016-6490-virtio-check-vring-descriptor-buffer-length.patch
