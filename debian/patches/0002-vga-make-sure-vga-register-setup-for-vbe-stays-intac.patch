@@ -1,0 +1,74 @@
+From fd3c136b3e1482cd0ec7285d6bc2a3e6a62c38d7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 26 Apr 2016 14:48:06 +0200
+Subject: [PATCH] vga: make sure vga register setup for vbe stays intact
+ (CVE-2016-3712).
+
+Call vbe_update_vgaregs() when the guest touches GFX, SEQ or CRT
+registers, to make sure the vga registers will always have the
+values needed by vbe mode.  This makes sure the sanity checks
+applied by vbe_fixup_regs() are effective.
+
+Without this guests can muck with shift_control, can turn on planar
+vga modes or text mode emulation while VBE is active, making qemu
+take code paths meant for CGA compatibility, but with the very
+large display widths and heigts settable using VBE registers.
+
+Which is good for one or another buffer overflow.  Not that
+critical as they typically read overflows happening somewhere
+in the display code.  So guests can DoS by crashing qemu with a
+segfault, but it is probably not possible to break out of the VM.
+
+Fixes: CVE-2016-3712
+Reported-by: Zuozhi Fzz <zuozhi.fzz@alibaba-inc.com>
+Reported-by: P J P <ppandit@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/display/vga.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/hw/display/vga.c b/hw/display/vga.c
+index eeeb9c8..4a55ec6 100644
+--- a/hw/display/vga.c
++++ b/hw/display/vga.c
+@@ -142,6 +142,8 @@ static uint32_t expand4[256];
+ static uint16_t expand2[256];
+ static uint8_t expand4to8[16];
+ 
++static void vbe_update_vgaregs(VGACommonState *s);
++
+ static void vga_update_memory_access(VGACommonState *s)
+ {
+     hwaddr base, offset, size;
+@@ -484,6 +486,7 @@ void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+         printf("vga: write SR%x = 0x%02x\n", s->sr_index, val);
+ #endif
+         s->sr[s->sr_index] = val & sr_mask[s->sr_index];
++        vbe_update_vgaregs(s);
+         if (s->sr_index == VGA_SEQ_CLOCK_MODE) {
+             s->update_retrace_info(s);
+         }
+@@ -515,6 +518,7 @@ void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+         printf("vga: write GR%x = 0x%02x\n", s->gr_index, val);
+ #endif
+         s->gr[s->gr_index] = val & gr_mask[s->gr_index];
++        vbe_update_vgaregs(s);
+         vga_update_memory_access(s);
+         break;
+     case VGA_CRT_IM:
+@@ -533,10 +537,12 @@ void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             if (s->cr_index == VGA_CRTC_OVERFLOW) {
+                 s->cr[VGA_CRTC_OVERFLOW] = (s->cr[VGA_CRTC_OVERFLOW] & ~0x10) |
+                     (val & 0x10);
++                vbe_update_vgaregs(s);
+             }
+             return;
+         }
+         s->cr[s->cr_index] = val;
++        vbe_update_vgaregs(s);
+ 
+         switch(s->cr_index) {
+         case VGA_CRTC_H_TOTAL:
+-- 
+2.1.4
+
