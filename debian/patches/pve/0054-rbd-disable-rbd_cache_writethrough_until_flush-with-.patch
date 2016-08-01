@@ -1,0 +1,29 @@
+From da5bf657823ed2f5a790363b5338f30be68de62b Mon Sep 17 00:00:00 2001
+From: Alexandre Derumier <aderumier@odiso.com>
+Date: Tue, 26 Jul 2016 16:51:00 +0200
+Subject: [PATCH] rbd: disable rbd_cache_writethrough_until_flush with
+ cache=unsafe
+
+Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
+---
+ block/rbd.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/block/rbd.c b/block/rbd.c
+index 5bc5b32..5656028 100644
+--- a/block/rbd.c
++++ b/block/rbd.c
+@@ -544,6 +544,10 @@ static int qemu_rbd_open(BlockDriverState *bs, QDict *options, int flags,
+         rados_conf_set(s->cluster, "rbd_cache", "true");
+     }
+ 
++    if (flags & BDRV_O_NO_FLUSH) {
++	rados_conf_set(s->cluster, "rbd_cache_writethrough_until_flush", "false");
++    }
++
+     r = rados_connect(s->cluster);
+     if (r < 0) {
+         error_setg(errp, "error connecting");
+-- 
+2.1.4
+
