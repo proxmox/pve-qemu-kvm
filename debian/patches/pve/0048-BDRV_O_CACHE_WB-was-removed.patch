@@ -32,7 +32,7 @@ index 4d73e66..2c41b17 100644
      Error *local_err = NULL;
  
 -    int bdrv_oflags = BDRV_O_CACHE_WB | BDRV_O_RDWR;
-+    int bdrv_oflags = BDRV_O_RDWR;
++    int bdrv_oflags = BDRV_O_RDWR | BDRV_O_NO_FLUSH;
      int ret;
  
      if (snap_state.state != SAVE_STATE_DONE) {
@@ -54,7 +54,7 @@ index c3db633..c1407d3 100644
              char *devfn = NULL;
              const char *format = NULL;
 -            int flags = BDRV_O_RDWR|BDRV_O_CACHE_WB;
-+            int flags = BDRV_O_RDWR;
++            int flags = BDRV_O_RDWR|BDRV_O_NO_FLUSH;
              bool write_zero = true;
  
              if (readmap) {
