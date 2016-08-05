@@ -33,13 +33,7 @@ ${KVM_DEB} kvm: ${KVMSRC}
 
 .PHONY: upload
 upload: ${KVM_DEB} ${KVMDIR}-src.tar.gz
-	umount /pve/${RELEASE}; mount /pve/${RELEASE} -o rw 
-	mkdir -p /pve/${RELEASE}/extra
-	rm -rf /pve/${RELEASE}/extra/Packages*
-	rm -rf /pve/${RELEASE}/extra/${KVMPACKAGE}_*.deb
-	cp ${KVM_DEB} /pve/${RELEASE}/extra
-	cd /pve/${RELEASE}/extra; dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
-	umount /pve/${RELEASE}; mount /pve/${RELEASE} -o ro
+	tar -cf - ${KVM_DEB} | ssh repoman@repo.proxmox.com upload --dist wheezy
 
 .PHONY: distclean
 distclean: clean
