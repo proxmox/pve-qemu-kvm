@@ -1,3 +1,39 @@
+pve-qemu-kvm (2.2-26) unstable; urgency=low
+
+  * fix CVE-2016-3712 
+  vga: make sure vga register setup for vbe stays intact
+
+  * fix CVE-2016-4037
+   ehci: apply limit to iTD/sidt descriptors
+
+   * fix CVE-2016-4453
+   vmsvga: don't process more than 1024 fifo commands at once
+
+   * fix CVE-2016-4454
+   vmsvga: move fifo sanity checks to vmsvga_fifo_length
+   vmsvga: add more fifo checks
+   vmsvga: shadow fifo registers
+
+   * fix CVE-2016-4952
+   scsi: pvscsi: check command descriptor ring buffer size
+
+   * fix CVE-2016-5105
+   scsi: megasas: initialise local configuration data buffer
+
+   * fix CVE-2016-5106
+   scsi: megasas: use appropriate property buffer size
+
+   * fix CVE-2016-5107
+   scsi: megasas: check 'read_queue_head' index value
+
+   * fix CVE-2016-5126
+   block/iscsi: avoid potential overflow of acb->task->cdb
+
+   * CVE-2016-6490
+   virtio: check vring descriptor buffer length
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 05 Aug 2016 11:50:29 +0200
+
 pve-qemu-kvm (2.2-25) unstable; urgency=low
 
   * Fix CVE-2016-2841, CVE-2016-2857, CVE-2016-2858
