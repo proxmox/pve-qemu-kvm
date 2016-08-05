@@ -1,8 +1,5 @@
 pve-qemu-kvm (2.2-26) unstable; urgency=low
 
-  * fix CVE-2016-3712 
-  vga: make sure vga register setup for vbe stays intact
-
   * fix CVE-2016-4037
    ehci: apply limit to iTD/sidt descriptors
 

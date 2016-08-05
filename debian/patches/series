@@ -73,9 +73,9 @@ CVE-2016-2857-net-check-packet-payload-length.patch
 0003-rng-move-request-queue-cleanup-from-RngEgd-to-RngBac.patch
 0005-virtio-rng-ask-for-more-data-if-queue-is-not-fully-d.patch
 CVE-2016-2858-0004-rng-add-request-queue-support-to-rng-random.patch
-0001-vga-factor-out-vga-register-setup.patch
-0002-vga-make-sure-vga-register-setup-for-vbe-stays-intac.patch
-0003-vga-add-sr_vbe-register-set.patch
+#0001-vga-factor-out-vga-register-setup.patch
+#0002-vga-make-sure-vga-register-setup-for-vbe-stays-intac.patch
+#0003-vga-add-sr_vbe-register-set.patch
 0001-scsi-esp-make-cmdbuf-big-enough-for-maximum-CDB-size.patch
 0002-scsi-esp-fix-migration.patch
 0004-vmsvga-move-fifo-sanity-checks-to-vmsvga_fifo_length.patch
