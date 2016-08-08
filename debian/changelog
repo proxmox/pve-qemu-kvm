@@ -1,3 +1,11 @@
+pve-qemu-kvm (2.2-27) unstable; urgency=low
+
+  * fix CVE-2016-3710
+  
+  * fix various vga bugs
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 08 Aug 2016 12:11:27 +0200
+
 pve-qemu-kvm (2.2-26) unstable; urgency=low
 
   * fix CVE-2016-4037
