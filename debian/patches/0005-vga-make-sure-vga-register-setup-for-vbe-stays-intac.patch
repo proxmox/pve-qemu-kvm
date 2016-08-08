@@ -1,7 +1,7 @@
 From fd3c136b3e1482cd0ec7285d6bc2a3e6a62c38d7 Mon Sep 17 00:00:00 2001
 From: Gerd Hoffmann <kraxel@redhat.com>
 Date: Tue, 26 Apr 2016 14:48:06 +0200
-Subject: [PATCH] vga: make sure vga register setup for vbe stays intact
+Subject: [PATCH 5/5] vga: make sure vga register setup for vbe stays intact
  (CVE-2016-3712).
 
 Call vbe_update_vgaregs() when the guest touches GFX, SEQ or CRT
@@ -37,9 +37,9 @@ index eeeb9c8..4a55ec6 100644
  
 +static void vbe_update_vgaregs(VGACommonState *s);
 +
- static void vga_update_memory_access(VGACommonState *s)
+ static inline bool vbe_enabled(VGACommonState *s)
  {
-     hwaddr base, offset, size;
+     return s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED;
 @@ -484,6 +486,7 @@ void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
          printf("vga: write SR%x = 0x%02x\n", s->sr_index, val);
  #endif

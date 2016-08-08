@@ -104,6 +104,7 @@ index 679070e..25d8bff 100644
          mask = (1 << plane);
 -        if (s->sr[VGA_SEQ_PLANE_WRITE] & mask) {
 +        if (sr(s, VGA_SEQ_PLANE_WRITE) & mask) {
+             assert(addr < s->vram_size);
              s->vram_ptr[addr] = val;
  #ifdef DEBUG_VGA_MEM
              printf("vga: chain4: [0x" TARGET_FMT_plx "]\n", addr);

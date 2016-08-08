@@ -1,7 +1,7 @@
 From 7fa5c2c5dc9f9bf878c1e8669eb9644d70a71e71 Mon Sep 17 00:00:00 2001
 From: Gerd Hoffmann <kraxel@redhat.com>
 Date: Tue, 26 Apr 2016 15:24:18 +0200
-Subject: [PATCH] vga: factor out vga register setup
+Subject: [PATCH 3/5] vga: factor out vga register setup
 
 When enabling vbe mode qemu will setup a bunch of vga registers to make
 sure the vga emulation operates in correct mode for a linear
