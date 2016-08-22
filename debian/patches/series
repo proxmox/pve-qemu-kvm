@@ -57,3 +57,8 @@ pve/0055-enable-cache-unsafe-for-vma-extract_content-and-qmp_.patch
 extra/0001-Revert-target-i386-disable-LINT0-after-reset.patch
 extra/0002-scsi-esp-fix-migration.patch
 extra/CVE-2016-6490-virtio-check-vring-descriptor-buffer-length.patch
+extra/0001-net-check-fragment-length-during-fragmentation.patch
+extra/0002-net-vmxnet3-check-for-device_active-before-write.patch
+extra/0003-net-vmxnet-use-g_new-for-pkt-initialisation.patch
+extra/0004-net-vmxnet-check-IP-header-length.patch
+extra/0005-net-vmxnet-initialise-local-tx-descriptor.patch

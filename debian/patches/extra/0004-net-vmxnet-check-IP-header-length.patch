@@ -1,0 +1,34 @@
+From 1f2c8a260b6f1c87cefa7459baff7e203316f7b6 Mon Sep 17 00:00:00 2001
+From: Li Qiang <address@hidden>
+Date: Tue, 9 Aug 2016 16:49:47 +0530
+Subject: [PATCH 4/5] net: vmxnet: check IP header length
+
+Vmxnet3 device emulator when parsing packet headers does not check
+for IP header length. It could lead to a OOB access when reading
+further packet data. Add check to avoid it.
+
+Reported-by: Li Qiang <address@hidden>
+Signed-off-by: Prasad J Pandit <address@hidden>
+---
+ hw/net/vmxnet_tx_pkt.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/hw/net/vmxnet_tx_pkt.c b/hw/net/vmxnet_tx_pkt.c
+index 9152444..849826b 100644
+--- a/hw/net/vmxnet_tx_pkt.c
++++ b/hw/net/vmxnet_tx_pkt.c
+@@ -177,6 +177,11 @@ static bool vmxnet_tx_pkt_parse_headers(struct VmxnetTxPkt *pkt)
+         }
+ 
+         l3_hdr->iov_len = IP_HDR_GET_LEN(l3_hdr->iov_base);
++        if(l3_hdr->iov_len < sizeof(struct ip_header))
++        {
++            l3_hdr->iov_len = 0;
++            return false;
++        }
+         pkt->l4proto = ((struct ip_header *) l3_hdr->iov_base)->ip_p;
+ 
+         /* copy optional IPv4 header data */
+-- 
+2.1.4
+
