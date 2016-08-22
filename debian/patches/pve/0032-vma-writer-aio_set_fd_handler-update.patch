@@ -1,7 +1,7 @@
-From 712f8526b54566361c9d1e4cc81a40714f29a26f Mon Sep 17 00:00:00 2001
+From 2d152da7999e912f6fc104f81a1616c3c6d96a89 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Thu, 10 Dec 2015 14:25:01 +0100
-Subject: [PATCH 32/41] vma-writer: aio_set_fd_handler update
+Subject: [PATCH 32/55] vma-writer: aio_set_fd_handler update
 
 passing 'false' as new is_external parameter to
 aio_set_fd_handler as per commit

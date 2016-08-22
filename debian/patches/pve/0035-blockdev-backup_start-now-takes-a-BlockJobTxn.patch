@@ -1,7 +1,7 @@
-From 825a46a3cfb266ebc12266555898ca3c27d4dda9 Mon Sep 17 00:00:00 2001
+From eb1226235b886a2e472ed78d5df38608eb537618 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Thu, 10 Dec 2015 14:50:05 +0100
-Subject: [PATCH 35/41] blockdev: backup_start now takes a BlockJobTxn
+Subject: [PATCH 35/55] blockdev: backup_start now takes a BlockJobTxn
 
 As per commit 78f51fde88d1:
 block: Add BlockJobTxn support to backup_run
@@ -12,10 +12,10 @@ For-patch: backup: add pve monitor commands
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 9cf76f1..ac504a7 100644
+index bf61a74..96fc30b 100644
 --- a/blockdev.c
 +++ b/blockdev.c
-@@ -3323,7 +3323,7 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3437,7 +3437,7 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
          backup_start(di->bs, di->target, speed, MIRROR_SYNC_MODE_FULL, NULL,
                       BLOCKDEV_ON_ERROR_REPORT, BLOCKDEV_ON_ERROR_REPORT,
                       pvebackup_dump_cb, pvebackup_complete_cb, di,

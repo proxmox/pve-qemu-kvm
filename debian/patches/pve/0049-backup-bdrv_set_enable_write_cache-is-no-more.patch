@@ -1,7 +1,7 @@
-From a639701d3f528aea313d0062b9ae863f2660f546 Mon Sep 17 00:00:00 2001
+From b194d9117c084d148a3e4fee5c2b113faf799968 Mon Sep 17 00:00:00 2001
 From: Thomas Lamprecht <t.lamprecht@proxmox.com>
 Date: Wed, 6 Apr 2016 16:43:38 +0200
-Subject: [PATCH 49/52] backup: bdrv_set_enable_write_cache is no more
+Subject: [PATCH 49/55] backup: bdrv_set_enable_write_cache is no more
 
 see: 09cf9db1bcd60d9889b774925ba7058286d35412
 
@@ -11,7 +11,7 @@ this reverts a hunk of our commit: backup: modify job api
  1 file changed, 3 insertions(+), 6 deletions(-)
 
 diff --git a/block/backup.c b/block/backup.c
-index 8801b47..8baaf36 100644
+index c38b520..f0e647d 100644
 --- a/block/backup.c
 +++ b/block/backup.c
 @@ -414,12 +414,9 @@ static void coroutine_fn backup_run(void *opaque)

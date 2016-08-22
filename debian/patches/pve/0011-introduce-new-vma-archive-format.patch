@@ -1,7 +1,7 @@
-From 04b6468a295871877b55fe792c566839e2afe29c Mon Sep 17 00:00:00 2001
+From 1ef80c8a5ce360bbff1a9daa1c191e9238855408 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
-Subject: [PATCH 11/54] introduce new vma archive format
+Subject: [PATCH 11/55] introduce new vma archive format
 
 This is a very simple archive format, see docs/specs/vma_spec.txt
 
@@ -20,10 +20,10 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  create mode 100644 vma.h
 
 diff --git a/Makefile b/Makefile
-index 930ac27..6cedc40 100644
+index 1d076a9..4e41399 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -166,7 +166,7 @@ ifneq ($(wildcard config-host.mak),)
+@@ -167,7 +167,7 @@ ifneq ($(wildcard config-host.mak),)
  include $(SRC_PATH)/tests/Makefile
  endif
  
@@ -41,10 +41,10 @@ index 930ac27..6cedc40 100644
  qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o libqemuutil.a libqemustub.a
  
 diff --git a/Makefile.objs b/Makefile.objs
-index 77be052..97d2bcc 100644
+index 8f705f6..5fd0bc4 100644
 --- a/Makefile.objs
 +++ b/Makefile.objs
-@@ -14,6 +14,7 @@ block-obj-$(CONFIG_POSIX) += aio-posix.o
+@@ -15,6 +15,7 @@ block-obj-$(CONFIG_POSIX) += aio-posix.o
  block-obj-$(CONFIG_WIN32) += aio-win32.o
  block-obj-y += block/
  block-obj-y += qemu-io-cmds.o

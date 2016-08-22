@@ -1,7 +1,7 @@
-From 2ec6f9ec8443f3389c74e8e21353d01e516c4f46 Mon Sep 17 00:00:00 2001
+From 621e6e6521a550fd3be48ee33b0d1e9a39c0ed5c Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:04:57 +0100
-Subject: [PATCH 15/54] backup: modify job api
+Subject: [PATCH 15/55] backup: modify job api
 
 Introduces a BackupDump function callback and a pause_count
 for backup_start. For a dump-backup the target parameter
@@ -13,10 +13,10 @@ can now be NULL so access to target needs to be guarded now.
  3 files changed, 65 insertions(+), 36 deletions(-)
 
 diff --git a/block/backup.c b/block/backup.c
-index 705bb77..7ac6b29 100644
+index 370c285..c38b520 100644
 --- a/block/backup.c
 +++ b/block/backup.c
-@@ -43,6 +43,7 @@ typedef struct BackupBlockJob {
+@@ -41,6 +41,7 @@ typedef struct BackupBlockJob {
      BdrvDirtyBitmap *sync_bitmap;
      MirrorSyncMode sync_mode;
      RateLimit limit;
@@ -24,7 +24,7 @@ index 705bb77..7ac6b29 100644
      BlockdevOnError on_source_error;
      BlockdevOnError on_target_error;
      CoRwlock flush_rwlock;
-@@ -147,14 +148,21 @@ static int coroutine_fn backup_do_cow(BlockDriverState *bs,
+@@ -153,14 +154,21 @@ static int coroutine_fn backup_do_cow(BlockDriverState *bs,
              goto out;
          }
  
@@ -52,7 +52,7 @@ index 705bb77..7ac6b29 100644
          }
          if (ret < 0) {
              trace_backup_do_cow_write_fail(job, start, ret);
-@@ -216,7 +224,7 @@ static void backup_iostatus_reset(BlockJob *job)
+@@ -222,7 +230,7 @@ static void backup_iostatus_reset(BlockJob *job)
  {
      BackupBlockJob *s = container_of(job, BackupBlockJob, common);
  
@@ -61,7 +61,7 @@ index 705bb77..7ac6b29 100644
          blk_iostatus_reset(s->target->blk);
      }
  }
-@@ -268,9 +276,11 @@ static BlockErrorAction backup_error_action(BackupBlockJob *job,
+@@ -274,9 +282,11 @@ static BlockErrorAction backup_error_action(BackupBlockJob *job,
      if (read) {
          return block_job_error_action(&job->common, job->common.bs,
                                        job->on_source_error, true, error);
@@ -116,7 +116,7 @@ index 705bb77..7ac6b29 100644
                    BlockJobTxn *txn, Error **errp)
  {
      int64_t len;
-@@ -507,7 +524,7 @@ void backup_start(BlockDriverState *bs, BlockDriverState *target,
+@@ -508,7 +525,7 @@ void backup_start(BlockDriverState *bs, BlockDriverState *target,
      int ret;
  
      assert(bs);
@@ -125,7 +125,7 @@ index 705bb77..7ac6b29 100644
      assert(cb);
  
      if (bs == target) {
-@@ -519,7 +535,7 @@ void backup_start(BlockDriverState *bs, BlockDriverState *target,
+@@ -529,7 +546,7 @@ void backup_start(BlockDriverState *bs, BlockDriverState *target,
          return;
      }
  
@@ -134,7 +134,7 @@ index 705bb77..7ac6b29 100644
          error_setg(errp, "Device is not inserted: %s",
                     bdrv_get_device_name(target));
          return;
-@@ -529,7 +545,7 @@ void backup_start(BlockDriverState *bs, BlockDriverState *target,
+@@ -539,7 +556,7 @@ void backup_start(BlockDriverState *bs, BlockDriverState *target,
          return;
      }
  
@@ -200,10 +200,10 @@ index 705bb77..7ac6b29 100644
      job->common.co = qemu_coroutine_create(backup_run);
      block_job_txn_add_job(txn, &job->common);
 diff --git a/blockdev.c b/blockdev.c
-index 80932e8..1796eaf 100644
+index 260a6f5..dfc5204 100644
 --- a/blockdev.c
 +++ b/blockdev.c
-@@ -3178,8 +3178,8 @@ static void do_drive_backup(const char *device, const char *target,
+@@ -3292,8 +3292,8 @@ static void do_drive_backup(const char *device, const char *target,
      }
  
      backup_start(bs, target_bs, speed, sync, bmap,
@@ -214,7 +214,7 @@ index 80932e8..1796eaf 100644
      if (local_err != NULL) {
          bdrv_unref(target_bs);
          error_propagate(errp, local_err);
-@@ -3268,7 +3268,7 @@ void do_blockdev_backup(const char *device, const char *target,
+@@ -3382,7 +3382,7 @@ void do_blockdev_backup(const char *device, const char *target,
      bdrv_ref(target_bs);
      bdrv_set_aio_context(target_bs, aio_context);
      backup_start(bs, target_bs, speed, sync, NULL, on_source_error,
@@ -224,7 +224,7 @@ index 80932e8..1796eaf 100644
          bdrv_unref(target_bs);
          error_propagate(errp, local_err);
 diff --git a/include/block/block_int.h b/include/block/block_int.h
-index 4012e36..f4b6ecd 100644
+index 10d8759..2dd866b 100644
 --- a/include/block/block_int.h
 +++ b/include/block/block_int.h
 @@ -60,6 +60,9 @@
@@ -237,7 +237,7 @@ index 4012e36..f4b6ecd 100644
  enum BdrvTrackedRequestType {
      BDRV_TRACKED_READ,
      BDRV_TRACKED_WRITE,
-@@ -679,7 +682,9 @@ void backup_start(BlockDriverState *bs, BlockDriverState *target,
+@@ -703,7 +706,9 @@ void backup_start(BlockDriverState *bs, BlockDriverState *target,
                    BdrvDirtyBitmap *sync_bitmap,
                    BlockdevOnError on_source_error,
                    BlockdevOnError on_target_error,

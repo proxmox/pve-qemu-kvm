@@ -1,7 +1,7 @@
-From 7844d4dd830c71ecfd437556251ecef96352e1e7 Mon Sep 17 00:00:00 2001
+From f8d5f70f8dbe379e442b182c89df168e38ba999d Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Mon, 8 Feb 2016 08:23:34 +0100
-Subject: [PATCH 42/44] vma-writer: don't bail out on zero-length files
+Subject: [PATCH 42/55] vma-writer: don't bail out on zero-length files
 
 ---
  vma-writer.c | 1 -

@@ -1,7 +1,7 @@
-From de27ffeb5f55764a51b435533311f1d627d26177 Mon Sep 17 00:00:00 2001
+From a53c35c25e703bc08198ec6ee02a86c79dae8aaa Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:04:32 +0100
-Subject: [PATCH 23/41] internal snapshot async
+Subject: [PATCH 23/55] internal snapshot async
 
 ---
  Makefile.objs           |   1 +
@@ -22,10 +22,10 @@ Subject: [PATCH 23/41] internal snapshot async
  create mode 100644 savevm-async.c
 
 diff --git a/Makefile.objs b/Makefile.objs
-index 97d2bcc..7da098b 100644
+index 5fd0bc4..c3367dd 100644
 --- a/Makefile.objs
 +++ b/Makefile.objs
-@@ -48,6 +48,7 @@ common-obj-y += migration/
+@@ -54,6 +54,7 @@ common-obj-y += migration/
  common-obj-y += qemu-char.o #aio.o
  common-obj-y += page_cache.o
  common-obj-y += qjson.o
@@ -34,10 +34,10 @@ index 97d2bcc..7da098b 100644
  common-obj-$(CONFIG_SPICE) += spice-qemu-char.o
  
 diff --git a/block.c b/block.c
-index 3a7324b..5505afb 100644
+index d4939b4..bee5a8d 100644
 --- a/block.c
 +++ b/block.c
-@@ -2117,7 +2117,7 @@ void bdrv_replace_in_backing_chain(BlockDriverState *old, BlockDriverState *new)
+@@ -2332,7 +2332,7 @@ void bdrv_replace_in_backing_chain(BlockDriverState *old, BlockDriverState *new)
      bdrv_unref(old);
  }
  
@@ -47,7 +47,7 @@ index 3a7324b..5505afb 100644
      assert(!bs->job);
      assert(bdrv_op_blocker_is_empty(bs));
 diff --git a/hmp-commands-info.hx b/hmp-commands-info.hx
-index 355289a..1de0d77 100644
+index f872262..c213ef7 100644
 --- a/hmp-commands-info.hx
 +++ b/hmp-commands-info.hx
 @@ -588,6 +588,19 @@ Show current migration xbzrle cache size.
@@ -71,10 +71,10 @@ index 355289a..1de0d77 100644
          .args_type  = "",
          .params     = "",
 diff --git a/hmp-commands.hx b/hmp-commands.hx
-index f6cc0e5..1e1eb5d 100644
+index 8a94e36..2c0009a 100644
 --- a/hmp-commands.hx
 +++ b/hmp-commands.hx
-@@ -1789,3 +1789,35 @@ ETEXI
+@@ -1790,3 +1790,35 @@ ETEXI
  STEXI
  @end table
  ETEXI
@@ -111,10 +111,10 @@ index f6cc0e5..1e1eb5d 100644
 +        .mhandler.cmd = hmp_savevm_end,
 +    },
 diff --git a/hmp.c b/hmp.c
-index acc4aea..724b5d3 100644
+index 040909e..78644a7 100644
 --- a/hmp.c
 +++ b/hmp.c
-@@ -2107,6 +2107,63 @@ void hmp_info_memory_devices(Monitor *mon, const QDict *qdict)
+@@ -2093,6 +2093,63 @@ void hmp_info_memory_devices(Monitor *mon, const QDict *qdict)
      qapi_free_MemoryDeviceInfoList(info_list);
  }
  
@@ -179,7 +179,7 @@ index acc4aea..724b5d3 100644
  {
      IOThreadInfoList *info_list = qmp_query_iothreads(NULL);
 diff --git a/hmp.h b/hmp.h
-index 0b39c25..86d2672 100644
+index c708b3f..99bc949 100644
 --- a/hmp.h
 +++ b/hmp.h
 @@ -26,6 +26,7 @@ void hmp_info_status(Monitor *mon, const QDict *qdict);
@@ -202,10 +202,10 @@ index 0b39c25..86d2672 100644
  void hmp_screendump(Monitor *mon, const QDict *qdict);
  void hmp_nbd_server_start(Monitor *mon, const QDict *qdict);
 diff --git a/include/block/block.h b/include/block/block.h
-index 3477328..030599e 100644
+index 3a73137..fcc9cac 100644
 --- a/include/block/block.h
 +++ b/include/block/block.h
-@@ -265,6 +265,7 @@ BlockDriverState *bdrv_find_backing_image(BlockDriverState *bs,
+@@ -266,6 +266,7 @@ BlockDriverState *bdrv_find_backing_image(BlockDriverState *bs,
  int bdrv_get_backing_file_depth(BlockDriverState *bs);
  void bdrv_refresh_filename(BlockDriverState *bs);
  int bdrv_truncate(BlockDriverState *bs, int64_t offset);
@@ -214,10 +214,10 @@ index 3477328..030599e 100644
  int64_t bdrv_getlength(BlockDriverState *bs);
  int64_t bdrv_get_allocated_file_size(BlockDriverState *bs);
 diff --git a/include/sysemu/sysemu.h b/include/sysemu/sysemu.h
-index 3bb8897..cc47e29 100644
+index 38fb3ca..d4790a6 100644
 --- a/include/sysemu/sysemu.h
 +++ b/include/sysemu/sysemu.h
-@@ -79,6 +79,7 @@ void qemu_add_machine_init_done_notifier(Notifier *notify);
+@@ -78,6 +78,7 @@ void qemu_add_machine_init_done_notifier(Notifier *notify);
  
  void hmp_savevm(Monitor *mon, const QDict *qdict);
  int load_vmstate(const char *name);
@@ -225,7 +225,7 @@ index 3bb8897..cc47e29 100644
  void hmp_delvm(Monitor *mon, const QDict *qdict);
  void hmp_info_snapshots(Monitor *mon, const QDict *qdict);
  
-@@ -106,13 +107,13 @@ enum qemu_vm_cmd {
+@@ -105,13 +106,13 @@ enum qemu_vm_cmd {
  #define MAX_VM_CMD_PACKAGED_SIZE (1ul << 24)
  
  bool qemu_savevm_state_blocked(Error **errp);
@@ -242,10 +242,10 @@ index 3bb8897..cc47e29 100644
                                 uint64_t *res_non_postcopiable,
                                 uint64_t *res_postcopiable);
 diff --git a/migration/savevm.c b/migration/savevm.c
-index 0ad1b93..a1cf4b5 100644
+index 8346649..d6560f5 100644
 --- a/migration/savevm.c
 +++ b/migration/savevm.c
-@@ -891,11 +891,11 @@ void qemu_savevm_state_header(QEMUFile *f)
+@@ -896,11 +896,11 @@ void qemu_savevm_state_header(QEMUFile *f)
  
  }
  
@@ -259,7 +259,7 @@ index 0ad1b93..a1cf4b5 100644
  
      trace_savevm_state_begin();
      QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
-@@ -923,6 +923,7 @@ void qemu_savevm_state_begin(QEMUFile *f,
+@@ -928,6 +928,7 @@ void qemu_savevm_state_begin(QEMUFile *f,
              break;
          }
      }
@@ -267,7 +267,7 @@ index 0ad1b93..a1cf4b5 100644
  }
  
  /*
-@@ -1026,7 +1027,7 @@ void qemu_savevm_state_complete_postcopy(QEMUFile *f)
+@@ -1031,7 +1032,7 @@ void qemu_savevm_state_complete_postcopy(QEMUFile *f)
      qemu_fflush(f);
  }
  
@@ -276,7 +276,7 @@ index 0ad1b93..a1cf4b5 100644
  {
      QJSON *vmdesc;
      int vmdesc_len;
-@@ -1060,12 +1061,12 @@ void qemu_savevm_state_complete_precopy(QEMUFile *f, bool iterable_only)
+@@ -1065,12 +1066,12 @@ void qemu_savevm_state_complete_precopy(QEMUFile *f, bool iterable_only)
          save_section_footer(f, se);
          if (ret < 0) {
              qemu_file_set_error(f, ret);
@@ -291,7 +291,7 @@ index 0ad1b93..a1cf4b5 100644
      }
  
      vmdesc = qjson_new();
-@@ -1113,6 +1114,7 @@ void qemu_savevm_state_complete_precopy(QEMUFile *f, bool iterable_only)
+@@ -1117,6 +1118,7 @@ void qemu_savevm_state_complete_precopy(QEMUFile *f, bool iterable_only)
      object_unref(OBJECT(vmdesc));
  
      qemu_fflush(f);
@@ -300,10 +300,10 @@ index 0ad1b93..a1cf4b5 100644
  
  /* Give an estimate of the amount left to be transferred,
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 84978bd..be51fa2 100644
+index 3427d50..2392139 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
-@@ -587,6 +587,42 @@
+@@ -585,6 +585,42 @@
             '*setup-time': 'int',
             '*x-cpu-throttle-percentage': 'int'} }
  
@@ -346,7 +346,7 @@ index 84978bd..be51fa2 100644
  ##
  # @query-migrate
  #
-@@ -3046,8 +3082,18 @@
+@@ -3197,8 +3233,18 @@
  #
  # Since: 1.2.0
  ##
@@ -366,10 +366,10 @@ index 84978bd..be51fa2 100644
  # @QKeyCode:
  #
 diff --git a/qemu-options.hx b/qemu-options.hx
-index 0eea4ee..cd465d5 100644
+index 6106520..20ab9ac 100644
 --- a/qemu-options.hx
 +++ b/qemu-options.hx
-@@ -3099,6 +3099,19 @@ STEXI
+@@ -3270,6 +3270,19 @@ STEXI
  Start right away with a saved state (@code{loadvm} in monitor)
  ETEXI
  
@@ -390,10 +390,10 @@ index 0eea4ee..cd465d5 100644
  DEF("daemonize", 0, QEMU_OPTION_daemonize, \
      "-daemonize      daemonize QEMU after initializing\n", QEMU_ARCH_ALL)
 diff --git a/qmp-commands.hx b/qmp-commands.hx
-index 3dea794..5ef8540 100644
+index 3f03c0d..437ddd6 100644
 --- a/qmp-commands.hx
 +++ b/qmp-commands.hx
-@@ -4675,6 +4675,36 @@ Example:
+@@ -4783,6 +4783,36 @@ Example:
  EQMP
  
      {
@@ -959,10 +959,10 @@ index 0000000..8117443
 +    return ret;
 +}
 diff --git a/vl.c b/vl.c
-index 77c734e..5379941 100644
+index feeb2c4..ba29593 100644
 --- a/vl.c
 +++ b/vl.c
-@@ -2985,6 +2985,7 @@ int main(int argc, char **argv, char **envp)
+@@ -2979,6 +2979,7 @@ int main(int argc, char **argv, char **envp)
      int optind;
      const char *optarg;
      const char *loadvm = NULL;
@@ -970,7 +970,7 @@ index 77c734e..5379941 100644
      MachineClass *machine_class;
      const char *cpu_model;
      const char *vga_model = NULL;
-@@ -3611,6 +3612,9 @@ int main(int argc, char **argv, char **envp)
+@@ -3612,6 +3613,9 @@ int main(int argc, char **argv, char **envp)
              case QEMU_OPTION_loadvm:
                  loadvm = optarg;
                  break;
@@ -980,7 +980,7 @@ index 77c734e..5379941 100644
              case QEMU_OPTION_full_screen:
                  full_screen = 1;
                  break;
-@@ -4656,6 +4660,10 @@ int main(int argc, char **argv, char **envp)
+@@ -4640,6 +4644,10 @@ int main(int argc, char **argv, char **envp)
          if (load_vmstate(loadvm) < 0) {
              autostart = 0;
          }

@@ -1,7 +1,7 @@
-From d72cdaed95ca8c8d39b367e187bcc03f0c3c3e42 Mon Sep 17 00:00:00 2001
+From 63b3b17a2ae5d373f49191bb0828b5dc9128b04b Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:32:11 +0100
-Subject: [PATCH 09/41] qapi: modify spice query
+Subject: [PATCH 09/55] qapi: modify spice query
 
 Provide the last ticket in the SpiceInfo struct optionally.
 ---
@@ -10,10 +10,10 @@ Provide the last ticket in the SpiceInfo struct optionally.
  2 files changed, 8 insertions(+)
 
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 3ac59c5..1aa434d 100644
+index 0e97da1..f9ccfe4 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
-@@ -1120,11 +1120,14 @@
+@@ -1192,11 +1192,14 @@
  #
  # @channels: a list of @SpiceChannel for each active spice channel
  #
@@ -29,10 +29,10 @@ index 3ac59c5..1aa434d 100644
  
  ##
 diff --git a/ui/spice-core.c b/ui/spice-core.c
-index 6a62d71..05d24a1 100644
+index da05054..acf5a73 100644
 --- a/ui/spice-core.c
 +++ b/ui/spice-core.c
-@@ -537,6 +537,11 @@ SpiceInfo *qmp_query_spice(Error **errp)
+@@ -543,6 +543,11 @@ SpiceInfo *qmp_query_spice(Error **errp)
      micro = SPICE_SERVER_VERSION & 0xff;
      info->compiled_version = g_strdup_printf("%d.%d.%d", major, minor, micro);
  

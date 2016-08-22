@@ -1,7 +1,7 @@
-From 97fe08940a43098fb033950ea8c46716a7476439 Mon Sep 17 00:00:00 2001
+From d0cbfa6899c33f2a93696666b03d9a343eb81d15 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Tue, 23 Feb 2016 15:48:41 +0100
-Subject: [PATCH] vma: better driver guessing for bdrv_open
+Subject: [PATCH 43/55] vma: better driver guessing for bdrv_open
 
 Only use 'raw' when the file actually ends with .raw and
 no protocol has been specified. With protocol pass the

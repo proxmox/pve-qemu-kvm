@@ -1,7 +1,7 @@
-From 1f5975e6b428b0f62fd538b36880a23ec25da9f5 Mon Sep 17 00:00:00 2001
+From 9170833ae6e593326b1a37892282d4177ab7414e Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:34:41 +0100
-Subject: [PATCH 28/41] qmp: add get_link_status
+Subject: [PATCH 28/55] qmp: add get_link_status
 
 ---
  net/net.c        | 27 +++++++++++++++++++++++++++
@@ -11,10 +11,10 @@ Subject: [PATCH 28/41] qmp: add get_link_status
  4 files changed, 67 insertions(+)
 
 diff --git a/net/net.c b/net/net.c
-index ade6051..afd6ea6 100644
+index 6b0b375..0e3f231 100644
 --- a/net/net.c
 +++ b/net/net.c
-@@ -1289,6 +1289,33 @@ void hmp_info_network(Monitor *mon, const QDict *qdict)
+@@ -1325,6 +1325,33 @@ void hmp_info_network(Monitor *mon, const QDict *qdict)
      }
  }
  
@@ -49,10 +49,10 @@ index ade6051..afd6ea6 100644
  {
      NetClientState *ncs[MAX_QUEUE_NUM];
 diff --git a/qapi-schema.json b/qapi-schema.json
-index be51fa2..172e200 100644
+index 2392139..d1985d2 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
-@@ -1653,6 +1653,21 @@
+@@ -1725,6 +1725,21 @@
  { 'command': 'set_link', 'data': {'name': 'str', 'up': 'bool'} }
  
  ##
@@ -75,10 +75,10 @@ index be51fa2..172e200 100644
  #
  # Request the balloon driver to change its balloon size.
 diff --git a/qmp-commands.hx b/qmp-commands.hx
-index 5ef8540..0ce913a 100644
+index 437ddd6..71c5d53 100644
 --- a/qmp-commands.hx
 +++ b/qmp-commands.hx
-@@ -1771,6 +1771,29 @@ Example:
+@@ -1844,6 +1844,29 @@ Example:
  EQMP
  
      {
@@ -109,10 +109,10 @@ index 5ef8540..0ce913a 100644
          .args_type  = "fdname:s",
          .params     = "getfd name",
 diff --git a/scripts/qapi.py b/scripts/qapi.py
-index 7c50cc4..8cb0f78 100644
+index b13ae47..088478a 100644
 --- a/scripts/qapi.py
 +++ b/scripts/qapi.py
-@@ -38,6 +38,8 @@ builtin_types = {
+@@ -39,6 +39,8 @@ builtin_types = {
  
  # Whitelist of commands allowed to return a non-dictionary
  returns_whitelist = [

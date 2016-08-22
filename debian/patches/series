@@ -41,7 +41,7 @@ pve/0040-vnc-make-x509-imply-tls-again.patch
 pve/0041-PVE-VNC-authentication.patch
 pve/0042-vma-writer-don-t-bail-out-on-zero-length-files.patch
 pve/0043-vma-better-driver-guessing-for-bdrv_open.patch
-pve/0044-block-add-zeroinit.patch
+pve/0044-block-add-the-zeroinit-block-driver-filter.patch
 pve/0045-vma-add-format-option-to-device-mapping.patch
 pve/0046-pve-cleanup-includes-all-over-the-place.patch
 pve/0047-zeroinit-bdrv_get_block_status-got-a-new-param.patch
@@ -52,6 +52,7 @@ pve/0051-net-NET_CLIENT_OPTIONS_KIND_MAX-changed.patch
 pve/0052-vnc-refactor-to-QIOChannelSocket.patch
 pve/0053-vma-use-BlockBackend-on-extract.patch
 pve/0054-rbd-disable-rbd_cache_writethrough_until_flush-with-.patch
+pve/0055-enable-cache-unsafe-for-vma-extract_content-and-qmp_.patch
 #see https://bugs.launchpad.net/qemu/+bug/1488363?comments=all
 extra/0001-Revert-target-i386-disable-LINT0-after-reset.patch
 extra/0002-scsi-esp-fix-migration.patch

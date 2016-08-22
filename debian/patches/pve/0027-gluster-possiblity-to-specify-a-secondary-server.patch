@@ -1,17 +1,17 @@
-From 7b58868a321a38585c20a6eecdaa52d2a85e8385 Mon Sep 17 00:00:00 2001
+From 15c3d8e19c9d7534441226229dd509e3a61ce82a Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:33:25 +0100
-Subject: [PATCH 27/41] gluster: possiblity to specify a secondary server
+Subject: [PATCH 27/55] gluster: possiblity to specify a secondary server
 
 ---
  block/gluster.c | 40 +++++++++++++++++++++++++++++++---------
  1 file changed, 31 insertions(+), 9 deletions(-)
 
 diff --git a/block/gluster.c b/block/gluster.c
-index e3c0dbc..8946e82 100644
+index 9cf33e9..0377725 100644
 --- a/block/gluster.c
 +++ b/block/gluster.c
-@@ -26,6 +26,7 @@ typedef struct BDRVGlusterState {
+@@ -28,6 +28,7 @@ typedef struct BDRVGlusterState {
  
  typedef struct GlusterConf {
      char *server;
@@ -19,7 +19,7 @@ index e3c0dbc..8946e82 100644
      int port;
      char *volname;
      char *image;
-@@ -36,6 +37,7 @@ static void qemu_gluster_gconf_free(GlusterConf *gconf)
+@@ -38,6 +39,7 @@ static void qemu_gluster_gconf_free(GlusterConf *gconf)
  {
      if (gconf) {
          g_free(gconf->server);
@@ -27,7 +27,7 @@ index e3c0dbc..8946e82 100644
          g_free(gconf->volname);
          g_free(gconf->image);
          g_free(gconf->transport);
-@@ -69,7 +71,7 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
+@@ -71,7 +73,7 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
  }
  
  /*
@@ -36,7 +36,7 @@ index e3c0dbc..8946e82 100644
   *
   * 'gluster' is the protocol.
   *
-@@ -85,6 +87,8 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
+@@ -87,6 +89,8 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
   * The 'socket' field needs to be populated with the path to unix domain
   * socket.
   *
@@ -45,7 +45,7 @@ index e3c0dbc..8946e82 100644
   * 'port' is the port number on which glusterd is listening. This is optional
   * and if not specified, QEMU will send 0 which will make gluster to use the
   * default port. If the transport type is unix, then 'port' should not be
-@@ -97,6 +101,7 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
+@@ -99,6 +103,7 @@ static int parse_volume_options(GlusterConf *gconf, char *path)
   * Examples:
   *
   * file=gluster://1.2.3.4/testvol/a.img
@@ -53,7 +53,7 @@ index e3c0dbc..8946e82 100644
   * file=gluster+tcp://1.2.3.4/testvol/a.img
   * file=gluster+tcp://1.2.3.4:24007/testvol/dir/a.img
   * file=gluster+tcp://[1:2:3:4:5:6:7:8]/testvol/dir/a.img
-@@ -111,6 +116,8 @@ static int qemu_gluster_parseuri(GlusterConf *gconf, const char *filename)
+@@ -113,6 +118,8 @@ static int qemu_gluster_parseuri(GlusterConf *gconf, const char *filename)
      QueryParams *qp = NULL;
      bool is_unix = false;
      int ret = 0;
@@ -62,7 +62,7 @@ index e3c0dbc..8946e82 100644
  
      uri = uri_parse(filename);
      if (!uri) {
-@@ -138,21 +145,28 @@ static int qemu_gluster_parseuri(GlusterConf *gconf, const char *filename)
+@@ -140,21 +147,28 @@ static int qemu_gluster_parseuri(GlusterConf *gconf, const char *filename)
      }
  
      qp = query_params_parse(uri->query);
@@ -98,7 +98,7 @@ index e3c0dbc..8946e82 100644
      } else {
          gconf->server = g_strdup(uri->server ? uri->server : "localhost");
          gconf->port = uri->port;
-@@ -176,7 +190,7 @@ static struct glfs *qemu_gluster_init(GlusterConf *gconf, const char *filename,
+@@ -178,7 +192,7 @@ static struct glfs *qemu_gluster_init(GlusterConf *gconf, const char *filename,
      ret = qemu_gluster_parseuri(gconf, filename);
      if (ret < 0) {
          error_setg(errp, "Usage: file=gluster[+transport]://[server[:port]]/"
@@ -107,7 +107,7 @@ index e3c0dbc..8946e82 100644
          errno = -ret;
          goto out;
      }
-@@ -192,6 +206,14 @@ static struct glfs *qemu_gluster_init(GlusterConf *gconf, const char *filename,
+@@ -194,6 +208,14 @@ static struct glfs *qemu_gluster_init(GlusterConf *gconf, const char *filename,
          goto out;
      }
  

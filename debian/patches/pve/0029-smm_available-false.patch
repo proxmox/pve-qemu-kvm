@@ -1,7 +1,7 @@
-From 67eb6fa3ea9193e43e6744c17e0cbaf1294de1b9 Mon Sep 17 00:00:00 2001
+From 3aebb3903e61b8ceb7f0d302f8dfddfe7195c10e Mon Sep 17 00:00:00 2001
 From: Alexandre Derumier <aderumier@odiso.com>
 Date: Tue, 29 Sep 2015 15:37:44 +0200
-Subject: [PATCH 29/41] smm_available = false
+Subject: [PATCH 29/55] smm_available = false
 
 Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
 ---
@@ -9,7 +9,7 @@ Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/hw/i386/pc.c b/hw/i386/pc.c
-index a20df3c..ba166d7 100644
+index 1225a99..ceae96c 100644
 --- a/hw/i386/pc.c
 +++ b/hw/i386/pc.c
 @@ -1839,7 +1839,7 @@ bool pc_machine_is_smm_enabled(PCMachineState *pcms)

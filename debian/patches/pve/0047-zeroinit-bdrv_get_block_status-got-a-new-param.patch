@@ -1,7 +1,7 @@
-From e6be17e4378f4aa0860baa316ff90e10d0b70a68 Mon Sep 17 00:00:00 2001
+From e698a23ad095fcaf0d72734a480d5bc0202a6f75 Mon Sep 17 00:00:00 2001
 From: Thomas Lamprecht <t.lamprecht@proxmox.com>
 Date: Wed, 6 Apr 2016 14:15:58 +0200
-Subject: [PATCH 47/52] zeroinit: bdrv_get_block_status got a new param
+Subject: [PATCH 47/55] zeroinit: bdrv_get_block_status got a new param
 
 see: 67a0fd2a9bca204d2b39f910a97c7137636a0715
 ---

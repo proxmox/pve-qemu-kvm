@@ -1,7 +1,7 @@
-From 9a6a1d5a6a3b0024ee2c664924cd67fb4cb43e46 Mon Sep 17 00:00:00 2001
+From 5a03baace683a297371dbe36795a517d68fc2727 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Mon, 11 Mar 2013 07:07:46 +0100
-Subject: [PATCH 12/41] vma: add verify command
+Subject: [PATCH 12/55] vma: add verify command
 
 Users wants to verify the archive after backup.
 

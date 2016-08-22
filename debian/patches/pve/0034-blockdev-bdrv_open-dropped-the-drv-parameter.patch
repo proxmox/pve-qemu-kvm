@@ -1,7 +1,7 @@
-From 25a24c9dc28d7f2304b8667ff1d076630adc300a Mon Sep 17 00:00:00 2001
+From 548b3b099d230b1221edf8062341900679d83f3e Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Thu, 10 Dec 2015 14:46:59 +0100
-Subject: [PATCH 34/41] blockdev: bdrv_open dropped the drv parameter
+Subject: [PATCH 34/55] blockdev: bdrv_open dropped the drv parameter
 
 As per commit:
 6ebf9aa2ef: block: Drop drv parameter from bdrv_open()
@@ -12,10 +12,10 @@ For-patch: backup: vma: add dir format
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 5e1234b..9cf76f1 100644
+index dd4e4bd..bf61a74 100644
 --- a/blockdev.c
 +++ b/blockdev.c
-@@ -3260,7 +3260,7 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3374,7 +3374,7 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
              }
  
              di->target = bdrv_new();

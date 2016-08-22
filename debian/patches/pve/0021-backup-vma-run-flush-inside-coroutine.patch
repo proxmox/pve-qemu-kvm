@@ -1,7 +1,7 @@
-From fe57d97e87fd49b03ce11d381f88fed546ea674d Mon Sep 17 00:00:00 2001
+From 60e4cc553c6ed53dd86e91ac143ad3aa8edcdbe7 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:40:42 +0100
-Subject: [PATCH 21/41] backup: vma: run flush inside coroutine
+Subject: [PATCH 21/55] backup: vma: run flush inside coroutine
 
 ---
  blockdev.c   | 10 +++++++++-
@@ -9,10 +9,10 @@ Subject: [PATCH 21/41] backup: vma: run flush inside coroutine
  2 files changed, 13 insertions(+), 1 deletion(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index c36888d..8df70cb 100644
+index 55c80c0..2c51b95 100644
 --- a/blockdev.c
 +++ b/blockdev.c
-@@ -2980,6 +2980,13 @@ static void pvebackup_cleanup(void)
+@@ -3094,6 +3094,13 @@ static void pvebackup_cleanup(void)
      }
  }
  
@@ -26,7 +26,7 @@ index c36888d..8df70cb 100644
  static void pvebackup_complete_cb(void *opaque, int ret)
  {
      PVEBackupDevInfo *di = opaque;
-@@ -2997,7 +3004,8 @@ static void pvebackup_complete_cb(void *opaque, int ret)
+@@ -3111,7 +3118,8 @@ static void pvebackup_complete_cb(void *opaque, int ret)
      di->target = NULL;
  
      if (backup_state.vmaw) {

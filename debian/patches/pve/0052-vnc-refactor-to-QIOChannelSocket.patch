@@ -1,15 +1,14 @@
-From ff4737549236e6b122d36ef5893058c69795a57f Mon Sep 17 00:00:00 2001
+From 24023a5773869ccac7c4f6d5065c7937396e2df9 Mon Sep 17 00:00:00 2001
 From: Thomas Lamprecht <t.lamprecht@proxmox.com>
 Date: Wed, 6 Apr 2016 16:47:54 +0200
-Subject: [PATCH 52/52] vnc: refactor to QIOChannelSocket
+Subject: [PATCH 52/55] vnc: refactor to QIOChannelSocket
 
-Signed-off-by: Thomas Lamprecht <t.lamprecht@proxmox.com>
 ---
  ui/vnc-auth-vencrypt.c | 31 ++++++++++++++++---------------
  1 file changed, 16 insertions(+), 15 deletions(-)
 
 diff --git a/ui/vnc-auth-vencrypt.c b/ui/vnc-auth-vencrypt.c
-index d11f1df..01aa1de 100644
+index d11f1df..a529520 100644
 --- a/ui/vnc-auth-vencrypt.c
 +++ b/ui/vnc-auth-vencrypt.c
 @@ -28,27 +28,23 @@

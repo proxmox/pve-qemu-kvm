@@ -1,7 +1,7 @@
-From bbf1558fc870eb4e72604b4d340ec317a59ac459 Mon Sep 17 00:00:00 2001
+From 0ea55080ddb9b9503dae8c35671a76fa5578572f Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:21:54 +0100
-Subject: [PATCH 17/41] backup: vma: add dir format
+Subject: [PATCH 17/55] backup: vma: add dir format
 
 ---
  blockdev.c       | 126 +++++++++++++++++++++++++++++++++++++++++--------------
@@ -11,10 +11,10 @@ Subject: [PATCH 17/41] backup: vma: add dir format
  4 files changed, 104 insertions(+), 36 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index a346c55..29a33c0 100644
+index 115524f..0537a53 100644
 --- a/blockdev.c
 +++ b/blockdev.c
-@@ -2900,6 +2900,8 @@ typedef struct PVEBackupDevInfo {
+@@ -3014,6 +3014,8 @@ typedef struct PVEBackupDevInfo {
      uint8_t dev_id;
      //bool started;
      bool completed;
@@ -23,7 +23,7 @@ index a346c55..29a33c0 100644
  } PVEBackupDevInfo;
  
  static void pvebackup_run_next_job(void);
-@@ -2968,8 +2970,6 @@ static void pvebackup_complete_cb(void *opaque, int ret)
+@@ -3082,8 +3084,6 @@ static void pvebackup_complete_cb(void *opaque, int ret)
  {
      PVEBackupDevInfo *di = opaque;
  
@@ -32,7 +32,7 @@ index a346c55..29a33c0 100644
      di->completed = true;
  
      if (ret < 0 && !backup_state.error) {
-@@ -2980,8 +2980,11 @@ static void pvebackup_complete_cb(void *opaque, int ret)
+@@ -3094,8 +3094,11 @@ static void pvebackup_complete_cb(void *opaque, int ret)
      BlockDriverState *bs = di->bs;
  
      di->bs = NULL;
@@ -45,7 +45,7 @@ index a346c55..29a33c0 100644
  
      block_job_cb(bs, ret);
  
-@@ -3060,6 +3063,7 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3174,6 +3177,7 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
  {
      BlockBackend *blk;
      BlockDriverState *bs = NULL;
@@ -53,7 +53,7 @@ index a346c55..29a33c0 100644
      Error *local_err = NULL;
      uuid_t uuid;
      VmaWriter *vmaw = NULL;
-@@ -3077,11 +3081,6 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3191,11 +3195,6 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -65,7 +65,7 @@ index a346c55..29a33c0 100644
      if (has_devlist) {
          devs = g_strsplit_set(devlist, ",;:", -1);
  
-@@ -3150,27 +3149,63 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3264,27 +3263,63 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
  
      uuid_generate(uuid);
  
@@ -145,7 +145,7 @@ index a346c55..29a33c0 100644
      }
  
      /* add configuration file to archive */
-@@ -3183,12 +3218,27 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3297,12 +3332,27 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
              goto err;
          }
  
@@ -178,7 +178,7 @@ index a346c55..29a33c0 100644
          g_free(cdata);
      }
  
-@@ -3228,10 +3278,11 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3342,10 +3392,11 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
          PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
          l = g_list_next(l);
  
@@ -191,7 +191,7 @@ index a346c55..29a33c0 100644
          if (local_err != NULL) {
              error_setg(&backup_state.error, "backup_job_create failed");
              pvebackup_cancel(NULL);
-@@ -3250,8 +3301,17 @@ err:
+@@ -3364,8 +3415,17 @@ err:
  
      l = di_list;
      while (l) {
@@ -210,7 +210,7 @@ index a346c55..29a33c0 100644
      }
      g_list_free(di_list);
  
-@@ -3265,6 +3325,10 @@ err:
+@@ -3379,6 +3439,10 @@ err:
          unlink(backup_file);
      }
  
@@ -222,7 +222,7 @@ index a346c55..29a33c0 100644
  }
  
 diff --git a/hmp-commands.hx b/hmp-commands.hx
-index 324125f..f6cc0e5 100644
+index 63c44f5..8a94e36 100644
 --- a/hmp-commands.hx
 +++ b/hmp-commands.hx
 @@ -89,9 +89,11 @@ ETEXI
@@ -241,10 +241,10 @@ index 324125f..f6cc0e5 100644
      },
  
 diff --git a/hmp.c b/hmp.c
-index ebb16c1..acc4aea 100644
+index 2d4bf97..040909e 100644
 --- a/hmp.c
 +++ b/hmp.c
-@@ -1512,11 +1512,13 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
+@@ -1527,11 +1527,13 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
  {
      Error *error = NULL;
  
@@ -260,10 +260,10 @@ index ebb16c1..acc4aea 100644
  
      hmp_handle_error(mon, &error);
 diff --git a/qapi-schema.json b/qapi-schema.json
-index edfb3a4..84978bd 100644
+index 4f673d4..3427d50 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
-@@ -397,7 +397,7 @@
+@@ -395,7 +395,7 @@
  # @vma: Proxmox vma backup format
  ##
  { 'enum': 'BackupFormat',

@@ -1,7 +1,7 @@
-From 194ceac1b39413a6a1eaeb8da62188effe3b5742 Mon Sep 17 00:00:00 2001
+From a88a0bf330a1ede68e867d7ae932b3ffd4d4911a Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:32:39 +0100
-Subject: [PATCH 25/41] backup: vma: add BlockDriver to bdrv_open in
+Subject: [PATCH 25/55] backup: vma: add BlockDriver to bdrv_open in
  extract_content
 
 ---

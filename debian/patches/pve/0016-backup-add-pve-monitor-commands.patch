@@ -1,7 +1,7 @@
-From af106cee7626a76c7d24c838d07b437f48c2da2c Mon Sep 17 00:00:00 2001
+From 30e5d63f13a3f7adcd1f473fa0238c3e2e915114 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:20:56 +0100
-Subject: [PATCH 16/41] backup: add pve monitor commands
+Subject: [PATCH 16/55] backup: add pve monitor commands
 
 ---
  blockdev.c           | 438 +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -14,7 +14,7 @@ Subject: [PATCH 16/41] backup: add pve monitor commands
  7 files changed, 651 insertions(+)
 
 diff --git a/blockdev.c b/blockdev.c
-index 1796eaf..a346c55 100644
+index dfc5204..115524f 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -52,6 +52,7 @@
@@ -25,7 +25,7 @@ index 1796eaf..a346c55 100644
  
  static QTAILQ_HEAD(, BlockDriverState) monitor_bdrv_states =
      QTAILQ_HEAD_INITIALIZER(monitor_bdrv_states);
-@@ -2986,6 +2987,443 @@ static void block_job_cb(void *opaque, int ret)
+@@ -2989,6 +2990,443 @@ static void block_job_cb(void *opaque, int ret)
      }
  }
  
@@ -470,7 +470,7 @@ index 1796eaf..a346c55 100644
                        bool has_base, const char *base,
                        bool has_backing_file, const char *backing_file,
 diff --git a/hmp-commands-info.hx b/hmp-commands-info.hx
-index 9b71351..355289a 100644
+index 52539c3..f872262 100644
 --- a/hmp-commands-info.hx
 +++ b/hmp-commands-info.hx
 @@ -502,6 +502,19 @@ STEXI
@@ -494,7 +494,7 @@ index 9b71351..355289a 100644
      {
          .name       = "usernet",
 diff --git a/hmp-commands.hx b/hmp-commands.hx
-index bb52e4d..324125f 100644
+index 4f4f60a..63c44f5 100644
 --- a/hmp-commands.hx
 +++ b/hmp-commands.hx
 @@ -87,6 +87,35 @@ STEXI
@@ -534,10 +534,10 @@ index bb52e4d..324125f 100644
          .name       = "block_job_set_speed",
          .args_type  = "device:B,speed:o",
 diff --git a/hmp.c b/hmp.c
-index 0e63ea8..ebb16c1 100644
+index fe80757..2d4bf97 100644
 --- a/hmp.c
 +++ b/hmp.c
-@@ -146,6 +146,44 @@ void hmp_info_mice(Monitor *mon, const QDict *qdict)
+@@ -148,6 +148,44 @@ void hmp_info_mice(Monitor *mon, const QDict *qdict)
      qapi_free_MouseInfoList(mice_list);
  }
  
@@ -582,7 +582,7 @@ index 0e63ea8..ebb16c1 100644
  void hmp_info_migrate(Monitor *mon, const QDict *qdict)
  {
      MigrationInfo *info;
-@@ -1461,6 +1499,29 @@ void hmp_block_stream(Monitor *mon, const QDict *qdict)
+@@ -1476,6 +1514,29 @@ void hmp_block_stream(Monitor *mon, const QDict *qdict)
      hmp_handle_error(mon, &error);
  }
  
@@ -613,7 +613,7 @@ index 0e63ea8..ebb16c1 100644
  {
      Error *error = NULL;
 diff --git a/hmp.h b/hmp.h
-index a8c5b5a..0b39c25 100644
+index 093d65f..c708b3f 100644
 --- a/hmp.h
 +++ b/hmp.h
 @@ -30,6 +30,7 @@ void hmp_info_migrate(Monitor *mon, const QDict *qdict);
@@ -634,10 +634,10 @@ index a8c5b5a..0b39c25 100644
  void hmp_block_job_cancel(Monitor *mon, const QDict *qdict);
  void hmp_block_job_pause(Monitor *mon, const QDict *qdict);
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 1aa434d..edfb3a4 100644
+index f9ccfe4..4f673d4 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
-@@ -358,6 +358,95 @@
+@@ -356,6 +356,95 @@
  ##
  { 'command': 'query-events', 'returns': ['EventInfo'] }
  
@@ -734,10 +734,10 @@ index 1aa434d..edfb3a4 100644
  # @MigrationStats
  #
 diff --git a/qmp-commands.hx b/qmp-commands.hx
-index 5c23d91..3dea794 100644
+index 9388578..3f03c0d 100644
 --- a/qmp-commands.hx
 +++ b/qmp-commands.hx
-@@ -1254,6 +1254,24 @@ Example:
+@@ -1279,6 +1279,24 @@ Example:
  EQMP
  
      {

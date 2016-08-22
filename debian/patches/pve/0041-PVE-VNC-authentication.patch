@@ -1,7 +1,7 @@
-From 19a3e72ea86fb723d7facba1f07d7ae99520e461 Mon Sep 17 00:00:00 2001
+From 4f24f670a0bbbce29981d7ee54d31a960e00617c Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Mon, 11 Jan 2016 10:40:31 +0100
-Subject: [PATCH 41/54] PVE VNC authentication
+Subject: [PATCH 41/55] PVE VNC authentication
 
 ---
  crypto/tlscreds.c         |  47 +++++++++++
@@ -18,10 +18,10 @@ Subject: [PATCH 41/54] PVE VNC authentication
  11 files changed, 375 insertions(+), 40 deletions(-)
 
 diff --git a/crypto/tlscreds.c b/crypto/tlscreds.c
-index e7d9c1c..27e5c78 100644
+index 1620e12..affe020 100644
 --- a/crypto/tlscreds.c
 +++ b/crypto/tlscreds.c
-@@ -156,6 +156,33 @@ qcrypto_tls_creds_prop_get_verify(Object *obj,
+@@ -158,6 +158,33 @@ qcrypto_tls_creds_prop_get_verify(Object *obj,
  
  
  static void
@@ -96,10 +96,10 @@ index 9222be4..3a34279 100644
  
  #endif /* QCRYPTO_TLSCRED_PRIV_H__ */
 diff --git a/crypto/tlscredsx509.c b/crypto/tlscredsx509.c
-index 26f18cb..12e67c8 100644
+index 6a0179c..d8f3bf1 100644
 --- a/crypto/tlscredsx509.c
 +++ b/crypto/tlscredsx509.c
-@@ -547,22 +547,23 @@ qcrypto_tls_creds_x509_load(QCryptoTLSCredsX509 *creds,
+@@ -550,22 +550,23 @@ qcrypto_tls_creds_x509_load(QCryptoTLSCredsX509 *creds,
          *key = NULL, *dhparams = NULL;
      int ret;
      int rv = -1;
@@ -126,7 +126,7 @@ index 26f18cb..12e67c8 100644
                                         true, &key, errp) < 0 ||
              qcrypto_tls_creds_get_path(&creds->parent_obj,
                                         QCRYPTO_TLS_CREDS_DH_PARAMS,
-@@ -571,13 +572,13 @@ qcrypto_tls_creds_x509_load(QCryptoTLSCredsX509 *creds,
+@@ -574,13 +575,13 @@ qcrypto_tls_creds_x509_load(QCryptoTLSCredsX509 *creds,
          }
      } else {
          if (qcrypto_tls_creds_get_path(&creds->parent_obj,
@@ -144,7 +144,7 @@ index 26f18cb..12e67c8 100644
              goto cleanup;
          }
 diff --git a/crypto/tlssession.c b/crypto/tlssession.c
-index 3735529..a7ed50a 100644
+index a543e5a..564ad5d 100644
 --- a/crypto/tlssession.c
 +++ b/crypto/tlssession.c
 @@ -23,6 +23,7 @@
@@ -156,10 +156,10 @@ index 3735529..a7ed50a 100644
  #include "trace.h"
  
 diff --git a/include/crypto/tlscreds.h b/include/crypto/tlscreds.h
-index 21761b7..2cc0ce0 100644
+index 8e2babd..8969e66 100644
 --- a/include/crypto/tlscreds.h
 +++ b/include/crypto/tlscreds.h
-@@ -56,6 +56,7 @@ struct QCryptoTLSCreds {
+@@ -54,6 +54,7 @@ struct QCryptoTLSCreds {
      gnutls_dh_params_t dh_params;
  #endif
      bool verifyPeer;
@@ -168,10 +168,10 @@ index 21761b7..2cc0ce0 100644
  
  
 diff --git a/include/ui/console.h b/include/ui/console.h
-index c249db4..399b42d 100644
+index d5a88d9..c17bee0 100644
 --- a/include/ui/console.h
 +++ b/include/ui/console.h
-@@ -409,6 +409,7 @@ void sdl_display_init(DisplayState *ds, int full_screen, int no_frame);
+@@ -427,6 +427,7 @@ void sdl_display_init(DisplayState *ds, int full_screen, int no_frame);
  void cocoa_display_init(DisplayState *ds, int full_screen);
  
  /* vnc.c */
@@ -180,10 +180,10 @@ index c249db4..399b42d 100644
  void vnc_display_open(const char *id, Error **errp);
  void vnc_display_add_client(const char *id, int csock, bool skipauth);
 diff --git a/qemu-options.hx b/qemu-options.hx
-index cd465d5..bf87c00 100644
+index 20ab9ac..30b90f5 100644
 --- a/qemu-options.hx
 +++ b/qemu-options.hx
-@@ -419,6 +419,9 @@ STEXI
+@@ -476,6 +476,9 @@ STEXI
  @table @option
  ETEXI
  
@@ -194,7 +194,7 @@ index cd465d5..bf87c00 100644
      "-fda/-fdb file  use 'file' as floppy disk 0/1 image\n", QEMU_ARCH_ALL)
  DEF("fdb", HAS_ARG, QEMU_OPTION_fdb, "", QEMU_ARCH_ALL)
 diff --git a/ui/vnc-auth-vencrypt.c b/ui/vnc-auth-vencrypt.c
-index 44ac2fa..480a1ee 100644
+index 11c8c9a..d11f1df 100644
 --- a/ui/vnc-auth-vencrypt.c
 +++ b/ui/vnc-auth-vencrypt.c
 @@ -28,6 +28,107 @@
@@ -305,7 +305,7 @@ index 44ac2fa..480a1ee 100644
  
  static void start_auth_vencrypt_subauth(VncState *vs)
  {
-@@ -37,6 +138,17 @@ static void start_auth_vencrypt_subauth(VncState *vs)
+@@ -39,6 +140,17 @@ static void start_auth_vencrypt_subauth(VncState *vs)
         start_client_init(vs);
         break;
  
@@ -431,10 +431,10 @@ index 44ac2fa..480a1ee 100644
          vnc_read_when(vs, protocol_client_vencrypt_auth, 4);
      }
 diff --git a/ui/vnc.c b/ui/vnc.c
-index ba99636..612cab2 100644
+index 4610ce8..66e2163 100644
 --- a/ui/vnc.c
 +++ b/ui/vnc.c
-@@ -54,6 +54,125 @@ static const struct timeval VNC_REFRESH_LOSSY = { 2, 0 };
+@@ -55,6 +55,125 @@ static const struct timeval VNC_REFRESH_LOSSY = { 2, 0 };
  #include "vnc_keysym.h"
  #include "crypto/cipher.h"
  
@@ -560,7 +560,7 @@ index ba99636..612cab2 100644
  static QTAILQ_HEAD(, VncDisplay) vnc_displays =
      QTAILQ_HEAD_INITIALIZER(vnc_displays);
  
-@@ -3427,11 +3546,17 @@ vnc_display_setup_auth(VncDisplay *vs,
+@@ -3359,11 +3478,17 @@ vnc_display_setup_auth(VncDisplay *vs,
              if (object_dynamic_cast(OBJECT(vs->tlscreds),
                                      TYPE_QCRYPTO_TLS_CREDS_X509)) {
                  VNC_DEBUG("Initializing VNC server with x509 password auth\n");
@@ -580,7 +580,7 @@ index ba99636..612cab2 100644
              } else {
                  error_setg(errp,
                             "Unsupported TLS cred type %s",
-@@ -3522,6 +3647,7 @@ vnc_display_create_creds(bool x509,
+@@ -3454,6 +3579,7 @@ vnc_display_create_creds(bool x509,
                           bool x509verify,
                           const char *dir,
                           const char *id,
@@ -588,7 +588,7 @@ index ba99636..612cab2 100644
                           Error **errp)
  {
      gchar *credsid = g_strdup_printf("tlsvnc%s", id);
-@@ -3537,6 +3663,7 @@ vnc_display_create_creds(bool x509,
+@@ -3469,6 +3595,7 @@ vnc_display_create_creds(bool x509,
                                        "endpoint", "server",
                                        "dir", dir,
                                        "verify-peer", x509verify ? "yes" : "no",
@@ -596,7 +596,7 @@ index ba99636..612cab2 100644
                                        NULL);
      } else {
          creds = object_new_with_props(TYPE_QCRYPTO_TLS_CREDS_ANON,
-@@ -3544,6 +3671,7 @@ vnc_display_create_creds(bool x509,
+@@ -3476,6 +3603,7 @@ vnc_display_create_creds(bool x509,
                                        credsid,
                                        &err,
                                        "endpoint", "server",
@@ -604,7 +604,7 @@ index ba99636..612cab2 100644
                                        NULL);
      }
  
-@@ -3730,12 +3858,17 @@ void vnc_display_open(const char *id, Error **errp)
+@@ -3669,12 +3797,17 @@ void vnc_display_open(const char *id, Error **errp)
          }
      } else {
          const char *path;
@@ -623,7 +623,7 @@ index ba99636..612cab2 100644
              } else {
                  path = qemu_opt_get(opts, "x509verify");
                  if (path) {
-@@ -3747,6 +3880,7 @@ void vnc_display_open(const char *id, Error **errp)
+@@ -3686,6 +3819,7 @@ void vnc_display_open(const char *id, Error **errp)
                                                      x509verify,
                                                      path,
                                                      vs->id,
@@ -632,10 +632,10 @@ index ba99636..612cab2 100644
              if (!vs->tlscreds) {
                  goto fail;
 diff --git a/ui/vnc.h b/ui/vnc.h
-index 2863f58..1c4fee2 100644
+index 81a3261..40e2780 100644
 --- a/ui/vnc.h
 +++ b/ui/vnc.h
-@@ -275,6 +275,8 @@ struct VncState
+@@ -281,6 +281,8 @@ struct VncState
      int auth;
      int subauth; /* Used by VeNCrypt */
      char challenge[VNC_AUTH_CHALLENGE_SIZE];
@@ -644,7 +644,7 @@ index 2863f58..1c4fee2 100644
      QCryptoTLSSession *tls; /* Borrowed pointer from channel, don't free */
  #ifdef CONFIG_VNC_SASL
      VncStateSASL sasl;
-@@ -578,4 +580,6 @@ int vnc_zrle_send_framebuffer_update(VncState *vs, int x, int y, int w, int h);
+@@ -576,4 +578,6 @@ int vnc_zrle_send_framebuffer_update(VncState *vs, int x, int y, int w, int h);
  int vnc_zywrle_send_framebuffer_update(VncState *vs, int x, int y, int w, int h);
  void vnc_zrle_clear(VncState *vs);
  
@@ -652,10 +652,10 @@ index 2863f58..1c4fee2 100644
 +
  #endif /* __QEMU_VNC_H */
 diff --git a/vl.c b/vl.c
-index 63c6798..e8034b0 100644
+index f393767..f5fc86f 100644
 --- a/vl.c
 +++ b/vl.c
-@@ -2973,6 +2973,7 @@ static void set_memory_options(uint64_t *ram_slots, ram_addr_t *maxram_size,
+@@ -2967,6 +2967,7 @@ static void set_memory_options(uint64_t *ram_slots, ram_addr_t *maxram_size,
  int main(int argc, char **argv, char **envp)
  {
      int i;
@@ -663,7 +663,7 @@ index 63c6798..e8034b0 100644
      int snapshot, linux_boot;
      const char *initrd_filename;
      const char *kernel_filename, *kernel_cmdline;
-@@ -3736,6 +3737,14 @@ int main(int argc, char **argv, char **envp)
+@@ -3737,6 +3738,14 @@ int main(int argc, char **argv, char **envp)
                      exit(1);
                  }
                  break;

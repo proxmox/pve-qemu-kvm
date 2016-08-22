@@ -1,7 +1,7 @@
-From 729410b4b0c9fc9a8d8462480ef580b5b97782d9 Mon Sep 17 00:00:00 2001
+From 0c87d830e293ad329e1ac175475cd149ce189177 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Thu, 10 Dec 2015 15:21:59 +0100
-Subject: [PATCH 39/41] qapi: qmp_mashal_* renames for get_link_status
+Subject: [PATCH 39/55] qapi: qmp_mashal_* renames for get_link_status
 
 As per 7fad30f0:
 qapi: Rename qmp_marshal_input_FOO() to qmp_marshal_FOO()
@@ -12,10 +12,10 @@ For-patch: qmp: add get_link_status
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/qmp-commands.hx b/qmp-commands.hx
-index 129e1b3..12b884c 100644
+index 6abe9df..38ec312 100644
 --- a/qmp-commands.hx
 +++ b/qmp-commands.hx
-@@ -1773,7 +1773,7 @@ EQMP
+@@ -1846,7 +1846,7 @@ EQMP
      {
          .name       = "get_link_status",
          .args_type  = "name:s",

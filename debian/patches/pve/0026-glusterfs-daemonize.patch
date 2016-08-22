@@ -1,17 +1,17 @@
-From 34ccb14434cfc6b61e568aa076bc09231df45981 Mon Sep 17 00:00:00 2001
+From 577243992461100d840e90b6018df958ee165a34 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:33:10 +0100
-Subject: [PATCH 26/41] glusterfs: daemonize
+Subject: [PATCH 26/55] glusterfs: daemonize
 
 ---
  block/gluster.c | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/block/gluster.c b/block/gluster.c
-index 0857c14..e3c0dbc 100644
+index a8aaacf..9cf33e9 100644
 --- a/block/gluster.c
 +++ b/block/gluster.c
-@@ -196,9 +196,11 @@ static struct glfs *qemu_gluster_init(GlusterConf *gconf, const char *filename,
+@@ -198,9 +198,11 @@ static struct glfs *qemu_gluster_init(GlusterConf *gconf, const char *filename,
       * TODO: Use GF_LOG_ERROR instead of hard code value of 4 here when
       * GlusterFS makes GF_LOG_* macros available to libgfapi users.
       */

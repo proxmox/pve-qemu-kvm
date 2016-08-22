@@ -1,7 +1,7 @@
-From fecf3abe8512f12a33f8250cfb4e2687c62d4105 Mon Sep 17 00:00:00 2001
+From c0ca2a0437b4d648df1b54513c9f22a7519a328a Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Thu, 10 Dec 2015 14:43:07 +0100
-Subject: [PATCH 33/41] vma: bdrv_open dropped the drv parameter
+Subject: [PATCH 33/55] vma: bdrv_open dropped the drv parameter
 
 we now pass the 'drive' option via a qdict.
 As per commit:

@@ -1,17 +1,17 @@
-From 297edbbf4fcdb1ad1515fbfaeff530f97e9259ac Mon Sep 17 00:00:00 2001
+From 5848b90ad434c9c697e32cdd00a34708cfce24c5 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:41:13 +0100
-Subject: [PATCH 22/41] backup: do not use bdrv_drain_all
+Subject: [PATCH 22/55] backup: do not use bdrv_drain_all
 
 ---
  blockdev.c | 6 +-----
  1 file changed, 1 insertion(+), 5 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 8df70cb..4d182d6 100644
+index 2c51b95..0131e92 100644
 --- a/blockdev.c
 +++ b/blockdev.c
-@@ -3028,9 +3028,6 @@ static void pvebackup_cancel(void *opaque)
+@@ -3142,9 +3142,6 @@ static void pvebackup_cancel(void *opaque)
          vma_writer_set_error(backup_state.vmaw, "backup cancelled");
      }
  
@@ -21,7 +21,7 @@ index 8df70cb..4d182d6 100644
      GList *l = backup_state.di_list;
      while (l) {
          PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
-@@ -3039,8 +3036,7 @@ static void pvebackup_cancel(void *opaque)
+@@ -3153,8 +3150,7 @@ static void pvebackup_cancel(void *opaque)
              BlockJob *job = di->bs->job;
              if (job) {
                  if (!di->completed) {
