@@ -1,3 +1,25 @@
+pve-qemu-kvm (2.6.1-1) unstable; urgency=medium
+
+  * update to qemu 2.6.1
+
+  * Fix CVE-2016-6490: virtio: check vring descriptor buffer length
+
+  * Fix CVE-2016-6833: net: vmxnet3: check for device_active before write
+
+  * Fix CVE-2016-6834: net: check fragment length during fragmentation
+
+  * Fix CVE-2016-6835: net: vmxnet: check IP header length
+
+  * Fix CVE-2016-6836: net: vmxnet: initialise local tx descriptor
+
+  * Fix CVE-2016-6888: net: vmxnet: use g_new for pkt initialisation
+
+  * enable cache=unsafe for vma extract_content and qmp_savevm_start
+
+  * rbd : disable cache_writethtrough_until_flush with cache=unsafe
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 22 Aug 2016 11:55:38 +0200
+
 pve-qemu-kvm (2.6-1) unstable; urgency=medium
 
   * update to qemu 2.6.0

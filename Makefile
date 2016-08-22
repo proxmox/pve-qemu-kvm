@@ -1,7 +1,7 @@
 RELEASE=4.2
 
 # also update debian/changelog
-KVMVER=2.6
+KVMVER=2.6.1
 KVMPKGREL=1
 
 KVMPACKAGE=pve-qemu-kvm
@@ -9,7 +9,7 @@ KVMDIR=qemu-kvm
 KVMSRC=${KVMDIR}-src.tar.gz
 
 ARCH=amd64
-GITVERSION:=$(shell cat .git/refs/heads/master)
+GITVERSION:=$(shell git rev-parse master)
 
 DEBS=							\
 ${KVMPACKAGE}-dbg_${KVMVER}-${KVMPKGREL}_${ARCH}.deb	\
@@ -21,7 +21,7 @@ all: ${DEBS}
 .PHONY: download
 download:
 	rm -rf ${KVMDIR} ${KVMSRC}
-	git clone --depth=1 git://git.qemu-project.org/qemu.git -b v2.6.0 ${KVMDIR}
+	git clone --depth=1 git://git.qemu-project.org/qemu.git -b v${KVMVER} ${KVMDIR}
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
 .PHONY: deb
