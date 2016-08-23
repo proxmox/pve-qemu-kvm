@@ -1,3 +1,21 @@
+pve-qemu-kvm (2.2-28) unstable; urgency=low
+
+  * CVE-2016-5337: scsi: megasas: null terminate bios version buffer
+
+  * CVE-2016-5338: scsi: esp: check TI buffer index before read/write
+
+  * CVE-2016-6833: net: vmxnet3: check for device_active before write
+
+  * CVE-2016-6834: net: check fragment length during fragmentation
+
+  * CVE-2016-6835: net: vmxnet: check IP header length
+
+  * CVE-2016-6836: net: vmxnet: initialise local tx descriptor
+
+  * CVE-2016-6888: net: vmxnet: use g_new for pkt initialisation
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 23 Aug 2016 08:39:21 +0200
+
 pve-qemu-kvm (2.2-27) unstable; urgency=low
 
   * fix CVE-2016-3710
