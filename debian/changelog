@@ -1,3 +1,13 @@
+pve-qemu-kvm (2.6.1-2) unstable; urgency=medium
+
+  * virtio related live migration fixes
+
+  * vnc server surface refresh fix
+
+  * iscsi and network fixes
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 25 Aug 2016 10:35:52 +0200
+
 pve-qemu-kvm (2.6.1-1) unstable; urgency=medium
 
   * update to qemu 2.6.1
