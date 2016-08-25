@@ -1,0 +1,34 @@
+From e8bc5606ad11e053a7c9ca64ed1aeaed18be8e4e Mon Sep 17 00:00:00 2001
+From: Stefan Hajnoczi <stefanha@redhat.com>
+Date: Mon, 15 Aug 2016 13:54:16 +0100
+Subject: [PATCH 07/10] virtio: decrement vq->inuse in virtqueue_discard()
+
+virtqueue_discard() moves vq->last_avail_idx back so the element can be
+popped again.  It's necessary to decrement vq->inuse to avoid "leaking"
+the element count.
+
+Cc: qemu-stable@nongnu.org
+Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
+Reviewed-by: Michael S. Tsirkin <mst@redhat.com>
+Reviewed-by: Cornelia Huck <cornelia.huck@de.ibm.com>
+Reviewed-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/virtio/virtio.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/hw/virtio/virtio.c b/hw/virtio/virtio.c
+index 486147b..787849a 100644
+--- a/hw/virtio/virtio.c
++++ b/hw/virtio/virtio.c
+@@ -267,6 +267,7 @@ void virtqueue_discard(VirtQueue *vq, const VirtQueueElement *elem,
+                        unsigned int len)
+ {
+     vq->last_avail_idx--;
++    vq->inuse--;
+     virtqueue_unmap_sg(vq, elem, len);
+ }
+ 
+-- 
+2.1.4
+

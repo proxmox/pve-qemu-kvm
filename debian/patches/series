@@ -62,3 +62,8 @@ extra/0002-net-vmxnet3-check-for-device_active-before-write.patch
 extra/0003-net-vmxnet-use-g_new-for-pkt-initialisation.patch
 extra/0004-net-vmxnet-check-IP-header-length.patch
 extra/0005-net-vmxnet-initialise-local-tx-descriptor.patch
+extra/0006-virtio-recalculate-vq-inuse-after-migration.patch
+extra/0007-virtio-decrement-vq-inuse-in-virtqueue_discard.patch
+extra/0008-iscsi-pass-SCSI-status-back-for-SG_IO.patch
+extra/0009-net-limit-allocation-in-nc_sendv_compat.patch
+extra/0010-ui-fix-refresh-of-VNC-server-surface.patch
