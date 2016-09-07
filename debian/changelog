@@ -1,3 +1,16 @@
+pve-qemu-kvm (2.6.1-3) unstable; urgency=medium
+
+  * fix CVE-2016-7116: various 9pfs fixe
+
+  * fix CVE-2016-7155: scsi: check page count while initialising
+    descriptor rings
+
+  * fix CVE-2016-7156: scsi: pvscsi: avoid infinite loop while building SG list
+
+  * fix CVE-2016-7157: scsi: mptconfig: fix an assert expression
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 07 Sep 2016 12:14:02 +0200
+
 pve-qemu-kvm (2.6.1-2) unstable; urgency=medium
 
   * virtio related live migration fixes
