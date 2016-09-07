@@ -67,3 +67,9 @@ extra/0007-virtio-decrement-vq-inuse-in-virtqueue_discard.patch
 extra/0008-iscsi-pass-SCSI-status-back-for-SG_IO.patch
 extra/0009-net-limit-allocation-in-nc_sendv_compat.patch
 extra/0010-ui-fix-refresh-of-VNC-server-surface.patch
+extra/0001-9pfs-forbid-illegal-path-names.patch
+extra/0002-9pfs-forbid-.-and-.-in-file-names.patch
+extra/0003-9pfs-handle-walk-of-.-in-the-root-directory.patch
+extra/CVE-2016-7155-scsi-check-page-count-while-initialising-descriptor-.patch
+extra/CVE-2016-7156-scsi-pvscsi-avoid-infinite-loop-while-building-SG-li.patch
+extra/CVE-2016-7157-scsi-mptconfig-fix-an-assert-expression.patch
