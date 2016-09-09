@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.7.0-1) unstable; urgency=medium
+
+  * update to qemu 2.7.0
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 09 Sep 2016 15:55:35 +0200
+
 pve-qemu-kvm (2.6.2-2) unstable; urgency=medium
 
   * fix CVE-2016-7466: memory leak in usb_xhci_exit

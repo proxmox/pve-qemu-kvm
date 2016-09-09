@@ -77,7 +77,6 @@ install: build
 	mv $(destdir)/usr/share/man/man1/qemu.1 $(destdir)/usr/share/man/man1/kvm.1
 
 	# Install the userspace utilities
-	install -m 0755 scripts/kvm/kvm_stat $(destdir)/usr/bin/
 	install -s -m 0755 vma $(destdir)/usr/bin/
 
 	install -D -m 0755 $(CURDIR)/debian/kvm-ifup $(destdir)/etc/kvm/kvm-ifup

@@ -1,7 +1,7 @@
-From 63b3b17a2ae5d373f49191bb0828b5dc9128b04b Mon Sep 17 00:00:00 2001
+From 42cf33b03e7f20cd9fe3f7cefbc3cc39f7a7cdeb Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:32:11 +0100
-Subject: [PATCH 09/55] qapi: modify spice query
+Subject: [PATCH 09/41] qapi: modify spice query
 
 Provide the last ticket in the SpiceInfo struct optionally.
 ---
@@ -10,10 +10,10 @@ Provide the last ticket in the SpiceInfo struct optionally.
  2 files changed, 8 insertions(+)
 
 diff --git a/qapi-schema.json b/qapi-schema.json
-index 0e97da1..f9ccfe4 100644
+index 63507f5..518c2ea 100644
 --- a/qapi-schema.json
 +++ b/qapi-schema.json
-@@ -1192,11 +1192,14 @@
+@@ -1253,11 +1253,14 @@
  #
  # @channels: a list of @SpiceChannel for each active spice channel
  #

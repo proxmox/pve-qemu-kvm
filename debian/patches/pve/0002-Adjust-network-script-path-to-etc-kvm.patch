@@ -1,17 +1,17 @@
-From 896141c8e486d45be140e53b395f81866b7af776 Mon Sep 17 00:00:00 2001
+From 3f71a11efda66b9145afa0015af1d5a2bc5e5bb2 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:16:49 +0100
-Subject: [PATCH 02/55] Adjust network script path to /etc/kvm/
+Subject: [PATCH 02/41] Adjust network script path to /etc/kvm/
 
 ---
  include/net/net.h | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/include/net/net.h b/include/net/net.h
-index 73e4c46..4267008 100644
+index e8d9e9e..375e81d 100644
 --- a/include/net/net.h
 +++ b/include/net/net.h
-@@ -198,8 +198,9 @@ void qmp_netdev_add(QDict *qdict, QObject **ret, Error **errp);
+@@ -216,8 +216,9 @@ void qmp_netdev_add(QDict *qdict, QObject **ret, Error **errp);
  int net_hub_id_for_client(NetClientState *nc, int *id);
  NetClientState *net_hub_port_find(int hub_id);
  

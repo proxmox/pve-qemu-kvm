@@ -1,17 +1,17 @@
-From bf9ce905d69ec3ac335d69a5ac578a52a96da204 Mon Sep 17 00:00:00 2001
+From 060fc3faed82c4f1bfe7fea3bea8b7bd39f4de81 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:18:46 +0100
-Subject: [PATCH 04/55] qemu-img: return success on info without snapshots
+Subject: [PATCH 04/41] qemu-img: return success on info without snapshots
 
 ---
  qemu-img.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/qemu-img.c b/qemu-img.c
-index 46f2a6d..418e2d6 100644
+index f204d041..99be68f 100644
 --- a/qemu-img.c
 +++ b/qemu-img.c
-@@ -2361,7 +2361,8 @@ static int img_info(int argc, char **argv)
+@@ -2389,7 +2389,8 @@ static int img_info(int argc, char **argv)
  
      list = collect_image_info_list(image_opts, filename, fmt, chain);
      if (!list) {

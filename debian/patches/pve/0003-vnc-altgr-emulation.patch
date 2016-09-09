@@ -1,17 +1,17 @@
-From 4d774ad7b71342c5e3ba2f1f5ac9d051eb835270 Mon Sep 17 00:00:00 2001
+From 4429be6a1a4ba5320f4ce61ac8f874bfc4ec196e Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:17:38 +0100
-Subject: [PATCH 03/55] vnc: altgr emulation
+Subject: [PATCH 03/41] vnc: altgr emulation
 
 ---
- ui/vnc.c | 24 +++++++++++++++++++++++-
- 1 file changed, 23 insertions(+), 1 deletion(-)
+ ui/vnc.c | 26 +++++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
 
 diff --git a/ui/vnc.c b/ui/vnc.c
-index 3e89dad..88a5824 100644
+index d1087c9..8d7d435 100644
 --- a/ui/vnc.c
 +++ b/ui/vnc.c
-@@ -1711,6 +1711,10 @@ static void kbd_leds(void *opaque, int ledstate)
+@@ -1729,6 +1729,10 @@ static void kbd_leds(void *opaque, int ledstate)
  
  static void do_key_event(VncState *vs, int down, int keycode, int sym)
  {
@@ -22,7 +22,7 @@ index 3e89dad..88a5824 100644
      /* QEMU console switch */
      switch(keycode) {
      case 0x2a:                          /* Left Shift */
-@@ -1791,7 +1795,24 @@ static void do_key_event(VncState *vs, int down, int keycode, int sym)
+@@ -1809,8 +1813,27 @@ static void do_key_event(VncState *vs, int down, int keycode, int sym)
      }
  
      if (qemu_console_is_graphic(NULL)) {
@@ -36,18 +36,21 @@ index 3e89dad..88a5824 100644
 +	if (emul_altgr) {
 +            reset_keys(vs);
 +            qemu_input_event_send_key_number(vs->vd->dcl.con, 0xb8, true);
++            qemu_input_event_send_key_delay(vs->vd->key_delay_ms);
 +	}
 +
          qemu_input_event_send_key_number(vs->vd->dcl.con, keycode, down);
+         qemu_input_event_send_key_delay(vs->vd->key_delay_ms);
 +
 +	if (emul_altgr) {
 +             qemu_input_event_send_key_number(vs->vd->dcl.con, 0xb8, false);
++             qemu_input_event_send_key_delay(vs->vd->key_delay_ms);
 +	}
 +
      } else {
          bool numlock = vs->modifiers_state[0x45];
          bool control = (vs->modifiers_state[0x1d] ||
-@@ -1930,7 +1951,8 @@ static void key_event(VncState *vs, int down, uint32_t sym)
+@@ -1950,7 +1973,8 @@ static void key_event(VncState *vs, int down, uint32_t sym)
          lsym = lsym - 'A' + 'a';
      }
  

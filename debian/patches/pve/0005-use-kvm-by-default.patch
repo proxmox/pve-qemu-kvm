@@ -1,17 +1,17 @@
-From c727dd8049e617a814e6b537648e0145190084e2 Mon Sep 17 00:00:00 2001
+From ebe8b0bb12b1725e9a56e5e65fe5b295d5ac90aa Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:27:05 +0100
-Subject: [PATCH 05/55] use kvm by default
+Subject: [PATCH 05/41] use kvm by default
 
 ---
  accel.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/accel.c b/accel.c
-index 0510b90..afe9a0d 100644
+index 403eb5e..dd2ebea 100644
 --- a/accel.c
 +++ b/accel.c
-@@ -88,8 +88,8 @@ int configure_accelerator(MachineState *ms)
+@@ -88,8 +88,8 @@ void configure_accelerator(MachineState *ms)
  
      p = qemu_opt_get(qemu_get_machine_opts(), "accel");
      if (p == NULL) {

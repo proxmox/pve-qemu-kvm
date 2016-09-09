@@ -1,7 +1,7 @@
-From 5a03baace683a297371dbe36795a517d68fc2727 Mon Sep 17 00:00:00 2001
+From 6dad22d8b527594d14987d1118f95179c0ff5aaa Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Mon, 11 Mar 2013 07:07:46 +0100
-Subject: [PATCH 12/55] vma: add verify command
+Subject: [PATCH 12/41] vma: add verify command
 
 Users wants to verify the archive after backup.
 
@@ -19,10 +19,10 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
  3 files changed, 147 insertions(+), 30 deletions(-)
 
 diff --git a/vma-reader.c b/vma-reader.c
-index bc36cba..9d92c6a 100644
+index 51dd8fe..2aafb26 100644
 --- a/vma-reader.c
 +++ b/vma-reader.c
-@@ -53,6 +53,8 @@ struct VmaReader {
+@@ -45,6 +45,8 @@ struct VmaReader {
      time_t start_time;
      int64_t cluster_count;
      int64_t clusters_read;
@@ -31,7 +31,7 @@ index bc36cba..9d92c6a 100644
      int clusters_read_per;
  };
  
-@@ -433,6 +435,27 @@ VmaDeviceInfo *vma_reader_get_device_info(VmaReader *vmar, guint8 dev_id)
+@@ -425,6 +427,27 @@ VmaDeviceInfo *vma_reader_get_device_info(VmaReader *vmar, guint8 dev_id)
      return NULL;
  }
  
@@ -59,7 +59,7 @@ index bc36cba..9d92c6a 100644
  int vma_reader_register_bs(VmaReader *vmar, guint8 dev_id, BlockDriverState *bs,
                             bool write_zeroes, Error **errp)
  {
-@@ -449,17 +472,7 @@ int vma_reader_register_bs(VmaReader *vmar, guint8 dev_id, BlockDriverState *bs,
+@@ -447,17 +470,7 @@ int vma_reader_register_bs(VmaReader *vmar, guint8 dev_id, BlockDriverState *bs,
          return -1;
      }
  
@@ -78,7 +78,7 @@ index bc36cba..9d92c6a 100644
  
      return 0;
  }
-@@ -526,9 +539,10 @@ static int restore_write_data(VmaReader *vmar, guint8 dev_id,
+@@ -524,9 +537,10 @@ static int restore_write_data(VmaReader *vmar, guint8 dev_id,
      }
      return 0;
  }
@@ -90,7 +90,7 @@ index bc36cba..9d92c6a 100644
  {
      assert(vmar);
      assert(buf);
-@@ -553,7 +567,7 @@ static int restore_extent(VmaReader *vmar, unsigned char *buf,
+@@ -551,7 +565,7 @@ static int restore_extent(VmaReader *vmar, unsigned char *buf,
  
          if (dev_id != vmar->vmstate_stream) {
              bs = rstate->bs;
@@ -99,7 +99,7 @@ index bc36cba..9d92c6a 100644
                  error_setg(errp, "got wrong dev id %d", dev_id);
                  return -1;
              }
-@@ -609,10 +623,13 @@ static int restore_extent(VmaReader *vmar, unsigned char *buf,
+@@ -607,10 +621,13 @@ static int restore_extent(VmaReader *vmar, unsigned char *buf,
                  return -1;
              }
  
@@ -117,7 +117,7 @@ index bc36cba..9d92c6a 100644
              }
  
              start += VMA_CLUSTER_SIZE;
-@@ -642,26 +659,37 @@ static int restore_extent(VmaReader *vmar, unsigned char *buf,
+@@ -640,26 +657,37 @@ static int restore_extent(VmaReader *vmar, unsigned char *buf,
                          return -1;
                      }
  
@@ -165,7 +165,7 @@ index bc36cba..9d92c6a 100644
                          }
                      }
                  }
-@@ -679,8 +707,9 @@ static int restore_extent(VmaReader *vmar, unsigned char *buf,
+@@ -677,8 +705,9 @@ static int restore_extent(VmaReader *vmar, unsigned char *buf,
      return 0;
  }
  
@@ -177,7 +177,7 @@ index bc36cba..9d92c6a 100644
  {
      assert(vmar);
      assert(vmar->head_data);
-@@ -747,7 +776,7 @@ int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,
+@@ -745,7 +774,7 @@ int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,
          }
  
          if (restore_extent(vmar, buf, extent_size, vmstate_fd, verbose,
@@ -186,7 +186,7 @@ index bc36cba..9d92c6a 100644
              return -1;
          }
  
-@@ -794,6 +823,38 @@ int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,
+@@ -792,6 +821,38 @@ int vma_reader_restore(VmaReader *vmar, int vmstate_fd, bool verbose,
          }
      }
  
@@ -226,10 +226,10 @@ index bc36cba..9d92c6a 100644
 +}
 +
 diff --git a/vma.c b/vma.c
-index 86c117b..3ad2f18 100644
+index 8014090..d55874a 100644
 --- a/vma.c
 +++ b/vma.c
-@@ -34,6 +34,7 @@ static void help(void)
+@@ -28,6 +28,7 @@ static void help(void)
          "vma list <filename>\n"
          "vma create <filename> [-c config] <archive> pathname ...\n"
          "vma extract <filename> [-r <fifo>] <targetdir>\n"
@@ -237,7 +237,7 @@ index 86c117b..3ad2f18 100644
          ;
  
      printf("%s", help_msg);
-@@ -338,6 +339,58 @@ static int extract_content(int argc, char **argv)
+@@ -332,6 +333,58 @@ static int extract_content(int argc, char **argv)
      return ret;
  }
  
@@ -296,7 +296,7 @@ index 86c117b..3ad2f18 100644
  typedef struct BackupJob {
      BlockDriverState *bs;
      int64_t len;
-@@ -575,6 +628,8 @@ int main(int argc, char **argv)
+@@ -578,6 +631,8 @@ int main(int argc, char **argv)
          return create_archive(argc, argv);
      } else if (!strcmp(cmdname, "extract")) {
          return extract_content(argc, argv);

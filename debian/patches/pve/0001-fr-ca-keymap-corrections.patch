@@ -1,7 +1,7 @@
-From 0dc734b8304318e7a4f9a0ca756f72fc7d0f543e Mon Sep 17 00:00:00 2001
+From 9e0dc08fa276f0f758d9c5fe1e47ef96ee59b069 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:15:49 +0100
-Subject: [PATCH 01/55] fr-ca keymap corrections
+Subject: [PATCH 01/41] fr-ca keymap corrections
 
 ---
  pc-bios/keymaps/fr-ca | 9 +++++++++

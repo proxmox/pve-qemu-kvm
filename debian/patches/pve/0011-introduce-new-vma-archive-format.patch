@@ -1,7 +1,7 @@
-From 1ef80c8a5ce360bbff1a9daa1c191e9238855408 Mon Sep 17 00:00:00 2001
+From 9cb2f2d61ebf1c28b19bc2df78879431b735f460 Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
-Subject: [PATCH 11/55] introduce new vma archive format
+Subject: [PATCH 11/41] introduce new vma archive format
 
 This is a very simple archive format, see docs/specs/vma_spec.txt
 
@@ -9,30 +9,30 @@ Signed-off-by: Dietmar Maurer <dietmar@proxmox.com>
 ---
  Makefile      |   3 +-
  Makefile.objs |   1 +
- vma-reader.c  | 799 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- vma-writer.c  | 876 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- vma.c         | 582 ++++++++++++++++++++++++++++++++++++++
+ vma-reader.c  | 797 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ vma-writer.c  | 870 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ vma.c         | 585 +++++++++++++++++++++++++++++++++++++++
  vma.h         | 146 ++++++++++
- 6 files changed, 2406 insertions(+), 1 deletion(-)
+ 6 files changed, 2401 insertions(+), 1 deletion(-)
  create mode 100644 vma-reader.c
  create mode 100644 vma-writer.c
  create mode 100644 vma.c
  create mode 100644 vma.h
 
 diff --git a/Makefile b/Makefile
-index 1d076a9..4e41399 100644
+index 50b4b3a..d92d905 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -167,7 +167,7 @@ ifneq ($(wildcard config-host.mak),)
- include $(SRC_PATH)/tests/Makefile
+@@ -165,7 +165,7 @@ ifneq ($(wildcard config-host.mak),)
+ include $(SRC_PATH)/tests/Makefile.include
  endif
  
 -all: $(DOCS) $(TOOLS) $(HELPERS-y) recurse-all modules
 +all: $(DOCS) $(TOOLS) vma$(EXESUF) $(HELPERS-y) recurse-all modules
  
- config-host.h: config-host.h-timestamp
- config-host.h-timestamp: config-host.mak
-@@ -237,6 +237,7 @@ qemu-img.o: qemu-img-cmds.h
+ qemu-version.h: FORCE
+ 	$(call quiet-command, \
+@@ -256,6 +256,7 @@ qemu-img.o: qemu-img-cmds.h
  qemu-img$(EXESUF): qemu-img.o $(block-obj-y) $(crypto-obj-y) $(io-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
  qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) $(crypto-obj-y) $(io-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
  qemu-io$(EXESUF): qemu-io.o $(block-obj-y) $(crypto-obj-y) $(io-obj-y) $(qom-obj-y) libqemuutil.a libqemustub.a
@@ -41,7 +41,7 @@ index 1d076a9..4e41399 100644
  qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o libqemuutil.a libqemustub.a
  
 diff --git a/Makefile.objs b/Makefile.objs
-index 8f705f6..5fd0bc4 100644
+index 6d5ddcf..845edd0 100644
 --- a/Makefile.objs
 +++ b/Makefile.objs
 @@ -15,6 +15,7 @@ block-obj-$(CONFIG_POSIX) += aio-posix.o
@@ -54,10 +54,10 @@ index 8f705f6..5fd0bc4 100644
  
 diff --git a/vma-reader.c b/vma-reader.c
 new file mode 100644
-index 0000000..bc36cba
+index 0000000..51dd8fe
 --- /dev/null
 +++ b/vma-reader.c
-@@ -0,0 +1,799 @@
+@@ -0,0 +1,797 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -71,14 +71,7 @@ index 0000000..bc36cba
 + *
 + */
 +
-+#include <stdio.h>
-+#include <errno.h>
-+#include <unistd.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
++#include "qemu/osdep.h"
 +#include <glib.h>
 +#include <uuid/uuid.h>
 +
@@ -87,8 +80,7 @@ index 0000000..bc36cba
 +#include "qemu/ratelimit.h"
 +#include "vma.h"
 +#include "block/block.h"
-+
-+#define BITS_PER_LONG  (sizeof(unsigned long) * CHAR_BIT)
++#include "sysemu/block-backend.h"
 +
 +static unsigned char zero_vma_block[VMA_BLOCK_SIZE];
 +
@@ -502,7 +494,13 @@ index 0000000..bc36cba
 +    assert(vmar->rstate[dev_id].bs == NULL);
 +
 +    int64_t size = bdrv_getlength(bs);
-+    if (size != vmar->devinfo[dev_id].size) {
++    int64_t size_diff = size - vmar->devinfo[dev_id].size;
++
++    /* storage types can have different size restrictions, so it
++     * is not always possible to create an image with exact size.
++     * So we tolerate a size difference up to 4MB.
++     */
++    if ((size_diff < 0) || (size_diff > 4*1024*1024)) {
 +        error_setg(errp, "vma_reader_register_bs for stream %s failed - "
 +                   "unexpected size %zd != %zd", vmar->devinfo[dev_id].devname,
 +                   size, vmar->devinfo[dev_id].size);
@@ -859,10 +857,10 @@ index 0000000..bc36cba
 +
 diff --git a/vma-writer.c b/vma-writer.c
 new file mode 100644
-index 0000000..8a3fa1c
+index 0000000..b0cf529
 --- /dev/null
 +++ b/vma-writer.c
-@@ -0,0 +1,876 @@
+@@ -0,0 +1,870 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -876,22 +874,16 @@ index 0000000..8a3fa1c
 + *
 + */
 +
-+#include <stdio.h>
-+#include <errno.h>
-+#include <unistd.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
++#include "qemu/osdep.h"
 +#include <glib.h>
 +#include <uuid/uuid.h>
 +
-+#include "qemu-common.h"
 +#include "vma.h"
 +#include "block/block.h"
 +#include "monitor/monitor.h"
 +#include "qemu/main-loop.h"
++#include "qemu/coroutine.h"
++#include "qemu/cutils.h"
 +
 +#define DEBUG_VMA 0
 +
@@ -1084,7 +1076,7 @@ index 0000000..8a3fa1c
 +    VmaWriter *vmaw = opaque;
 +
 +    DPRINTF("vma_co_continue_write\n");
-+    qemu_coroutine_enter(vmaw->co_writer, NULL);
++    qemu_coroutine_enter(vmaw->co_writer);
 +}
 +
 +static ssize_t coroutine_fn
@@ -1102,7 +1094,7 @@ index 0000000..8a3fa1c
 +
 +    vmaw->co_writer = qemu_coroutine_self();
 +
-+    aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, NULL, vma_co_continue_write, vmaw);
++    aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, false, NULL, vma_co_continue_write, vmaw);
 +
 +    DPRINTF("vma_co_write wait until writable\n");
 +    qemu_coroutine_yield();
@@ -1129,7 +1121,7 @@ index 0000000..8a3fa1c
 +        }
 +    }
 +
-+    aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, NULL, NULL, NULL);
++    aio_set_fd_handler(qemu_get_aio_context(), vmaw->fd, false, NULL, NULL, NULL);
 +
 +    vmaw->co_writer = NULL;
 +
@@ -1741,10 +1733,10 @@ index 0000000..8a3fa1c
 +}
 diff --git a/vma.c b/vma.c
 new file mode 100644
-index 0000000..86c117b
+index 0000000..8014090
 --- /dev/null
 +++ b/vma.c
-@@ -0,0 +1,582 @@
+@@ -0,0 +1,585 @@
 +/*
 + * VMA: Virtual Machine Archive
 + *
@@ -1758,20 +1750,14 @@ index 0000000..86c117b
 + *
 + */
 +
-+#include <stdio.h>
-+#include <errno.h>
-+#include <unistd.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
++#include "qemu/osdep.h"
 +#include <glib.h>
 +
 +#include "vma.h"
 +#include "qemu-common.h"
 +#include "qemu/error-report.h"
 +#include "qemu/main-loop.h"
++#include "sysemu/char.h" /* qstring_from_str */
 +
 +static void help(void)
 +{
@@ -2044,7 +2030,7 @@ index 0000000..86c117b
 +            }
 +
 +            BlockDriverState *bs = bdrv_new();
-+            if (errp || bdrv_open(&bs, devfn, NULL, NULL, flags, NULL, &errp)) {
++            if (errp || bdrv_open(&bs, devfn, NULL, NULL, flags, &errp)) {
 +                g_error("can't open file %s - %s", devfn,
 +                        error_get_pretty(errp));
 +            }
@@ -2140,7 +2126,7 @@ index 0000000..86c117b
 +
 +static int create_archive(int argc, char **argv)
 +{
-+    int i, c, res;
++    int i, c;
 +    int verbose = 0;
 +    const char *archivename;
 +    GList *config_files = NULL;
@@ -2209,12 +2195,11 @@ index 0000000..86c117b
 +        char *devname = NULL;
 +        path = extract_devname(path, &devname, ind++);
 +
-+        BlockDriver *drv = NULL;
 +        Error *errp = NULL;
-+        BlockDriverState *bs = bdrv_new();
++        BlockDriverState *bs;
 +
-+        res = bdrv_open(&bs, path, NULL, NULL, BDRV_O_CACHE_WB , drv, &errp);
-+        if (res < 0) {
++        bs = bdrv_open(path, NULL, NULL, 0, &errp);
++        if (!bs) {
 +            unlink(archivename);
 +            g_error("bdrv_open '%s' failed - %s", path, error_get_pretty(errp));
 +        }
@@ -2231,8 +2216,8 @@ index 0000000..86c117b
 +        job->vmaw = vmaw;
 +        job->dev_id = dev_id;
 +
-+        Coroutine *co = qemu_coroutine_create(backup_run);
-+        qemu_coroutine_enter(co, job);
++        Coroutine *co = qemu_coroutine_create(backup_run, job);
++        qemu_coroutine_enter(co);
 +    }
 +
 +    VmaStatus vmastat;
@@ -2269,6 +2254,16 @@ index 0000000..86c117b
 +
 +        if (vmastat.closed) {
 +            break;
++        }
++    } else {
++        Coroutine *co = qemu_coroutine_create(backup_run_empty, vmaw);
++        qemu_coroutine_enter(co);
++        while (1) {
++            main_loop_wait(false);
++            vma_writer_get_status(vmaw, &vmastat);
++            if (vmastat.closed) {
++                    break;
++            }
 +        }
 +    }
 +
