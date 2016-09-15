@@ -53,6 +53,7 @@ pve/0052-vnc-refactor-to-QIOChannelSocket.patch
 pve/0053-vma-use-BlockBackend-on-extract.patch
 pve/0054-rbd-disable-rbd_cache_writethrough_until_flush-with-.patch
 pve/0055-enable-cache-unsafe-for-vma-extract_content-and-qmp_.patch
+pve/0056-qmp_snapshot_drive-add-aiocontext.patch
 #see https://bugs.launchpad.net/qemu/+bug/1488363?comments=all
 extra/0001-Revert-target-i386-disable-LINT0-after-reset.patch
 extra/0002-scsi-esp-fix-migration.patch
