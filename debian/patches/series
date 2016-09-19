@@ -74,3 +74,6 @@ extra/0003-9pfs-handle-walk-of-.-in-the-root-directory.patch
 extra/CVE-2016-7155-scsi-check-page-count-while-initialising-descriptor-.patch
 extra/CVE-2016-7156-scsi-pvscsi-avoid-infinite-loop-while-building-SG-li.patch
 extra/CVE-2016-7157-scsi-mptconfig-fix-an-assert-expression.patch
+extra/CVE-2016-7170-vmsvga-correct-bitmap-and-pixmap-size-checks.patch
+extra/CVE-2016-7421-scsi-pvscsi-limit-process-IO-loop-to-ring-size.patch
+extra/CVE-2016-7423-scsi-mptsas-use-g_new0-to-allocate-MPTSASRequest-obj.patch
