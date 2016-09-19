@@ -77,3 +77,4 @@ extra/CVE-2016-7157-scsi-mptconfig-fix-an-assert-expression.patch
 extra/CVE-2016-7170-vmsvga-correct-bitmap-and-pixmap-size-checks.patch
 extra/CVE-2016-7421-scsi-pvscsi-limit-process-IO-loop-to-ring-size.patch
 extra/CVE-2016-7423-scsi-mptsas-use-g_new0-to-allocate-MPTSASRequest-obj.patch
+extra/x86-lapic-Load-LAPIC-state-at-post_load.patch
