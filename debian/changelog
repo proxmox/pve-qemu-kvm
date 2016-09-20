@@ -1,3 +1,16 @@
+pve-qemu-kvm (2.6.1-6) unstable; urgency=medium
+
+  * fix #615: Windows guests suddenly hangs after couple times of migration
+
+  * fix CVE-2016-7170: vmsvga: correct bitmap and pixmap size checks
+
+  * fix CVE-2016-7421: scsi: pvscsi: limit process IO loop to ring size
+
+  * fix CVE-2016-7423: scsi: mptsas: use g_new0 to allocate MPTSASRequest
+    object
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 20 Sep 2016 09:42:12 +0200
+
 pve-qemu-kvm (2.6.1-5) unstable; urgency=medium
 
   * qmp_snapshot_drive : add aiocontext
