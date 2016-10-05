@@ -78,3 +78,8 @@ extra/CVE-2016-7170-vmsvga-correct-bitmap-and-pixmap-size-checks.patch
 extra/CVE-2016-7421-scsi-pvscsi-limit-process-IO-loop-to-ring-size.patch
 extra/CVE-2016-7423-scsi-mptsas-use-g_new0-to-allocate-MPTSASRequest-obj.patch
 extra/x86-lapic-Load-LAPIC-state-at-post_load.patch
+extra/CVE-2016-7161-hw-net-Fix-a-heap-overflow-in-xlnx.xps-ethernetlite.patch
+extra/CVE-2016-7422-virtio-add-check-for-descriptor-s-mapped-address.patch
+extra/CVE-2016-7907-net-imx-limit-buffer-descriptor-count.patch
+extra/CVE-2016-7908-net-mcf-limit-buffer-descriptor-count.patch
+extra/CVE-2016-7909-net-pcnet-check-rx-tx-descriptor-ring-length.patch
