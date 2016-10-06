@@ -1,3 +1,17 @@
+pve-qemu-kvm (2.6.1-7) unstable; urgency=medium
+
+  * fix CVE-2016-7161: hw/net: Fix a heap overflow in xlnx.xps-ethernetlite
+
+  * fix CVE-2016-7422: virtio: add check for descriptor's mapped address
+
+  * fix CVE-2016-7907: net: imx: limit buffer descriptor count
+
+  * fix CVE-2016-7908: net: mcf: limit buffer descriptor count
+
+  * fix CVE-2016-7909: net: pcnet: check rx/tx descriptor ring length
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 06 Oct 2016 08:11:52 +0200
+
 pve-qemu-kvm (2.6.1-6) unstable; urgency=medium
 
   * fix #615: Windows guests suddenly hangs after couple times of migration
