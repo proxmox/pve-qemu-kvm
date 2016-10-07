@@ -69,3 +69,4 @@ extra/CVE-2016-7422-virtio-add-check-for-descriptor-s-mapped-address.patch
 extra/CVE-2016-7907-net-imx-limit-buffer-descriptor-count.patch
 extra/CVE-2016-7908-net-mcf-limit-buffer-descriptor-count.patch
 extra/CVE-2016-7909-net-pcnet-check-rx-tx-descriptor-ring-length.patch
+extra/CVE-2016-7466-usb-xhci-fix-memory-leak-in-usb_xhci_exit.patch
