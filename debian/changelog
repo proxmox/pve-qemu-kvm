@@ -1,3 +1,15 @@
+pve-qemu-kvm (2.7.0-2) unstable; urgency=medium
+
+  * fix a crash when adding iothreads
+
+  * fix CVE-2016-8576: xhci: limit the number of link trbs we are willing to process
+
+  * fix CVE-2016-8577: 9pfs: fix potential host memory leak in v9fs_read
+
+  * fix CVE-2016-8578: 9pfs: allocate space for guest originated empty strings
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 13 Oct 2016 15:20:52 +0200
+
 pve-qemu-kvm (2.7.0-1) unstable; urgency=medium
 
   * update to qemu 2.7.0
