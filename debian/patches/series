@@ -45,6 +45,7 @@ extra/x86-lapic-Load-LAPIC-state-at-post_load.patch
 extra/0001-Revert-target-i386-disable-LINT0-after-reset.patch
 extra/0002-net-vmxnet-initialise-local-tx-descriptor.patch
 extra/0003-net-limit-allocation-in-nc_sendv_compat.patch
+extra/0004-qmp-fix-object-add-assert-without-props
 extra/CVE-2016-7155-scsi-check-page-count-while-initialising-descriptor-.patch
 extra/CVE-2016-7156-scsi-pvscsi-avoid-infinite-loop-while-building-SG-li.patch
 extra/CVE-2016-7157-scsi-mptconfig-fix-an-assert-expression.patch
