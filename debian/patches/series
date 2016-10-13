@@ -59,3 +59,6 @@ extra/CVE-2016-7908-net-mcf-limit-buffer-descriptor-count.patch
 extra/CVE-2016-7909-net-pcnet-check-rx-tx-descriptor-ring-length.patch
 extra/CVE-2016-7994-virtio-gpu-fix-memory-leak-in-virtio_gpu_resource_cr.patch
 extra/CVE-2016-7995-usb-ehci-fix-memory-leak-in-ehci_process_itd.patch
+extra/CVE-2016-8576-xhci-limit-the-number-of-link-trbs-we-are-willing-to.patch
+extra/CVE-2016-8577-9pfs-fix-potential-host-memory-leak-in-v9fs_read.patch
+extra/CVE-2016-8578-9pfs-allocate-space-for-guest-originated-empty-strin.patch
