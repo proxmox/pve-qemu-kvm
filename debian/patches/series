@@ -63,3 +63,5 @@ extra/CVE-2016-7995-usb-ehci-fix-memory-leak-in-ehci_process_itd.patch
 extra/CVE-2016-8576-xhci-limit-the-number-of-link-trbs-we-are-willing-to.patch
 extra/CVE-2016-8577-9pfs-fix-potential-host-memory-leak-in-v9fs_read.patch
 extra/CVE-2016-8578-9pfs-allocate-space-for-guest-originated-empty-strin.patch
+extra/CVE-2016-8668-net-rocker-set-limit-to-DMA-buffer-size.patch
+extra/CVE-2016-8669-char-serial-check-divider-value-against-baud-base.patch
