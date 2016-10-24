@@ -41,6 +41,7 @@ pve/0040-enable-cache-unsafe-for-vma-extract_content-and-qmp_.patch
 pve/0041-savevm-async-updates.patch
 pve/0042-qmp_snapshot_drive-add-aiocontext.patch
 pve/0043-vma-sizes-passed-to-blk_co_preadv-should-be-bytes-no.patch
+pve/0044-glusterfs-daemonize.patch
 #see https://bugs.launchpad.net/qemu/+bug/1488363?comments=all
 extra/x86-lapic-Load-LAPIC-state-at-post_load.patch
 extra/0001-Revert-target-i386-disable-LINT0-after-reset.patch
