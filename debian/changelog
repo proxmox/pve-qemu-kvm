@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.7.0-4) unstable; urgency=medium
+
+  * fix #1178: glusterfs daemonization problem
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 24 Oct 2016 09:35:49 +0200
+
 pve-qemu-kvm (2.7.0-3) unstable; urgency=medium
 
   * fix a crash when doing an offline backup via vma
