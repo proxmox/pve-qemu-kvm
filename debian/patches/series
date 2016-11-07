@@ -66,3 +66,11 @@ extra/CVE-2016-8577-9pfs-fix-potential-host-memory-leak-in-v9fs_read.patch
 extra/CVE-2016-8578-9pfs-allocate-space-for-guest-originated-empty-strin.patch
 extra/CVE-2016-8668-net-rocker-set-limit-to-DMA-buffer-size.patch
 extra/CVE-2016-8669-char-serial-check-divider-value-against-baud-base.patch
+extra/CVE-2016-8910-net-rtl8139-limit-processing-of-ring-descriptors.patch
+extra/CVE-2016-8909-audio-intel-hda-check-stream-entry-count-during-tran.patch
+extra/CVE-2016-9103-9pfs-fix-information-leak-in-xattr-read.patch
+extra/CVE-2016-9101-net-eepro100-fix-memory-leak-in-device-uninit.patch
+extra/CVE-2016-9105-9pfs-fix-memory-leak-in-v9fs_link.patch
+extra/CVE-2016-9102-9pfs-fix-memory-leak-in-v9fs_xattrcreate.patch
+extra/CVE-2016-9106-9pfs-fix-memory-leak-in-v9fs_write.patch
+extra/CVE-2016-9104-9pfs-fix-integer-overflow-issue-in-xattr-read-write.patch
