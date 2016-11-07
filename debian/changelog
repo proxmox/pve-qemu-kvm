@@ -1,3 +1,27 @@
+pve-qemu-kvm (2.7.0-5) unstable; urgency=medium
+
+  * fix a missing gluster dependency
+
+  * fix #1193: RAM state of snapshots with RAM getting truncated at creation
+
+  * fix CVE-2016-8909: audio: intel-hda: check stream entry count during transfer
+
+  * fix CVE-2016-8910: net: rtl8139: limit processing of ring descriptors
+
+  * fix CVE-2016-9101: net: eepro100: fix memory leak in device uninit
+
+  * fix CVE-2016-9102: 9pfs: fix memory leak in v9fs_xattrcreate
+
+  * fix CVE-2016-9103: 9pfs: fix information leak in xattr read
+
+  * fix CVE-2016-9104: 9pfs: fix integer overflow issue in xattr read/write
+
+  * fix CVE-2016-9105: 9pfs: fix memory leak in v9fs_link
+
+  * fix CVE-2016-9106: 9pfs: fix memory leak in v9fs_write
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 07 Nov 2016 11:14:31 +0100
+
 pve-qemu-kvm (2.7.0-4) unstable; urgency=medium
 
   * fix #1178: glusterfs daemonization problem
