@@ -1,14 +1,14 @@
-From 8ba1bc13200b72a287554224b5aeb8cbf1bba156 Mon Sep 17 00:00:00 2001
+From b7bac74dd970eba47961cdaac3b219a2de7668b5 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Fri, 9 Sep 2016 15:21:19 +0200
-Subject: [PATCH 41/41] savevm-async updates
+Subject: [PATCH 41/44] savevm-async updates
 
 ---
- savevm-async.c | 99 +++++++++++++++++++++++++++++++++++++---------------------
- 1 file changed, 63 insertions(+), 36 deletions(-)
+ savevm-async.c | 76 +++++++++++++++++++++++++++++-----------------------------
+ 1 file changed, 38 insertions(+), 38 deletions(-)
 
 diff --git a/savevm-async.c b/savevm-async.c
-index 76cd8fa..fddb18c 100644
+index 76cd8fa..af86cbd 100644
 --- a/savevm-async.c
 +++ b/savevm-async.c
 @@ -20,6 +20,8 @@
@@ -52,7 +52,7 @@ index 76cd8fa..fddb18c 100644
      }
  
      return ret;
-@@ -151,21 +153,49 @@ static void save_snapshot_completed(void)
+@@ -151,21 +153,22 @@ static void save_snapshot_completed(void)
  static int block_state_close(void *opaque)
  {
      snap_state.file = NULL;
@@ -62,55 +62,30 @@ index 76cd8fa..fddb18c 100644
  
 -static ssize_t block_state_put_buffer(void *opaque, const uint8_t *buf,
 -                                      int64_t pos, size_t size)
-+typedef struct BlkRwCo {
-+    int64_t offset;
-+    QEMUIOVector *qiov;
-+    int ret;
-+} BlkRwCo;
-+
-+static void block_state_write_entry(void *opaque) {
-+    BlkRwCo *rwco = opaque;
-+    rwco->ret = blk_co_pwritev(snap_state.target, rwco->offset, rwco->qiov->size,
-+                               rwco->qiov, 0);
-+}
-+
 +static ssize_t block_state_writev_buffer(void *opaque, struct iovec *iov,
 +                                         int iovcnt, int64_t pos)
  {
 -    ssize_t ret;
-+    AioContext *aio_context;
-+    QEMUIOVector qiov;
-+    Coroutine *co;
-+    BlkRwCo rwco;
-+
-+    qemu_iovec_init_external(&qiov, iov, iovcnt);
-+
-+    rwco = (BlkRwCo) {
-+        .offset = pos,
-+        .qiov   = &qiov,
-+        .ret    = NOT_DONE,
-+    };
- 
+-
 -    assert(pos == snap_state.bs_pos);
-+    co = qemu_coroutine_create(&block_state_write_entry, &rwco);
-+    qemu_coroutine_enter(co);
++    int ret;
++    QEMUIOVector qiov;
  
 -    if ((ret = bdrv_pwrite(snap_state.bs, snap_state.bs_pos, buf, size)) > 0) {
 -        snap_state.bs_pos += ret;
-+    aio_context = blk_get_aio_context(snap_state.target);
-+    while (rwco.ret == NOT_DONE) {
-+        aio_poll(aio_context, true);
++    qemu_iovec_init_external(&qiov, iov, iovcnt);
++    ret = blk_co_pwritev(snap_state.target, pos, qiov.size, &qiov, 0);
++    if (ret < 0) {
++        return ret;
      }
- 
+-
 -    return ret;
-+    if (rwco.ret < 0) {
-+        return rwco.ret;
-+    }
++    snap_state.bs_pos += qiov.size;
 +    return qiov.size;
  }
  
  static int store_and_stop(void) {
-@@ -227,7 +257,7 @@ static void process_savevm_co(void *opaque)
+@@ -227,7 +230,7 @@ static void process_savevm_co(void *opaque)
          /* stop the VM if we get to the end of available space,
           * or if pending_size is just a few MB
           */
@@ -119,7 +94,7 @@ index 76cd8fa..fddb18c 100644
          if ((pending_size < 100000) ||
              ((snap_state.bs_pos + pending_size) >= maxlen)) {
              if (store_and_stop())
-@@ -244,7 +274,7 @@ static void process_savevm_co(void *opaque)
+@@ -244,7 +247,7 @@ static void process_savevm_co(void *opaque)
  }
  
  static const QEMUFileOps block_file_ops = {
@@ -128,7 +103,7 @@ index 76cd8fa..fddb18c 100644
      .close =          block_state_close,
  };
  
-@@ -254,7 +284,6 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
+@@ -254,7 +257,6 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
      Error *local_err = NULL;
  
      int bdrv_oflags = BDRV_O_RDWR | BDRV_O_NO_FLUSH;
@@ -136,7 +111,7 @@ index 76cd8fa..fddb18c 100644
  
      if (snap_state.state != SAVE_STATE_DONE) {
          error_set(errp, ERROR_CLASS_GENERIC_ERROR,
-@@ -284,13 +313,11 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
+@@ -284,13 +286,11 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
      }
  
      /* Open the image */
@@ -152,7 +127,7 @@ index 76cd8fa..fddb18c 100644
          error_set(errp, ERROR_CLASS_GENERIC_ERROR, "failed to open '%s'", statefile);
          goto restart;
      }
-@@ -304,9 +331,9 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
+@@ -304,9 +304,9 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
  
  
      error_setg(&snap_state.blocker, "block device is in use by savevm");
@@ -164,7 +139,7 @@ index 76cd8fa..fddb18c 100644
      qemu_coroutine_enter(co);
  
      return;
-@@ -457,8 +484,8 @@ void qmp_delete_drive_snapshot(const char *device, const char *name,
+@@ -457,8 +457,8 @@ void qmp_delete_drive_snapshot(const char *device, const char *name,
  static ssize_t loadstate_get_buffer(void *opaque, uint8_t *buf, int64_t pos,
                                      size_t size)
  {
@@ -175,7 +150,7 @@ index 76cd8fa..fddb18c 100644
      if (pos > maxlen) {
          return -EIO;
      }
-@@ -468,7 +495,7 @@ static ssize_t loadstate_get_buffer(void *opaque, uint8_t *buf, int64_t pos,
+@@ -468,7 +468,7 @@ static ssize_t loadstate_get_buffer(void *opaque, uint8_t *buf, int64_t pos,
      if (size == 0) {
          return 0;
      }
@@ -184,7 +159,7 @@ index 76cd8fa..fddb18c 100644
  }
  
  static const QEMUFileOps loadstate_file_ops = {
-@@ -477,25 +504,25 @@ static const QEMUFileOps loadstate_file_ops = {
+@@ -477,25 +477,25 @@ static const QEMUFileOps loadstate_file_ops = {
  
  int load_state_from_blockdev(const char *filename)
  {
@@ -217,7 +192,7 @@ index 76cd8fa..fddb18c 100644
      if (!f) {
          error_report("Could not open VM state file");
          ret = -EINVAL;
-@@ -516,10 +543,10 @@ int load_state_from_blockdev(const char *filename)
+@@ -516,10 +516,10 @@ int load_state_from_blockdev(const char *filename)
      ret = 0;
  
   the_end:
