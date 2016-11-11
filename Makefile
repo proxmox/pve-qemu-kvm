@@ -20,6 +20,11 @@ all: ${DEBS}
 
 .PHONY: download
 download:
+	@echo "---                                                  ---"
+	@echo "--- TODO when updating to a new release:             ---"
+	@echo "--- Check if efi-roms-1182.tar.xz is still required. ---"
+	@echo "---                                                  ---"
+	@false
 	rm -rf ${KVMDIR} ${KVMSRC}
 	git clone --depth=1 git://git.qemu-project.org/qemu.git -b v${KVMVER} ${KVMDIR}
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
@@ -29,6 +34,7 @@ deb ${DEBS} kvm: ${KVMSRC}
 	rm -f *.deb
 	rm -rf ${KVMDIR}
 	tar xf ${KVMSRC} 
+	tar -C ${KVMDIR} -xJf efi-roms-1182.tar.xz
 	cp -a debian ${KVMDIR}/debian
 	echo "git clone git://git.proxmox.com/git/pve-qemu-kvm.git\\ngit checkout ${GITVERSION}" > ${KVMDIR}/debian/SOURCE
 	# set package version
