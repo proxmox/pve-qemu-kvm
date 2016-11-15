@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.7.0-8) unstable; urgency=medium
+
+  * correctly report live snapshots as active
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 15 Nov 2016 15:28:44 +0100
+
 pve-qemu-kvm (2.7.0-7) unstable; urgency=medium
 
   * fix #1182: update EFI roms to include PXE fixes
