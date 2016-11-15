@@ -1,14 +1,14 @@
-From f255c2a02017dbefc3bcc786762b1de3c5aa5c89 Mon Sep 17 00:00:00 2001
+From 8880b917223466d6e350b63b49c02b7eb15ec43e Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Tue, 8 Nov 2016 11:13:06 +0100
 Subject: [PATCH 46/46] convert savevm-async to threads
 
 ---
- savevm-async.c | 143 +++++++++++++++++++++++++++++++++++----------------------
- 1 file changed, 88 insertions(+), 55 deletions(-)
+ savevm-async.c | 144 +++++++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 88 insertions(+), 56 deletions(-)
 
 diff --git a/savevm-async.c b/savevm-async.c
-index 05b5b19..c4afc3b 100644
+index 05b5b19..91ce285 100644
 --- a/savevm-async.c
 +++ b/savevm-async.c
 @@ -48,6 +48,8 @@ static struct SnapshotState {
@@ -40,7 +40,7 @@ index 05b5b19..c4afc3b 100644
  }
  
  static int block_state_close(void *opaque)
-@@ -156,36 +145,76 @@ static int block_state_close(void *opaque)
+@@ -156,51 +145,90 @@ static int block_state_close(void *opaque)
      return blk_flush(snap_state.target);
  }
  
@@ -129,13 +129,12 @@ index 05b5b19..c4afc3b 100644
      MigrationParams params = {
          .blk = 0,
          .shared = 0
-@@ -193,14 +222,15 @@ static void process_savevm_co(void *opaque)
+     };
  
-     snap_state.state = SAVE_STATE_ACTIVE;
+-    snap_state.state = SAVE_STATE_ACTIVE;
++    rcu_register_thread();
  
 -    qemu_mutex_unlock_iothread();
-+    rcu_register_thread();
-+
      qemu_savevm_state_header(snap_state.file);
      ret = qemu_savevm_state_begin(snap_state.file, &params);
 -    qemu_mutex_lock_iothread();
@@ -148,7 +147,7 @@ index 05b5b19..c4afc3b 100644
      }
  
      while (snap_state.state == SAVE_STATE_ACTIVE) {
-@@ -209,41 +239,43 @@ static void process_savevm_co(void *opaque)
+@@ -209,41 +237,43 @@ static void process_savevm_co(void *opaque)
          qemu_savevm_state_pending(snap_state.file, 0, &pend_nonpost, &pend_post);
          pending_size = pend_post + pend_nonpost;
  
@@ -217,12 +216,13 @@ index 05b5b19..c4afc3b 100644
  }
  
  static const QEMUFileOps block_file_ops = {
-@@ -306,8 +338,9 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
+@@ -306,8 +336,10 @@ void qmp_savevm_start(bool has_statefile, const char *statefile, Error **errp)
      error_setg(&snap_state.blocker, "block device is in use by savevm");
      blk_op_block_all(snap_state.target, snap_state.blocker);
  
 -    Coroutine *co = qemu_coroutine_create(process_savevm_co, NULL);
 -    qemu_coroutine_enter(co);
++    snap_state.state = SAVE_STATE_ACTIVE;
 +    snap_state.cleanup_bh = qemu_bh_new(process_savevm_cleanup, &snap_state);
 +    qemu_thread_create(&snap_state.thread, "savevm-async", process_savevm_thread,
 +                       NULL, QEMU_THREAD_JOINABLE);
