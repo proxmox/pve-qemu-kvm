@@ -1,9 +1,17 @@
+pve-qemu-kvm (2.7.0-7) unstable; urgency=medium
+
+  * fix #1182: update EFI roms to include PXE fixes
+
+  * fix snapshot-with-RAM stability with some file systems
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 11 Nov 2016 15:02:28 +0100
+
 pve-qemu-kvm (2.7.0-6) unstable; urgency=medium
 
   * fix deletion of snapshots on qcow2 while running with iothreads
 
   * fix #796: live snapshot never finishes with some guests
-  
+
   * fix live snapshot while running with iothreads
 
  -- Proxmox Support Team <support@proxmox.com>  Tue, 08 Nov 2016 11:45:02 +0100
