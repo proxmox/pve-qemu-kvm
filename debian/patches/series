@@ -44,6 +44,7 @@ pve/0043-vma-sizes-passed-to-blk_co_preadv-should-be-bytes-no.patch
 pve/0044-glusterfs-daemonize.patch
 pve/0045-qmp_delete_drive_snapshot-add-aiocontext.patch
 pve/0046-convert-savevm-async-to-threads.patch
+pve/0047-glusterfs-allow-partial-reads.patch
 #see https://bugs.launchpad.net/qemu/+bug/1488363?comments=all
 extra/x86-lapic-Load-LAPIC-state-at-post_load.patch
 extra/0001-Revert-target-i386-disable-LINT0-after-reset.patch
