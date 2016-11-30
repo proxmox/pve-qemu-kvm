@@ -1,14 +1,14 @@
-From b7bac74dd970eba47961cdaac3b219a2de7668b5 Mon Sep 17 00:00:00 2001
+From f678278f0f4d311a0d9bfa087bd722aa7403df11 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Fri, 9 Sep 2016 15:21:19 +0200
-Subject: [PATCH 41/44] savevm-async updates
+Subject: [PATCH 41/47] savevm-async updates
 
 ---
- savevm-async.c | 76 +++++++++++++++++++++++++++++-----------------------------
- 1 file changed, 38 insertions(+), 38 deletions(-)
+ savevm-async.c | 79 +++++++++++++++++++++++++++++-----------------------------
+ 1 file changed, 39 insertions(+), 40 deletions(-)
 
 diff --git a/savevm-async.c b/savevm-async.c
-index 76cd8fa..af86cbd 100644
+index 76cd8fa..8c76137 100644
 --- a/savevm-async.c
 +++ b/savevm-async.c
 @@ -20,6 +20,8 @@
@@ -159,7 +159,7 @@ index 76cd8fa..af86cbd 100644
  }
  
  static const QEMUFileOps loadstate_file_ops = {
-@@ -477,25 +477,25 @@ static const QEMUFileOps loadstate_file_ops = {
+@@ -477,28 +477,27 @@ static const QEMUFileOps loadstate_file_ops = {
  
  int load_state_from_blockdev(const char *filename)
  {
@@ -169,7 +169,8 @@ index 76cd8fa..af86cbd 100644
      Error *blocker = NULL;
  
      QEMUFile *f;
-     int ret;
+-    int ret;
++    int ret = -EINVAL;
  
 -    bs = bdrv_new();
 -    ret = bdrv_open(&bs, filename, NULL, NULL, 0, &local_err);
@@ -191,8 +192,11 @@ index 76cd8fa..af86cbd 100644
 +    f = qemu_fopen_ops(be, &loadstate_file_ops);
      if (!f) {
          error_report("Could not open VM state file");
-         ret = -EINVAL;
-@@ -516,10 +516,10 @@ int load_state_from_blockdev(const char *filename)
+-        ret = -EINVAL;
+         goto the_end;
+     }
+ 
+@@ -516,10 +515,10 @@ int load_state_from_blockdev(const char *filename)
      ret = 0;
  
   the_end:
