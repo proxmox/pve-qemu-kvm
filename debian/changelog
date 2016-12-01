@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.7.0-9) unstable; urgency=medium
+
+  * gluster: fix an issue with linked clones refusing to start
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 01 Dec 2016 11:59:55 +0100
+
 pve-qemu-kvm (2.7.0-8) unstable; urgency=medium
 
   * correctly report live snapshots as active
