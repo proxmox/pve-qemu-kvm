@@ -77,3 +77,15 @@ extra/CVE-2016-9105-9pfs-fix-memory-leak-in-v9fs_link.patch
 extra/CVE-2016-9102-9pfs-fix-memory-leak-in-v9fs_xattrcreate.patch
 extra/CVE-2016-9106-9pfs-fix-memory-leak-in-v9fs_write.patch
 extra/CVE-2016-9104-9pfs-fix-integer-overflow-issue-in-xattr-read-write.patch
+extra/CVE-2016-9776-net-mcf-check-receive-buffer-size-register-value.patch
+extra/CVE-2016-9845-virtio-gpu-fix-information-leak-in-getting-capset-in.patch
+extra/CVE-2016-9846-virtio-gpu-fix-memory-leak-in-update_cursor_data_vir.patch
+extra/CVE-2016-9907-usbredir-free-vm_change_state_handler-in-usbredir-de.patch
+extra/CVE-2016-9908-virtio-gpu-fix-information-leak-in-capset-get-dispat.patch
+extra/CVE-2016-9911-usb-ehci-fix-memory-leak-in-ehci_init_transfer.patch
+extra/CVE-2016-9912-virtio-gpu-call-cleanup-mapping-function-in-resource.patch
+extra/CVE-2016-9913-9pfs-adjust-the-order-of-resource-cleanup-in-device-.patch
+extra/CVE-2016-9914-9pfs-add-cleanup-operation-in-FileOperations.patch
+extra/CVE-2016-9915-9pfs-add-cleanup-operation-for-handle-backend-driver.patch
+extra/CVE-2016-9916-9pfs-add-cleanup-operation-for-proxy-backend-driver.patch
+extra/CVE-2016-9921-display-cirrus-check-vga-bits-per-pixel-bpp-value.patch
