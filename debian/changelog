@@ -1,3 +1,32 @@
+pve-qemu-kvm (2.7.0-10) unstable; urgency=medium
+
+  * fix CVE-2016-9776: net: mcf: check receive buffer size register value
+
+  * fix CVE-2016-9845: virtio-gpu: fix information leak in getting capset info dispatch
+
+  * fix CVE-2016-9846: virtio-gpu: fix memory leak in update_cursor_data_virgl
+
+  * fix CVE-2016-9907: usbredir: free vm_change_state_handler in usbredir destroy dispatch
+
+  * fix CVE-2016-9908: virtio-gpu: fix information leak in capset get dispatch
+
+  * fix CVE-2016-9911: usb: ehci: fix memory leak in ehci_init_transfer
+
+  * fix CVE-2016-9912: virtio-gpu: call cleanup mapping function in resource destroy
+
+  * fix CVE-2016-9913: 9pfs: adjust the order of resource cleanup in device unrealize
+
+  * fix CVE-2016-9914: 9pfs: add cleanup operation in FileOperations
+
+  * fix CVE-2016-9915: 9pfs: add cleanup operation for handle backend driver
+
+  * fix CVE-2016-9916: 9pfs: add cleanup operation for proxy backend driver
+
+  * fix CVE-2016-9921 and CVE-2016-9922:
+     display: cirrus: check vga bits per pixel(bpp) value
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 12 Dec 2016 14:36:58 +0100
+
 pve-qemu-kvm (2.7.0-9) unstable; urgency=medium
 
   * gluster: fix an issue with linked clones refusing to start
