@@ -1,7 +1,7 @@
-From 42cf33b03e7f20cd9fe3f7cefbc3cc39f7a7cdeb Mon Sep 17 00:00:00 2001
+From c09467afaf37989942076b45f6ffa7bb8ebde2ca Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:32:11 +0100
-Subject: [PATCH 09/41] qapi: modify spice query
+Subject: [PATCH 09/47] qapi: modify spice query
 
 Provide the last ticket in the SpiceInfo struct optionally.
 ---

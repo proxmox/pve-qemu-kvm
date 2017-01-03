@@ -1,7 +1,7 @@
-From eeedbc0558580dcb28d4e82b567ea980b24c9cd3 Mon Sep 17 00:00:00 2001
+From 3400a70a51015f119c12d3600943baae97aabb0f Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:51:23 +0100
-Subject: [PATCH 27/41] vma: add firewall
+Subject: [PATCH 27/47] vma: add firewall
 
 ---
  blockdev.c       | 78 ++++++++++++++++++++++++++++++++++----------------------
@@ -116,10 +116,10 @@ index 2371cf3..bbb1502 100644
  
      backup_state.cancel = false;
 diff --git a/hmp.c b/hmp.c
-index 7bd319f..6c6a0ac 100644
+index 030fd97..5c5e8ed 100644
 --- a/hmp.c
 +++ b/hmp.c
-@@ -1549,7 +1549,7 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
+@@ -1550,7 +1550,7 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
      int64_t speed = qdict_get_try_int(qdict, "speed", 0);
  
      qmp_backup(backup_file, true, dir ? BACKUP_FORMAT_DIR : BACKUP_FORMAT_VMA,

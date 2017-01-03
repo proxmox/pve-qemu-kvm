@@ -1,7 +1,7 @@
-From 83fc57d04020d8d9aebd7b9676bee0be099421d8 Mon Sep 17 00:00:00 2001
+From 798846b48b31d8231a3af5858285845d932d1d6b Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:20:56 +0100
-Subject: [PATCH 15/41] backup: add pve monitor commands
+Subject: [PATCH 15/47] backup: add pve monitor commands
 
 ---
  blockdev.c                | 439 ++++++++++++++++++++++++++++++++++++++++++++++
@@ -551,7 +551,7 @@ index 848efee..8f2f3e0 100644
          .name       = "block_job_set_speed",
          .args_type  = "device:B,speed:o",
 diff --git a/hmp.c b/hmp.c
-index aa1395d..88cb4e5 100644
+index 3b0dd81..95da164 100644
 --- a/hmp.c
 +++ b/hmp.c
 @@ -149,6 +149,44 @@ void hmp_info_mice(Monitor *mon, const QDict *qdict)
@@ -599,7 +599,7 @@ index aa1395d..88cb4e5 100644
  void hmp_info_migrate(Monitor *mon, const QDict *qdict)
  {
      MigrationInfo *info;
-@@ -1492,6 +1530,29 @@ void hmp_block_stream(Monitor *mon, const QDict *qdict)
+@@ -1493,6 +1531,29 @@ void hmp_block_stream(Monitor *mon, const QDict *qdict)
      hmp_handle_error(mon, &error);
  }
  

@@ -1,7 +1,7 @@
-From e588ad5b8eccaecfea37f4bdcedfd7cc11ba4276 Mon Sep 17 00:00:00 2001
+From 8aaa1a8108aabdca93d866eeaa9308deae81cd70 Mon Sep 17 00:00:00 2001
 From: Alexandre Derumier <aderumier@odiso.com>
 Date: Tue, 26 Jul 2016 16:51:00 +0200
-Subject: [PATCH 39/41] rbd: disable rbd_cache_writethrough_until_flush with
+Subject: [PATCH 39/47] rbd: disable rbd_cache_writethrough_until_flush with
  cache=unsafe
 
 Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
@@ -10,7 +10,7 @@ Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/block/rbd.c b/block/rbd.c
-index 0106fea..66428af 100644
+index 5cefdbb..b0bb516 100644
 --- a/block/rbd.c
 +++ b/block/rbd.c
 @@ -552,6 +552,10 @@ static int qemu_rbd_open(BlockDriverState *bs, QDict *options, int flags,

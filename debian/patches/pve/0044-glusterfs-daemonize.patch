@@ -1,7 +1,7 @@
-From f9f68037d7138efd078dba7c23c4c9066c5ddacc Mon Sep 17 00:00:00 2001
+From a7613eb93e702d5de5b40d17c4d4e95e8e5a010d Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Mon, 24 Oct 2016 09:32:36 +0200
-Subject: [PATCH 44/44] glusterfs: daemonize
+Subject: [PATCH 44/47] glusterfs: daemonize
 
 ---
  block/gluster.c | 8 +++++---

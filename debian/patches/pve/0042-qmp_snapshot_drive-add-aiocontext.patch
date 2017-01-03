@@ -1,7 +1,7 @@
-From fa4f5325137a86bbbdc3f477a2a171a43ea80a7a Mon Sep 17 00:00:00 2001
+From 704d008790dbccfd38aa55463c9e8bd873d08a3d Mon Sep 17 00:00:00 2001
 From: Alexandre Derumier <aderumier@odiso.com>
 Date: Tue, 13 Sep 2016 01:57:56 +0200
-Subject: [PATCH 42/42] qmp_snapshot_drive: add aiocontext
+Subject: [PATCH 42/47] qmp_snapshot_drive: add aiocontext
 
 Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
 ---
@@ -9,10 +9,10 @@ Signed-off-by: Alexandre Derumier <aderumier@odiso.com>
  1 file changed, 11 insertions(+), 4 deletions(-)
 
 diff --git a/savevm-async.c b/savevm-async.c
-index fddb18c..a158249 100644
+index 8c76137..99ba132 100644
 --- a/savevm-async.c
 +++ b/savevm-async.c
-@@ -372,6 +372,7 @@ void qmp_snapshot_drive(const char *device, const char *name, Error **errp)
+@@ -345,6 +345,7 @@ void qmp_snapshot_drive(const char *device, const char *name, Error **errp)
      BlockBackend *blk;
      BlockDriverState *bs;
      QEMUSnapshotInfo sn1, *sn = &sn1;
@@ -20,7 +20,7 @@ index fddb18c..a158249 100644
      int ret;
  #ifdef _WIN32
      struct _timeb tb;
-@@ -398,20 +399,23 @@ void qmp_snapshot_drive(const char *device, const char *name, Error **errp)
+@@ -371,20 +372,23 @@ void qmp_snapshot_drive(const char *device, const char *name, Error **errp)
          return;
      }
  
@@ -47,7 +47,7 @@ index fddb18c..a158249 100644
      }
  
      sn = &sn1;
-@@ -436,8 +440,11 @@ void qmp_snapshot_drive(const char *device, const char *name, Error **errp)
+@@ -409,8 +413,11 @@ void qmp_snapshot_drive(const char *device, const char *name, Error **errp)
      if (ret < 0) {
          error_set(errp, ERROR_CLASS_GENERIC_ERROR,
                    "Error while creating snapshot on '%s'\n", device);

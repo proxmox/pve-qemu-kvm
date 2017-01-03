@@ -1,7 +1,7 @@
-From 996797aac7aa6bc93ed934a14fa3f8425e711318 Mon Sep 17 00:00:00 2001
+From 210be0fc498989e7b029de90b9d2599fdcc343d3 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:21:54 +0100
-Subject: [PATCH 16/41] backup: vma: add dir format
+Subject: [PATCH 16/47] backup: vma: add dir format
 
 ---
  blockdev.c       | 124 +++++++++++++++++++++++++++++++++++++++++--------------
@@ -237,10 +237,10 @@ index 8f2f3e0..0e20ef9 100644
      },
  
 diff --git a/hmp.c b/hmp.c
-index 88cb4e5..c292354 100644
+index 95da164..c23cf2f 100644
 --- a/hmp.c
 +++ b/hmp.c
-@@ -1543,11 +1543,13 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
+@@ -1544,11 +1544,13 @@ void hmp_backup(Monitor *mon, const QDict *qdict)
  {
      Error *error = NULL;
  

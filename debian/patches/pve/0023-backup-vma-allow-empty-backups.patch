@@ -1,7 +1,7 @@
-From 4e3757e9cb0235a3ff0093f982dc3a2b4f4bdfe4 Mon Sep 17 00:00:00 2001
+From e9b9fd9156a6631998ec4b4254fe2e91859b340a Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:31:51 +0100
-Subject: [PATCH 23/41] backup: vma: allow empty backups
+Subject: [PATCH 23/47] backup: vma: allow empty backups
 
 ---
  vma-reader.c | 29 ++++++++++++-------------

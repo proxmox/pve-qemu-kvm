@@ -1,7 +1,7 @@
-From bac1501cc8927f21ba79f986cefe5d741825f33d Mon Sep 17 00:00:00 2001
+From 927da5e2426aac5bef37c97604740deddedbda41 Mon Sep 17 00:00:00 2001
 From: Thomas Lamprecht <t.lamprecht@proxmox.com>
 Date: Wed, 6 Apr 2016 16:45:15 +0200
-Subject: [PATCH 35/41] fix possible unitialised return value
+Subject: [PATCH 35/47] fix possible unitialised return value
 
 ---
  migration/savevm.c | 2 +-

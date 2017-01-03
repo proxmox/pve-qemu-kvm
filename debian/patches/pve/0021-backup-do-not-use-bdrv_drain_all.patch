@@ -1,7 +1,7 @@
-From 120827907beae1a28dbdc98e5d3ebf43ce7156da Mon Sep 17 00:00:00 2001
+From e7cf613192638f5ac24629961c4010a3b3575ad6 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:41:13 +0100
-Subject: [PATCH 21/41] backup: do not use bdrv_drain_all
+Subject: [PATCH 21/47] backup: do not use bdrv_drain_all
 
 ---
  blockdev.c | 6 +-----

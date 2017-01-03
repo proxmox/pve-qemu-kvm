@@ -1,7 +1,7 @@
-From a9503229ca99454a94045c1bf0cd285228ed2863 Mon Sep 17 00:00:00 2001
+From dc5b92fbb2d405fd86228409b1f25c0bb2d6d973 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:31:18 +0100
-Subject: [PATCH 08/41] qapi: modify query machines
+Subject: [PATCH 08/47] qapi: modify query machines
 
 provide '*is-current' in MachineInfo struct
 ---
@@ -32,10 +32,10 @@ index 4bf7222..63507f5 100644
  
  ##
 diff --git a/vl.c b/vl.c
-index b3c80d5..bdf4fdc 100644
+index 6a218ce..b226e0b 100644
 --- a/vl.c
 +++ b/vl.c
-@@ -1508,6 +1508,11 @@ MachineInfoList *qmp_query_machines(Error **errp)
+@@ -1509,6 +1509,11 @@ MachineInfoList *qmp_query_machines(Error **errp)
          info->cpu_max = !mc->max_cpus ? 1 : mc->max_cpus;
          info->hotpluggable_cpus = !!mc->query_hotpluggable_cpus;
  

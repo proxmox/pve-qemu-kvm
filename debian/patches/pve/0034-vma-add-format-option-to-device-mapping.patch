@@ -1,7 +1,7 @@
-From 20cd4944b9581a7197d5544077117e5d704d9f78 Mon Sep 17 00:00:00 2001
+From 10ae69c411df788752628c8950bf9e76c8cf6af1 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Tue, 12 Apr 2016 13:49:44 +0200
-Subject: [PATCH 34/41] vma: add format option to device mapping
+Subject: [PATCH 34/47] vma: add format option to device mapping
 
 The BDRV_O_PROTOCOL option breaks non-raw protocol devices,
 so we instead now allow the format to be explicitly

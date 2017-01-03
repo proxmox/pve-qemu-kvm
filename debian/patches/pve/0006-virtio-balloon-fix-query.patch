@@ -1,7 +1,7 @@
-From ff496e015b9b53c2d49a0110d247223872d5a582 Mon Sep 17 00:00:00 2001
+From 132444451193736847c68d91f74c09cb76a16e6a Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:27:49 +0100
-Subject: [PATCH 06/41] virtio-balloon: fix query
+Subject: [PATCH 06/47] virtio-balloon: fix query
 
 Actually provide memory information via the query-balloon
 command.
@@ -13,7 +13,7 @@ command.
  4 files changed, 94 insertions(+), 5 deletions(-)
 
 diff --git a/hmp.c b/hmp.c
-index cc2056e..aa1395d 100644
+index bb45f7f..3b0dd81 100644
 --- a/hmp.c
 +++ b/hmp.c
 @@ -704,7 +704,35 @@ void hmp_info_balloon(Monitor *mon, const QDict *qdict)
@@ -54,7 +54,7 @@ index cc2056e..aa1395d 100644
      qapi_free_BalloonInfo(info);
  }
 diff --git a/hw/virtio/virtio-balloon.c b/hw/virtio/virtio-balloon.c
-index 5af429a..d87b971 100644
+index ad4189a..b3a17f4 100644
 --- a/hw/virtio/virtio-balloon.c
 +++ b/hw/virtio/virtio-balloon.c
 @@ -376,8 +376,37 @@ static uint64_t virtio_balloon_get_features(VirtIODevice *vdev, uint64_t f,

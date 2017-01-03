@@ -1,7 +1,7 @@
-From 7e58a86c836514745590e4f4d280841c4808a022 Mon Sep 17 00:00:00 2001
+From e933992419bd8da2689a527ae95000891e687a2d Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:34:41 +0100
-Subject: [PATCH 24/41] qmp: add get_link_status
+Subject: [PATCH 24/47] qmp: add get_link_status
 
 ---
  net/net.c        | 27 +++++++++++++++++++++++++++
@@ -11,7 +11,7 @@ Subject: [PATCH 24/41] qmp: add get_link_status
  4 files changed, 67 insertions(+)
 
 diff --git a/net/net.c b/net/net.c
-index d51cb29..c94d93d 100644
+index 19b4d9e..5f890b7 100644
 --- a/net/net.c
 +++ b/net/net.c
 @@ -1362,6 +1362,33 @@ void hmp_info_network(Monitor *mon, const QDict *qdict)

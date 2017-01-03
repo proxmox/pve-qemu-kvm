@@ -1,7 +1,7 @@
-From 09e462b87b17f37fa98a2745dcf2d14c981b7e95 Mon Sep 17 00:00:00 2001
+From 51dd4df80640e1671de73c014c6273b154df920a Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Mon, 11 Jan 2016 10:40:31 +0100
-Subject: [PATCH 30/41] PVE VNC authentication
+Subject: [PATCH 30/47] PVE VNC authentication
 
 ---
  crypto/tlscreds.c         |  47 +++++++++++
@@ -431,7 +431,7 @@ index 11c8c9a..d11f1df 100644
          vnc_read_when(vs, protocol_client_vencrypt_auth, 4);
      }
 diff --git a/ui/vnc.c b/ui/vnc.c
-index a7f5f1e..6b73667 100644
+index acbe3bd..2a18a20 100644
 --- a/ui/vnc.c
 +++ b/ui/vnc.c
 @@ -55,6 +55,125 @@ static const struct timeval VNC_REFRESH_LOSSY = { 2, 0 };
@@ -560,7 +560,7 @@ index a7f5f1e..6b73667 100644
  static QTAILQ_HEAD(, VncDisplay) vnc_displays =
      QTAILQ_HEAD_INITIALIZER(vnc_displays);
  
-@@ -3409,11 +3528,17 @@ vnc_display_setup_auth(VncDisplay *vs,
+@@ -3413,11 +3532,17 @@ vnc_display_setup_auth(VncDisplay *vs,
              if (object_dynamic_cast(OBJECT(vs->tlscreds),
                                      TYPE_QCRYPTO_TLS_CREDS_X509)) {
                  VNC_DEBUG("Initializing VNC server with x509 password auth\n");
@@ -580,7 +580,7 @@ index a7f5f1e..6b73667 100644
              } else {
                  error_setg(errp,
                             "Unsupported TLS cred type %s",
-@@ -3504,6 +3629,7 @@ vnc_display_create_creds(bool x509,
+@@ -3508,6 +3633,7 @@ vnc_display_create_creds(bool x509,
                           bool x509verify,
                           const char *dir,
                           const char *id,
@@ -588,7 +588,7 @@ index a7f5f1e..6b73667 100644
                           Error **errp)
  {
      gchar *credsid = g_strdup_printf("tlsvnc%s", id);
-@@ -3519,6 +3645,7 @@ vnc_display_create_creds(bool x509,
+@@ -3523,6 +3649,7 @@ vnc_display_create_creds(bool x509,
                                        "endpoint", "server",
                                        "dir", dir,
                                        "verify-peer", x509verify ? "yes" : "no",
@@ -596,7 +596,7 @@ index a7f5f1e..6b73667 100644
                                        NULL);
      } else {
          creds = object_new_with_props(TYPE_QCRYPTO_TLS_CREDS_ANON,
-@@ -3526,6 +3653,7 @@ vnc_display_create_creds(bool x509,
+@@ -3530,6 +3657,7 @@ vnc_display_create_creds(bool x509,
                                        credsid,
                                        &err,
                                        "endpoint", "server",
@@ -604,7 +604,7 @@ index a7f5f1e..6b73667 100644
                                        NULL);
      }
  
-@@ -3723,12 +3851,17 @@ void vnc_display_open(const char *id, Error **errp)
+@@ -3727,12 +3855,17 @@ void vnc_display_open(const char *id, Error **errp)
          }
      } else {
          const char *path;
@@ -623,7 +623,7 @@ index a7f5f1e..6b73667 100644
              } else {
                  path = qemu_opt_get(opts, "x509verify");
                  if (path) {
-@@ -3740,6 +3873,7 @@ void vnc_display_open(const char *id, Error **errp)
+@@ -3744,6 +3877,7 @@ void vnc_display_open(const char *id, Error **errp)
                                                      x509verify,
                                                      path,
                                                      vs->id,
@@ -652,10 +652,10 @@ index ab5f244..2fde9d3 100644
 +
  #endif /* QEMU_VNC_H */
 diff --git a/vl.c b/vl.c
-index fefc0bd..7813b78 100644
+index 0b5a721..4742300 100644
 --- a/vl.c
 +++ b/vl.c
-@@ -2936,6 +2936,7 @@ static int global_init_func(void *opaque, QemuOpts *opts, Error **errp)
+@@ -2950,6 +2950,7 @@ static int global_init_func(void *opaque, QemuOpts *opts, Error **errp)
  int main(int argc, char **argv, char **envp)
  {
      int i;
@@ -663,7 +663,7 @@ index fefc0bd..7813b78 100644
      int snapshot, linux_boot;
      const char *initrd_filename;
      const char *kernel_filename, *kernel_cmdline;
-@@ -3708,6 +3709,14 @@ int main(int argc, char **argv, char **envp)
+@@ -3722,6 +3723,14 @@ int main(int argc, char **argv, char **envp)
                      exit(1);
                  }
                  break;

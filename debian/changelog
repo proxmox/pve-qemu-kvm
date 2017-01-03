@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.7.1-1) unstable; urgency=medium
+
+  * update to qemu 2.7.1
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 03 Jan 2017 07:57:17 +0100
+
 pve-qemu-kvm (2.7.0-10) unstable; urgency=medium
 
   * fix CVE-2016-9776: net: mcf: check receive buffer size register value

@@ -1,7 +1,7 @@
-From 7f74494cc36b70074bbdf8aaaca7eb7d0ad6c5e5 Mon Sep 17 00:00:00 2001
+From c31ba8ff9485b7648ca45952b9e7ccd74c50ac40 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:39:36 +0100
-Subject: [PATCH 18/41] backup: vma: correctly propagate error
+Subject: [PATCH 18/47] backup: vma: correctly propagate error
 
 ---
  blockdev.c   | 2 +-
