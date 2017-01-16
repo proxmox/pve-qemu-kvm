@@ -1,7 +1,7 @@
-From 78d6a05d2f69cbfa6e95f0a4a24a2c934969913b Mon Sep 17 00:00:00 2001
+From 385c66564aad5fbbe303e0d2ee5e8ffd9c10bc23 Mon Sep 17 00:00:00 2001
 From: "Dr. David Alan Gilbert" <dgilbert@redhat.com>
 Date: Mon, 12 Sep 2016 18:18:35 +0100
-Subject: [PATCH] x86/lapic: Load LAPIC state at post_load
+Subject: [PATCH 04/36] x86/lapic: Load LAPIC state at post_load
 
 Load the LAPIC state during post_load (rather than when the CPU
 starts).
@@ -17,13 +17,13 @@ Signed-off-by: Dr. David Alan Gilbert <dgilbert@redhat.com>
 Suggested-by: Paolo Bonzini <pbonzini@redhat.com>
 Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
 ---
- hw/i386/kvm/apic.c   | 27 +++++++++++++++++++++++++--
+ hw/i386/kvm/apic.c   | 26 ++++++++++++++++++++++++--
  include/sysemu/kvm.h |  1 -
  target-i386/kvm.c    | 17 -----------------
- 3 files changed, 25 insertions(+), 20 deletions(-)
+ 3 files changed, 24 insertions(+), 20 deletions(-)
 
 diff --git a/hw/i386/kvm/apic.c b/hw/i386/kvm/apic.c
-index 2bd0de8..5d140b9 100644
+index 2bd0de8..feb0002 100644
 --- a/hw/i386/kvm/apic.c
 +++ b/hw/i386/kvm/apic.c
 @@ -28,9 +28,8 @@ static inline uint32_t kvm_apic_get_reg(struct kvm_lapic_state *kapic,
@@ -37,7 +37,7 @@ index 2bd0de8..5d140b9 100644
      int i;
  
      memset(kapic, 0, sizeof(*kapic));
-@@ -125,6 +124,27 @@ static void kvm_apic_vapic_base_update(APICCommonState *s)
+@@ -125,6 +124,26 @@ static void kvm_apic_vapic_base_update(APICCommonState *s)
      }
  }
  
@@ -58,14 +58,13 @@ index 2bd0de8..5d140b9 100644
 +
 +static void kvm_apic_post_load(APICCommonState *s)
 +{
-+    fprintf(stderr, "%s: Yeh\n", __func__);
 +    run_on_cpu(CPU(s->cpu), kvm_apic_put, s);
 +}
 +
  static void do_inject_external_nmi(void *data)
  {
      APICCommonState *s = data;
-@@ -178,6 +198,8 @@ static void kvm_apic_reset(APICCommonState *s)
+@@ -178,6 +197,8 @@ static void kvm_apic_reset(APICCommonState *s)
  {
      /* Not used by KVM, which uses the CPU mp_state instead.  */
      s->wait_for_sipi = 0;
@@ -74,7 +73,7 @@ index 2bd0de8..5d140b9 100644
  }
  
  static void kvm_apic_realize(DeviceState *dev, Error **errp)
-@@ -206,6 +228,7 @@ static void kvm_apic_class_init(ObjectClass *klass, void *data)
+@@ -206,6 +227,7 @@ static void kvm_apic_class_init(ObjectClass *klass, void *data)
      k->set_base = kvm_apic_set_base;
      k->set_tpr = kvm_apic_set_tpr;
      k->get_tpr = kvm_apic_get_tpr;
@@ -83,10 +82,10 @@ index 2bd0de8..5d140b9 100644
      k->vapic_base_update = kvm_apic_vapic_base_update;
      k->external_nmi = kvm_apic_external_nmi;
 diff --git a/include/sysemu/kvm.h b/include/sysemu/kvm.h
-index 4938f65..f2a7b3b 100644
+index c9c2436..ae5d81b 100644
 --- a/include/sysemu/kvm.h
 +++ b/include/sysemu/kvm.h
-@@ -371,7 +371,6 @@ int kvm_irqchip_send_msi(KVMState *s, MSIMessage msg);
+@@ -372,7 +372,6 @@ int kvm_irqchip_send_msi(KVMState *s, MSIMessage msg);
  
  void kvm_irqchip_add_irq_route(KVMState *s, int gsi, int irqchip, int pin);
  
