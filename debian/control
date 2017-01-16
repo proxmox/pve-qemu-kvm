@@ -9,7 +9,8 @@ Package: pve-qemu-kvm
 Architecture: any
 Depends: iproute2, bridge-utils, python, libsdl1.2debian, libaio1, libuuid1, ceph-common (>= 0.48), libiscsi4 (>= 1.12.0), pve-libspice-server1 (>= 0.12.5-1), ${shlibs:Depends}, ${misc:Depends}, libusbredirparser1 (>= 0.6-2), glusterfs-common (>= 3.5.2-1), libusb-1.0-0 (>= 1.0.17-1), numactl, libjemalloc1, libjpeg62-turbo
 Conflicts: qemu, qemu-kvm, qemu-utils, kvm, pve-kvm, pve-qemu-kvm-2.6.18
-Replaces: pve-kvm, pve-qemu-kvm-2.6.18
+Provides: qemu-utils
+Replaces: pve-kvm, pve-qemu-kvm-2.6.18, qemu-utils
 Description: Full virtualization on x86 hardware
  Using KVM, one can run multiple virtual PCs, each running unmodified Linux or
  Windows images. Each virtual machine has private virtualized hardware: a
