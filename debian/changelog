@@ -1,3 +1,19 @@
+pve-qemu-kvm (2.7.1-2) unstable; urgency=medium
+
+  * fix #1237: cirrus: fix pattern fill regressions
+
+  * fix CVE-2017-2615: cirrus: out of bounds access on backward blits
+
+  * fix CVE-2016-10028: virtio-gpu-3d: check virgl capabilities
+
+  * fix CVE-2016-10155: memory leak on unplugging an Intel 6300ESB watchdog
+
+  * remove debug output from LAPIC patch
+
+  * added 'qemu-utils' to replaces & provides
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 02 Feb 2017 10:01:53 +0100
+
 pve-qemu-kvm (2.7.1-1) unstable; urgency=medium
 
   * update to qemu 2.7.1
