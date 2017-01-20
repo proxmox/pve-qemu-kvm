@@ -83,3 +83,8 @@ extra/CVE-2016-9914-9pfs-add-cleanup-operation-in-FileOperations.patch
 extra/CVE-2016-9915-9pfs-add-cleanup-operation-for-handle-backend-driver.patch
 extra/CVE-2016-9916-9pfs-add-cleanup-operation-for-proxy-backend-driver.patch
 extra/CVE-2016-9921-display-cirrus-check-vga-bits-per-pixel-bpp-value.patch
+extra/0001-display-cirrus-ignore-source-pitch-value-as-needed-i.patch
+extra/0001-cirrus-handle-negative-pitch-in-cirrus_invalidate_re.patch
+extra/0002-cirrus-allow-zero-source-pitch-in-pattern-fill-rops.patch
+extra/0003-cirrus-fix-blit-address-mask-handling.patch
+extra/0004-cirrus-fix-oob-access-issue-CVE-2017-2615.patch
