@@ -11,12 +11,12 @@ KVMSRC=${KVMDIR}-src.tar.gz
 ARCH=amd64
 GITVERSION:=$(shell git rev-parse master)
 
-DEBS=							\
-${KVMPACKAGE}-dbg_${KVMVER}-${KVMPKGREL}_${ARCH}.deb	\
-${KVMPACKAGE}_${KVMVER}-${KVMPKGREL}_${ARCH}.deb
+DEB=${KVMPACKAGE}_${KVMVER}-${KVMPKGREL}_${ARCH}.deb
+DEB_DBG=${KVMPACKAGE}-dbg_${KVMVER}-${KVMPKGREL}_${ARCH}.deb
+DEBS=$(DEB) $(DEB_DBG)
 
 
-all: ${DEBS}
+all: $(DEBS)
 
 .PHONY: download
 download:
@@ -29,8 +29,10 @@ download:
 	git clone --depth=1 git://git.qemu-project.org/qemu.git -b v${KVMVER} ${KVMDIR}
 	tar czf ${KVMSRC} --exclude CVS --exclude .git --exclude .svn ${KVMDIR}
 
-.PHONY: deb
-deb ${DEBS} kvm: ${KVMSRC}
+.PHONY: deb kvm
+deb kvm: $(DEBS)
+$(DEB_DBG): $(DEB)
+$(DEB): $(KVMSRC)
 	rm -f *.deb
 	rm -rf ${KVMDIR}
 	tar xf ${KVMSRC} 
