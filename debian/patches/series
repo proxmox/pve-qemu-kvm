@@ -92,3 +92,5 @@ extra/CVE-2016-10028-display-virtio-gpu-3d-check-virgl-capabilities-max_s.patch
 extra/CVE-2016-10155-watchdog-6300esb-add-exit-function.patch
 extra/0003-sd-sdhci-check-transfer-mode-register-in-multi-block.patch
 extra/0004-sd-sdhci-block-count-enable-not-relevant-in-single-b.patch
+extra/0001-cirrus-fix-patterncopy-checks.patch
+extra/0002-Revert-cirrus-allow-zero-source-pitch-in-pattern-fil.patch
