@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.7.1-4) unstable; urgency=medium
+
+  * fix CVE-2017-2620: display: cirrus: out-of-bounds access issue
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 22 Feb 2017 14:19:57 +0100
+
 pve-qemu-kvm (2.7.1-3) unstable; urgency=medium
 
   * more fixes for cirrus pattern fill operations
