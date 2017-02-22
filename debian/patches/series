@@ -94,3 +94,4 @@ extra/0003-sd-sdhci-check-transfer-mode-register-in-multi-block.patch
 extra/0004-sd-sdhci-block-count-enable-not-relevant-in-single-b.patch
 extra/0001-cirrus-fix-patterncopy-checks.patch
 extra/0002-Revert-cirrus-allow-zero-source-pitch-in-pattern-fil.patch
+extra/CVE-2017-2620_cirrus_add_blit_is_unsafe_call_to_cirrus_bitblt_cputovideo.patch
