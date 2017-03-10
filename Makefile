@@ -2,7 +2,7 @@ RELEASE=4.4
 
 # also update debian/changelog
 KVMVER=2.7.1
-KVMPKGREL=4
+KVMPKGREL=500
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm
@@ -45,8 +45,8 @@ $(DEB): $(KVMSRC)
 	lintian ${DEBS} || true
 
 .PHONY: upload
-upload: ${DEBS} ${KVMDIR}-src.tar.gz
-	tar cf - ${DEBS} | ssh repoman@repo.proxmox.com upload
+upload: ${DEBS}
+	tar cf - ${DEBS} | ssh repoman@repo.proxmox.com upload --product pve --dist stretch
 
 .PHONY: distclean
 distclean: clean
