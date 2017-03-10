@@ -45,8 +45,8 @@ $(DEB): $(KVMSRC)
 	lintian ${DEBS} || true
 
 .PHONY: upload
-upload: ${DEBS} ${KVMDIR}-src.tar.gz
-	tar cf - ${DEBS} | ssh repoman@repo.proxmox.com upload
+upload: ${DEBS}
+	tar cf - ${DEBS} | ssh repoman@repo.proxmox.com upload --produce pve --dist jessie
 
 .PHONY: distclean
 distclean: clean
