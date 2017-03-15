@@ -8,7 +8,7 @@ KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm
 KVMSRC=${KVMDIR}-src.tar.gz
 
-ARCH=amd64
+ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 GITVERSION:=$(shell git rev-parse master)
 
 DEB=${KVMPACKAGE}_${KVMVER}-${KVMPKGREL}_${ARCH}.deb
