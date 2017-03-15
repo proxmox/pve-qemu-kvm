@@ -54,7 +54,7 @@ distclean: clean
 
 .PHONY: clean
 clean:
-	rm -rf *~ ${KVMDIR} ${KVMPACKAGE}_* ${DEBS}
+	rm -rf *.changes *.buildinfo ${KVMDIR} ${KVMPACKAGE}_* ${DEBS}
 
 .PHONY: dinstall
 dinstall: ${DEBS}
