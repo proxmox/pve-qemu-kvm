@@ -31,7 +31,6 @@ Package: pve-qemu-kvm
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  iproute2,
- bridge-utils,
  python,
  libsdl1.2debian,
  libaio1,
