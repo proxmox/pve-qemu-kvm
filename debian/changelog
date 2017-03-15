@@ -1,3 +1,11 @@
+pve-qemu-kvm (2.7.1-501) unstable; urgency=medium
+
+  * drop bridge-utils dependency
+
+  * use ip from iproute2 over ifconfig from net-tools
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 15 Mar 2017 11:24:33 +0100
+
 pve-qemu-kvm (2.7.1-500) unstable; urgency=medium
 
   * version bumped for stetch upgrade
