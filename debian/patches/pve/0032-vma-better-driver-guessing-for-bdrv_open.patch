@@ -1,4 +1,4 @@
-From 2dc69ead56b7ecd60eb513ab5b6c9978e06070ef Mon Sep 17 00:00:00 2001
+From 9b2434933e9a4bd411111dad716d4239e163af9e Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Tue, 23 Feb 2016 15:48:41 +0100
 Subject: [PATCH 32/47] vma: better driver guessing for bdrv_open
@@ -12,10 +12,10 @@ into account.
  1 file changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/vma.c b/vma.c
-index 08e4725..8a27704 100644
+index c7c0538..4903568 100644
 --- a/vma.c
 +++ b/vma.c
-@@ -293,7 +293,20 @@ static int extract_content(int argc, char **argv)
+@@ -294,7 +294,20 @@ static int extract_content(int argc, char **argv)
              }
  
              BlockDriverState *bs = bdrv_new();
