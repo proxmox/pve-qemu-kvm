@@ -1,4 +1,4 @@
-From 75cc381c5a486241e47900eab6b0e99de7f45665 Mon Sep 17 00:00:00 2001
+From a61194439318c95dfcb7df973ac961c12937dbcd Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Tue, 12 Apr 2016 13:49:44 +0200
 Subject: [PATCH 34/47] vma: add format option to device mapping

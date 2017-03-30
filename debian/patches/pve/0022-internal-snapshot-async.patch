@@ -1,4 +1,4 @@
-From 85bba03b81d637e1dca1aa404fbb627a5e581fa1 Mon Sep 17 00:00:00 2001
+From ab6904d8e0f3a976ade19e8b5f99270738ed6518 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:04:32 +0100
 Subject: [PATCH 22/47] internal snapshot async

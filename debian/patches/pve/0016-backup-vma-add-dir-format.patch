@@ -1,4 +1,4 @@
-From cc5b1446be5c3501881f7968edb645425db839d1 Mon Sep 17 00:00:00 2001
+From 99a526d92531d64ff0c31a83d0d55f38651a32a5 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:21:54 +0100
 Subject: [PATCH 16/47] backup: vma: add dir format
@@ -12,7 +12,7 @@ Subject: [PATCH 16/47] backup: vma: add dir format
  5 files changed, 111 insertions(+), 42 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 3e5c9ce..4958a5f 100644
+index 3e5c9ce..af1b9d4 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -3007,6 +3007,8 @@ typedef struct PVEBackupDevInfo {
@@ -186,7 +186,7 @@ index 3e5c9ce..4958a5f 100644
          g_free(cdata);
      }
  
-@@ -3335,12 +3385,12 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3335,15 +3385,16 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
      while (l) {
          PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
          l = g_list_next(l);
@@ -205,12 +205,15 @@ index 3e5c9ce..4958a5f 100644
              error_setg(&backup_state.error, "backup_job_create failed");
              pvebackup_cancel(NULL);
          }
-@@ -3352,14 +3402,25 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
++        block_job_start(job);
+     }
+ 
+     if (!backup_state.error) {
+@@ -3352,14 +3403,24 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
  
      uuid_info = g_malloc0(sizeof(*uuid_info));
      uuid_info->UUID = g_strdup(backup_state.uuid_str);
 +
-+    block_job_start(job);
      return uuid_info;
  
  err:

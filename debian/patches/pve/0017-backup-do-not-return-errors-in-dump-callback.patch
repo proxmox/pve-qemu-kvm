@@ -1,4 +1,4 @@
-From 2aa143eb4296d3dcdae3afbc9c03f8675cbdba51 Mon Sep 17 00:00:00 2001
+From f859377de12e2faa46046b266ce4418c138e61ab Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:22:19 +0100
 Subject: [PATCH 17/47] backup: do not return errors in dump callback
@@ -8,7 +8,7 @@ Subject: [PATCH 17/47] backup: do not return errors in dump callback
  1 file changed, 20 insertions(+), 6 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 4958a5f..636e58a 100644
+index af1b9d4..4b073d4 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -3019,6 +3019,11 @@ static int pvebackup_dump_cb(void *opaque, BlockBackend *target,

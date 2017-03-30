@@ -1,4 +1,4 @@
-From 0e111929cd58870a12b0e70b6e9e7478a656e725 Mon Sep 17 00:00:00 2001
+From 17b2fc7ed399325558b891e13e104214568fd154 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:39:36 +0100
 Subject: [PATCH 18/47] backup: vma: correctly propagate error
@@ -10,7 +10,7 @@ Subject: [PATCH 18/47] backup: vma: correctly propagate error
  3 files changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 636e58a..db03f8b 100644
+index 4b073d4..6253ef1 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -3043,7 +3043,7 @@ static int pvebackup_dump_cb(void *opaque, BlockBackend *target,
