@@ -1,7 +1,7 @@
 From c0b66c21bb4d4cc1f02d4259d62dd8d6d413fd7f Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:40:42 +0100
-Subject: [PATCH 20/47] backup: vma: run flush inside coroutine
+Subject: [PATCH 20/48] backup: vma: run flush inside coroutine
 
 ---
  blockdev.c   | 10 +++++++++-

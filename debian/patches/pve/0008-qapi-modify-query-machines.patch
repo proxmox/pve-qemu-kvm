@@ -1,7 +1,7 @@
 From e453e9a98f7f0c2a213fe5bee04ece37ce10e625 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:31:18 +0100
-Subject: [PATCH 08/47] qapi: modify query machines
+Subject: [PATCH 08/48] qapi: modify query machines
 
 provide '*is-current' in MachineInfo struct
 ---

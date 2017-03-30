@@ -1,7 +1,7 @@
 From 220fb93343dc6c05989c903873d8ed68943848ef Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Fri, 21 Oct 2016 09:09:26 +0200
-Subject: [PATCH 43/47] vma: sizes passed to blk_co_preadv should be bytes now
+Subject: [PATCH 43/48] vma: sizes passed to blk_co_preadv should be bytes now
 
 ---
  vma.c | 4 ++--

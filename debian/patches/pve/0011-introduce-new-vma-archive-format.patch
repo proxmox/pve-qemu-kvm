@@ -1,7 +1,7 @@
 From c1338b34ccac2c5e6d7d1aca3ca3e3457a3f744c Mon Sep 17 00:00:00 2001
 From: Dietmar Maurer <dietmar@proxmox.com>
 Date: Tue, 13 Nov 2012 11:11:38 +0100
-Subject: [PATCH 11/47] introduce new vma archive format
+Subject: [PATCH 11/48] introduce new vma archive format
 
 This is a very simple archive format, see docs/specs/vma_spec.txt
 

@@ -1,7 +1,7 @@
 From c46139b295f9edffd43a12e7f029fce4f9b2ea46 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:04:57 +0100
-Subject: [PATCH 14/47] backup: modify job api
+Subject: [PATCH 14/48] backup: modify job api
 
 Introduces a BackupDump function callback and a pause_count
 for backup_start. For a dump-backup the target parameter

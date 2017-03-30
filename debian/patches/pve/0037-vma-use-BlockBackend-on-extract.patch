@@ -1,7 +1,7 @@
 From d63b3c58bce32b976231923f5e186ebd55259c98 Mon Sep 17 00:00:00 2001
 From: Thomas Lamprecht <t.lamprecht@proxmox.com>
 Date: Fri, 1 Jul 2016 15:47:29 +0200
-Subject: [PATCH 37/47] vma: use BlockBackend on extract
+Subject: [PATCH 37/48] vma: use BlockBackend on extract
 
 As we else rely on bdrv_close_all() do clean up, which was rewritten
 in ca9bd24cf1d53775169ba9adc17e265554d1afed and fails on "dangling"

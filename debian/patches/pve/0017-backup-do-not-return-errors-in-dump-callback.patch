@@ -1,7 +1,7 @@
 From f859377de12e2faa46046b266ce4418c138e61ab Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:22:19 +0100
-Subject: [PATCH 17/47] backup: do not return errors in dump callback
+Subject: [PATCH 17/48] backup: do not return errors in dump callback
 
 ---
  blockdev.c | 26 ++++++++++++++++++++------

@@ -1,7 +1,7 @@
 From 99a526d92531d64ff0c31a83d0d55f38651a32a5 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:21:54 +0100
-Subject: [PATCH 16/47] backup: vma: add dir format
+Subject: [PATCH 16/48] backup: vma: add dir format
 
 ---
  blockdev.c       | 137 ++++++++++++++++++++++++++++++++++++++++---------------

@@ -1,7 +1,7 @@
 From cfc9d20b832a3db40b4e61fa6af0fbcda911ec2e Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:46:49 +0100
-Subject: [PATCH 13/47] vma: add 'config' command to dump the config
+Subject: [PATCH 13/48] vma: add 'config' command to dump the config
 
 ---
  vma.c | 64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

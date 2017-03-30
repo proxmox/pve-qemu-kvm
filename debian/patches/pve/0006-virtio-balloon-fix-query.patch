@@ -1,7 +1,7 @@
 From 5921bc0360f6964a5bb5355c2707c806425f4734 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:27:49 +0100
-Subject: [PATCH 06/47] virtio-balloon: fix query
+Subject: [PATCH 06/48] virtio-balloon: fix query
 
 Actually provide memory information via the query-balloon
 command.

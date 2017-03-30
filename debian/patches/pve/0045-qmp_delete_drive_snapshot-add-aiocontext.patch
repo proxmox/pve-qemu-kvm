@@ -1,7 +1,7 @@
 From 58d620cb1d511be7a6521e76a6cd54ebbbbae2b7 Mon Sep 17 00:00:00 2001
 From: Alexandre Derumier <aderumier@odiso.com>
 Date: Mon, 7 Nov 2016 11:47:50 +0100
-Subject: [PATCH 45/47] qmp_delete_drive_snapshot : add aiocontext
+Subject: [PATCH 45/48] qmp_delete_drive_snapshot : add aiocontext
 
 this fix snapshot delete of qcow2 with iothread enabled
 

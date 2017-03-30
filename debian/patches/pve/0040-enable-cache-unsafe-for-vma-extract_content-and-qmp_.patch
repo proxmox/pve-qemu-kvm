@@ -1,7 +1,7 @@
 From 5a587bc1cfc30faa8506b5c2925b767b4c3d7b56 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Mon, 1 Aug 2016 10:52:46 +0200
-Subject: [PATCH 40/47] enable cache=unsafe for vma extract_content and
+Subject: [PATCH 40/48] enable cache=unsafe for vma extract_content and
  qmp_savevm_start
 
 We don't send any flush here, so we need to open with cache=unsafe.

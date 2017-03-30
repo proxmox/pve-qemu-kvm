@@ -1,7 +1,7 @@
 From 2cebda37c624832599906df01f540fdc76ecac50 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 30 Nov 2016 10:27:47 +0100
-Subject: [PATCH 47/47] glusterfs: allow partial reads
+Subject: [PATCH 47/48] glusterfs: allow partial reads
 
 This should deal with qemu bug #1644754 until upstream
 decides which way to go. The general direction seems to be

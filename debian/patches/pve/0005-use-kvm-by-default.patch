@@ -1,7 +1,7 @@
 From bd3aa97864804b5b37421f199b9fe64e3b16b52c Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 14:27:05 +0100
-Subject: [PATCH 05/47] use kvm by default
+Subject: [PATCH 05/48] use kvm by default
 
 ---
  accel.c | 4 ++--
