@@ -1,18 +1,18 @@
-From 7a74d0bf611d5a700970ae5000235d9345104bf3 Mon Sep 17 00:00:00 2001
+From cc5b1446be5c3501881f7968edb645425db839d1 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 15:21:54 +0100
 Subject: [PATCH 16/47] backup: vma: add dir format
 
 ---
- blockdev.c       | 127 +++++++++++++++++++++++++++++++++++++++++--------------
+ blockdev.c       | 137 ++++++++++++++++++++++++++++++++++++++++---------------
  hmp-commands.hx  |   8 ++--
  hmp.c            |   4 +-
  qapi-schema.json |   2 +-
  vma.c            |   2 +-
- 5 files changed, 105 insertions(+), 38 deletions(-)
+ 5 files changed, 111 insertions(+), 42 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 3e5c9ce..e065922 100644
+index 3e5c9ce..4958a5f 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -3007,6 +3007,8 @@ typedef struct PVEBackupDevInfo {
@@ -54,7 +54,15 @@ index 3e5c9ce..e065922 100644
      Error *local_err = NULL;
      uuid_t uuid;
      VmaWriter *vmaw = NULL;
-@@ -3185,11 +3189,6 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3175,6 +3179,7 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+     GList *di_list = NULL;
+     GList *l;
+     UuidInfo *uuid_info;
++    BlockJob *job;
+ 
+     if (backup_state.di_list) {
+         error_set(errp, ERROR_CLASS_GENERIC_ERROR,
+@@ -3185,11 +3190,6 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
      /* Todo: try to auto-detect format based on file name */
      format = has_format ? format : BACKUP_FORMAT_VMA;
  
@@ -66,7 +74,7 @@ index 3e5c9ce..e065922 100644
      if (has_devlist) {
          devs = g_strsplit_set(devlist, ",;:", -1);
  
-@@ -3258,27 +3257,62 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3258,27 +3258,62 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
  
      uuid_generate(uuid);
  
@@ -145,7 +153,7 @@ index 3e5c9ce..e065922 100644
      }
  
      /* add configuration file to archive */
-@@ -3291,12 +3325,27 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3291,12 +3326,27 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
              goto err;
          }
  
@@ -178,19 +186,34 @@ index 3e5c9ce..e065922 100644
          g_free(cdata);
      }
  
-@@ -3336,8 +3385,9 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3335,12 +3385,12 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+     while (l) {
          PVEBackupDevInfo *di = (PVEBackupDevInfo *)l->data;
          l = g_list_next(l);
- 
+-
 -        backup_job_create(NULL, di->bs, NULL, speed, MIRROR_SYNC_MODE_FULL, NULL,
 -                          BLOCKDEV_ON_ERROR_REPORT, BLOCKDEV_ON_ERROR_REPORT,
-+        backup_job_create(NULL, di->bs, di->target, speed, MIRROR_SYNC_MODE_FULL, NULL,
-+                          false, BLOCKDEV_ON_ERROR_REPORT, BLOCKDEV_ON_ERROR_REPORT,
-+                          BLOCK_JOB_DEFAULT,
-                           pvebackup_dump_cb, pvebackup_complete_cb, di,
-                           1, NULL, &local_err);
-         if (local_err != NULL) {
-@@ -3358,8 +3408,17 @@ err:
+-                          pvebackup_dump_cb, pvebackup_complete_cb, di,
+-                          1, NULL, &local_err);
+-        if (local_err != NULL) {
++        job = backup_job_create(NULL, di->bs, di->target, speed, MIRROR_SYNC_MODE_FULL, NULL,
++                                false, BLOCKDEV_ON_ERROR_REPORT, BLOCKDEV_ON_ERROR_REPORT,
++                                BLOCK_JOB_DEFAULT,
++                                pvebackup_dump_cb, pvebackup_complete_cb, di,
++                                1, NULL, &local_err);
++        if (!job || local_err != NULL) {
+             error_setg(&backup_state.error, "backup_job_create failed");
+             pvebackup_cancel(NULL);
+         }
+@@ -3352,14 +3402,25 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+ 
+     uuid_info = g_malloc0(sizeof(*uuid_info));
+     uuid_info->UUID = g_strdup(backup_state.uuid_str);
++
++    block_job_start(job);
+     return uuid_info;
+ 
+ err:
  
      l = di_list;
      while (l) {
@@ -209,7 +232,7 @@ index 3e5c9ce..e065922 100644
      }
      g_list_free(di_list);
  
-@@ -3373,6 +3432,10 @@ err:
+@@ -3373,6 +3434,10 @@ err:
          unlink(backup_file);
      }
  

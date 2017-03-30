@@ -1,4 +1,4 @@
-From f12b170f30566d50ff52ee20a2075e806c62f38e Mon Sep 17 00:00:00 2001
+From 139f49fe0cb825885fd4cddde96195d87149f07d Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:51:23 +0100
 Subject: [PATCH 27/47] vma: add firewall
@@ -10,7 +10,7 @@ Subject: [PATCH 27/47] vma: add firewall
  3 files changed, 50 insertions(+), 31 deletions(-)
 
 diff --git a/blockdev.c b/blockdev.c
-index 70f04bf..3335a33 100644
+index 437ed57..19828de 100644
 --- a/blockdev.c
 +++ b/blockdev.c
 @@ -3163,6 +3163,44 @@ void qmp_backup_cancel(Error **errp)
@@ -66,7 +66,7 @@ index 70f04bf..3335a33 100644
                      bool has_devlist, const char *devlist,
                      bool has_speed, int64_t speed, Error **errp)
  {
-@@ -3341,38 +3380,17 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
+@@ -3342,38 +3381,17 @@ UuidInfo *qmp_backup(const char *backup_file, bool has_format,
  
      /* add configuration file to archive */
      if (has_config_file) {

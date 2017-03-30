@@ -1,4 +1,4 @@
-From 821b6e565433da3132e6a4c69b8ce57912427f35 Mon Sep 17 00:00:00 2001
+From cbf0d2aca8df738ee33bc6287114f2324a57de2d Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Mon, 1 Aug 2016 10:52:46 +0200
 Subject: [PATCH 40/47] enable cache=unsafe for vma extract_content and

@@ -1,4 +1,4 @@
-From b4c3d5bd99807290626339b25e555a0187c195b8 Mon Sep 17 00:00:00 2001
+From f175ee758bfbe2199a17b3459ece5031b3a540c8 Mon Sep 17 00:00:00 2001
 From: Alexandre Derumier <aderumier@odiso.com>
 Date: Tue, 29 Sep 2015 15:37:44 +0200
 Subject: [PATCH 25/47] smm_available = false

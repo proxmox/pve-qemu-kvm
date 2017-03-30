@@ -1,4 +1,4 @@
-From 2b80d33fbafd332233f0b49fe7b921d00809d8a5 Mon Sep 17 00:00:00 2001
+From 7e3d5f9b54990866923b1a0b142838bd2de487b6 Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Wed, 9 Dec 2015 16:31:51 +0100
 Subject: [PATCH 23/47] backup: vma: allow empty backups

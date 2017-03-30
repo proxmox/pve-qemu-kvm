@@ -1,4 +1,4 @@
-From 37b358b0aa7b60c0a609e16394a89f5b3e1904f1 Mon Sep 17 00:00:00 2001
+From 9b845edfd3bd571921af56e9f4fc3f7d358049ca Mon Sep 17 00:00:00 2001
 From: Wolfgang Bumiller <w.bumiller@proxmox.com>
 Date: Tue, 8 Nov 2016 11:13:06 +0100
 Subject: [PATCH 46/47] convert savevm-async to threads

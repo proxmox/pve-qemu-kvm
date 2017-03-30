@@ -1,4 +1,4 @@
-From 7142892fdd63de719b7b2e434914314e9357ecac Mon Sep 17 00:00:00 2001
+From 0d19a91c710650ed7eb0aad9654e8d13ecf7489a Mon Sep 17 00:00:00 2001
 From: Thomas Lamprecht <t.lamprecht@proxmox.com>
 Date: Wed, 6 Apr 2016 16:47:54 +0200
 Subject: [PATCH 36/47] vnc: refactor to QIOChannelSocket
