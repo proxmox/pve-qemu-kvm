@@ -1,7 +1,7 @@
 # also update debian/changelog
 KVMVER=2.9.0
 KVMTAG=$(KVMVER)-rc2
-KVMPKGREL=1~rc2
+KVMPKGREL=1~rc2+1
 
 KVMPACKAGE=pve-qemu-kvm
 KVMDIR=qemu-kvm

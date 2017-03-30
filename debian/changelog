@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.9.0-1~rc2+1) unstable; urgency=medium
+
+  * fix backup jobs not starting and an assertion on backup job cleanup
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Mar 2017 10:49:00 +0200
+
 pve-qemu-kvm (2.9.0-1~rc2) unstable; urgency=medium
 
   * update to qemu 2.9.0-rc2
