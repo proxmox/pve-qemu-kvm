@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.9.0-1~rc2+4) unstable; urgency=medium
+
+  * fix data loss when piping backups through compression pipes on pve-5
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Mar 2017 16:07:52 +0200
+
 pve-qemu-kvm (2.9.0-1~rc2+3) unstable; urgency=medium
 
   * fix backup jobs not starting when using multiple disks
