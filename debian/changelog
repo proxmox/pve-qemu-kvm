@@ -1,3 +1,9 @@
+pve-qemu-kvm (2.9.0-1~rc2+3) unstable; urgency=medium
+
+  * fix backup jobs not starting when using multiple disks
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Mar 2017 12:16:30 +0200
+
 pve-qemu-kvm (2.9.0-1~rc2+2) unstable; urgency=medium
 
   * build with virtfs enabled
