@@ -24,7 +24,8 @@ Build-Depends: debhelper (>= 5),
  libnuma-dev,
  libjemalloc-dev,
  libjpeg-dev,
- libacl1-dev
+ libacl1-dev,
+ libcap-dev
 Standards-Version: 3.7.2
 
 Package: pve-qemu-kvm
