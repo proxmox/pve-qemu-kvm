@@ -1,6 +1,12 @@
+pve-qemu-kvm (2.9.0-1~rc2+5) unstable; urgency=medium
+
+  * fix a crash caused by the zeroinit filter in drive-mirror
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 31 Mar 2017 09:31:38 +0200
+
 pve-qemu-kvm (2.9.0-1~rc2+4) unstable; urgency=medium
 
-  * fix data loss when piping backups through compression pipes on pve-5
+  * fix data loss when sending backups through pipes on kernel >= 4.5
 
  -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Mar 2017 16:07:52 +0200
 
