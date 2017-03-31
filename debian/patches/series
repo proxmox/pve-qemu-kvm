@@ -46,3 +46,4 @@ pve/0045-qmp_delete_drive_snapshot-add-aiocontext.patch
 pve/0046-convert-savevm-async-to-threads.patch
 pve/0047-glusterfs-allow-partial-reads.patch
 pve/0048-vma-don-t-use-O_DIRECT-on-pipes.patch
+pve/0049-block-zeroinit-request-child-permissions.patch
