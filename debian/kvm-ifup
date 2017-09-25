@@ -1,5 +1,0 @@
-#!/bin/sh
-
-switch=$(/sbin/ip route show |sed -nre 's/^default .* dev ([^ ]+).*$/\1/;T;p;q')
-/sbin/ip link set "$1" up promisc on
-test -d "/sys/class/net/$switch/bridge" && /sbin/ip link set "$1" master "$switch"
